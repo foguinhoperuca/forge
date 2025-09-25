@@ -6,8 +6,9 @@ NOW=$(date +"%Y-%m-%dT%H-%M-%S")
 CUSTOM_VARS_FRAGMENT="PMS_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|AUTHORIZATION|DEPLOYMENT"
 
 declare -a SYMBOLIC_LINK_FILES=(
-    ".target-server"
     ".pgpass"
+    ".target-server"
+    "api/.env"
     "backoffice/.env"
     "bot/.env"
 )
@@ -24,11 +25,12 @@ declare -a ENVS_AVAILABLE=(
 )
 
 declare -a PYTHON_PROJECTS_AVAILABLE=(
+    "api"
     "backoffice"
     "bot"
 )
 
 declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
-    "pedido_ajuda"
-    "photo_guia_atendimento"
+    "some_folder_for_save_media"
+    "another_folder_for_save_media"
 )
