@@ -1,7 +1,6 @@
 #!/bin/bash
 
 unset_vars() {
-    # for var in $(env | sort | grep -E "(PMS_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|AUTHORIZATION|DEPLOYMENT)" | cut -d = -f1);
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
     do
         unset $var
@@ -14,15 +13,12 @@ set_vars() {
     # [OPTIONAL]  $3 :: define GIT_BRANCH different from default
 
     # PROJECT specific variables
-    DEPLOYMENT_FILE=$(dirname $0)/.credentials/.mise-en-place.conf
+    export DEPLOYMENT_FILE=$(dirname $0)/.credentials/.mise-en-place.conf
+
     export PMS_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep PMS_SYSTEM_ACRONYM | cut -d = -f2)
     export PMS_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep PMS_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] PMS_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by PMS_SYSTEM_ACRONYM?!
     export PMS_SYSTEM_NAME="$(echo $PMS_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
-
-    export APP_PATH="/opt/river" # FIXME remove it!
-    
-    # Bare minimum for GIT repository
     if [ "$2" == "" ];
     then
         export GIT_REPOS="backend"
@@ -39,6 +35,9 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
+    export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
+    export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
+    export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
 
     # ENVIRONMENT specific variables
     case $1 in
@@ -57,8 +56,7 @@ set_vars() {
             fi
             ;;
         *)
-            # TODO TARGET_ENV should use DEFAULT_TARGET_ENV from .mise-en-place
-            export TARGET_ENV=$(ls -lah .pgpass | cut -d " " -f12 | cut -d . -f3) # if not setted
+            export TARGET_ENV=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_ENV | cut -d = -f2) # if not setted
             export GIT_BRANCH=$TARGET_ENV
             echo "ENV USAGE: [local | dev | stage | prod]. $1 *NOT* found!! Using already setted!"
             ;;
@@ -66,15 +64,23 @@ set_vars() {
     echo ""
     echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 :: INTERRUPTS: $4 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
     
-    # FIXME This part depends from set_symbolic_link. Should be there?
-    if [[ "$4" != "INTERRUPTS" ]];
-    then
-        set_vars_from_conf
-    fi
+    # # FIXME This part depends from set_symbolic_link. Should be there?
+    # if [[ "$4" != "INTERRUPTS" ]];
+    # then
+    #     set_vars_by_env
+    # fi
 }
 
-set_vars_from_conf() {
-    # TODO use APP_PATH_ETC instead of $APP_PATH_ETC/
+set_vars_by_env() {
+    echo ""
+    echo "[SET VARS BY ENV] Vars that dependent from environment (ENV is $TARGET_ENV)"
+
+    export TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
+    export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
+    export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
+    export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
+    export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
+
     export PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
     export DB_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '1,1p')
     export DB_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '1,1p')
@@ -94,25 +100,12 @@ set_vars_from_conf() {
     export DJANGO_SUPERUSER_FIRSTNAME=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_FIRSTNAME | cut -d = -f2)
     export DJANGO_SUPERUSER_LASTNAME=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_LASTNAME | cut -d = -f2)
 
-    # TODO add AUTHORIZATION_TOKEN HERE (adc)
+    # TODO add AUTHORIZATION_TOKEN HERE (adc) - api
 
-    export TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
-    export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
-    export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
-    export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
-    export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
-
-    export DEPLOYMENT_FILE=$APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf
-    export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
-
-    # FIXME adjust `cat .env` bellow
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
-    export RIVER_APP_PWD=$(cat $BOT_ENV_FILE | grep RIVER_APP_PWD | cut -d = -f2)
-    export RIVER_PWD=$(cat $BOT_ENV_FILE | grep RIVER_PWD | cut -d = -f2)
 }
 
 unset_symbolic_link() {
-    # TODO remove tmp files from origin
     rm -f .*~ *~ *#
     for slf in ${SYMBOLIC_LINK_FILES[@]};
     do
@@ -136,6 +129,8 @@ set_symbolic_link() {
     ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
+    ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_DOCUMENT_ROOT/.mise-en-place.conf
+
     ln -s $APP_PATH_ORIGIN_EDGE/forge.sh $APP_PATH_ORIGIN_EDGE/git-hooks/forge.sh
     ln -s $APP_PATH_ORIGIN_EDGE/forge $APP_PATH_ORIGIN_EDGE/git-hooks/forge
 
@@ -147,6 +142,7 @@ set_symbolic_link() {
         ln -s $APP_PATH_ETC/.env.$python_project.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.env
     done
 
+    # FIXME mise-en-place should stay in /etc or .credentials!?
     chmod 600 $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.*
     chmod 600 $APP_PATH_ETC/.pgpass.*
     chmod 600 $APP_PATH_ETC/.target-server.*
@@ -197,44 +193,4 @@ show_env() {
         echo ""
         read break
     fi
-}
-
-export_env() {
-    # To be used in command line. Prepare the environment to run command with Makefile.
-    # $1 :: define main TARGET_ENV
-    # $2 :: define GIT_REPOS different from default
-    # $3 :: define GIT_BRANCH different from default
-    clear
-    echo "Starting with variable ENV $1 :: REPOS $2 :: GIT_BRANCH $3"
-    case $1 in
-        "local" | "dev" | "stage" | "prod")
-            echo ""
-            echo "------------ BEFORE --------------"
-            echo ""
-            show_env "PWD"
-
-            unset_vars
-            echo ""
-            echo "UNSETED vars..."
-            echo ""
-
-            set_vars $1 $2 $3 ""
-            echo ""
-            echo "SETTED vars with ENV $1 :: REPOS $2 :: GIT_BRANCH $3 ..."
-            echo ""
-
-            set_symbolic_link
-            echo ""
-            echo "SETTED vars..."
-            echo ""
-
-            echo ""
-            echo "------------- AFTER --------------"
-            echo ""
-            show_env "PWD"
-            ;;
-        *)
-            echo "ENV USAGE: [local | dev | stage | prod]. $1 *NOT* found!!"
-            ;;
-    esac
 }

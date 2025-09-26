@@ -13,7 +13,7 @@ terraform() {
 
     echo "Terraforming for env $1"
     echo "======================="
-    set_vars $1 "" "" "INTERRUPTS"
+    set_vars $1 "" ""
 
     echo "|---------------------------|"
     echo "| Terraforming APP_PATH_ETC |"
@@ -22,13 +22,14 @@ terraform() {
     export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk '{print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
     sudo rm -rf $APP_PATH_ETC
     sudo mkdir $APP_PATH_ETC
-    # # TODO copy each file - this way gnu core utils 8.32 will complain
+    # TODO copy each file - this way gnu core utils 8.32 will complain
     sudo cp ${APP_PATH_ORIGIN_EDGE}/.credentials/.* $APP_PATH_ETC/
+    sudo rm $APP_PATH_ETC/.*.sample
     sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER $APP_PATH_ETC/
     sudo chmod 600 -R $APP_PATH_ETC/.pgpass.* $APP_PATH_ETC/.pgpass.*
     sudo chown $TARGET_SERVER_USER:www-data $APP_PATH_ETC/.env.*
     sudo chmod 640 -R $APP_PATH_ETC/.env.*
-    set_vars $1 "" "" ""
+    set_vars_by_env
     echo "${NOW}" > $APP_PATH_ETC/deployment_datetime.txt
 
     echo ""
@@ -54,9 +55,10 @@ terraform() {
             mkdir $APP_PATH_WORKTREE/$env_available
         fi
     done
-    ln -s $APP_PATH_WORKTREE/$TARGET_ENV $APP_PATH_DOCUMENT_ROOT
+    # TODO on deploy set correct APP_PATH_WORKTREE/TARGET_ENV for $APP_PATH_DOCUMENT_ROOT
+    ln -s $APP_PATH_UPSTREAM $APP_PATH_DOCUMENT_ROOT
 
-    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone http://root@ti.sorocaba.sp.gov.br/gitlab/sistemas/$PMS_SYSTEM_BASE_DNS.git $APP_PATH_UPSTREAM
+    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone http://$GIT_USER@$GIT_BASE_URL/$PMS_SYSTEM_BASE_DNS.git $APP_PATH_UPSTREAM
     cd $APP_PATH_UPSTREAM
     git config credential.helper store
     git fetch -a $APP_PATH_UPSTREAM
@@ -64,6 +66,10 @@ terraform() {
     git remote add deployment file://$APP_PATH_BARE
     git push deployment $GIT_BRANCH
     ln -s $APP_PATH_WORKTREE/edge/git-hooks/post-receive $APP_PATH_BARE/hooks/post-receive
+
+    set_symbolic_link
+    echo "${NOW}" > $APP_PATH_UPSTREAM/deployment_datetime.txt
+    cd -
 
     # # TODO move it for deploy() fn
     # # TODO move to a proper function

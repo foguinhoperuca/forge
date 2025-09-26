@@ -1,0 +1,7 @@
+# This file must live $EDGE_REPOS/git-hooks and set ln -s in bare.git/hooks/.mise-en-place.conf
+DEFAULT_TARGET_ENV=[local | dev | stage | prod]
+GIT_BASE_URL=<TARGET_ENV_GIT_BASE_URL>
+GIT_USER=<TARGET_ENV_GIT_USER>
+GIT_PASSWORD=<TARGET_ENV_GIT_PASSWORD>
+PMS_SYSTEM_ACRONYM=<SYSTEM_ACRONYM>
+PMS_SYSTEM_BASE_DNS=<SYSTEM_BASE_DNS>

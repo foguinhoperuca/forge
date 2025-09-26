@@ -22,7 +22,20 @@ case $1 in
         unset_vars
         show_env $2
         ;;
-    "env") export_env $2 $3 $4;;
+    "env")
+        case $2 in
+            "local" | "dev" | "stage" | "prod")
+                unset_vars
+                set_vars $2 "$3" "$4"
+                set_vars_by_env
+                set_symbolic_link
+                show_env "PWD"
+                ;;
+            *)
+                echo "ENV USAGE: [local | dev | stage | prod]. $1 *NOT* found!!"
+                ;;
+        esac
+        ;;
     # "deploy") deploy;;
     # "githook") githook $2 $3 $4;;
     "terraform")
