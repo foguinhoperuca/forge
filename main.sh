@@ -1,9 +1,12 @@
 #!/bin/bash
 
-FORGE_PATH=$(dirname $0)
+# FORGE_PATH=$(dirname $0)
+export FORGE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Setted FORGE_PATH to $FORGE_PATH"
 if [[ "$FORGE_PATH" == "." ]];
 then
-    FORGE_PATH="$FORGE_PATH/forge"
+    export FORGE_PATH="$FORGE_PATH/forge"
+    echo "Setted FORGE_PATH to $FORGE_PATH **INSTEAD OF** ."
 fi
 
 source $FORGE_PATH/var.sh
