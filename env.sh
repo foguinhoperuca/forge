@@ -13,6 +13,7 @@ set_vars() {
     # [OPTIONAL]  $3 :: define GIT_BRANCH different from default
 
     # PROJECT specific variables
+    # FIXME DEPLOYMENT_FILE path is hardcoded. Should receive project's path here to have access to .credentials
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
 
     export PMS_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep PMS_SYSTEM_ACRONYM | cut -d = -f2)

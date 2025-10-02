@@ -1,26 +1,26 @@
-# # Env stuffs
-# patch:
-# 	@clear
-# 	@date
-# 	@rm -rf $(GIT_BRANCH).patch
-# 	@git diff HEAD . >> $(GIT_BRANCH).patch
-# 	scp $(GIT_BRANCH).patch $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
+# Env stuffs
+patch:
+	@clear
+	@date
+	@rm -rf $(GIT_BRANCH).patch
+	@git diff --ignore-submodules HEAD . >> $(GIT_BRANCH).patch
+	scp $(GIT_BRANCH).patch $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
 
-# patch-diffutils: patch
-# 	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
-# 	@date
+patch-diffutils: patch
+	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
+	@date
 
-# patch-git: patch
-# 	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
-# 	@date
+patch-git: patch
+	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
+	@date
 
-# patch-git-edge: PATCH_GIT_TARGET=$(APP_PATH_ORIGIN_EDGE)
-# patch-git-edge: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_ORIGIN_EDGE)
-# patch-git-edge: patch-git
+patch-git-edge: PATCH_GIT_TARGET=$(APP_PATH_ORIGIN_EDGE)
+patch-git-edge: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_ORIGIN_EDGE)
+patch-git-edge: patch-git
 
-# patch-git-upstream: PATCH_GIT_TARGET=$(APP_PATH_UPSTREAM)
-# patch-git-upstream: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_WORKTREE)
-# patch-git-upstream: patch-git
+patch-git-upstream: PATCH_GIT_TARGET=$(APP_PATH_UPSTREAM)
+patch-git-upstream: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_WORKTREE)
+patch-git-upstream: patch-git
 
 # # TODO cp secrets to /etc/adc - move it to forge.sh
 # # TODO set array var to credential's files.
