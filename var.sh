@@ -30,6 +30,11 @@ declare -a PYTHON_PROJECTS_AVAILABLE=(
     "bot"
 )
 
+declare -a DJANGO_PROJECTS_AVAILABLE=(
+    "backoffice"
+    "api"
+)
+
 declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
     "some_folder_for_save_media"
     "another_folder_for_save_media"

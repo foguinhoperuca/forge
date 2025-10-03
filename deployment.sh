@@ -1,20 +1,7 @@
 #!/bin/bash
 
-terraform() {
-    # Assume there is no env yet! Just basic vars (without file's dependent values)
-    # $1 :: set the target env
-
-    # FIXME - ?: (staticfiles.W004) The directory '/opt/adc/backend/worktree/local/api/setup/static' in the STATICFILES_DIRS setting does not exist.
-
-    # Tasks to deploy - perform more tasks like migrate and run test, the output of these commands will be shown on the push screen
-    # * filesystem /mnt/storage_sistemas
-    # ** se certificar que as pastas /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/pedido_ajuda e /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/photo_guia_atendimento/ existem!
-    # * /etc/hosts
-
-    echo "Terraforming for env $1"
-    echo "======================="
-    set_vars $1 "" ""
-
+terraform_app_path_etc() {
+    echo ""
     echo "|---------------------------|"
     echo "| Terraforming APP_PATH_ETC |"
     echo "|---------------------------|"
@@ -29,9 +16,10 @@ terraform() {
     sudo chmod 600 -R $APP_PATH_ETC/.pgpass.* $APP_PATH_ETC/.pgpass.*
     sudo chown $TARGET_SERVER_USER:www-data $APP_PATH_ETC/.env.*
     sudo chmod 640 -R $APP_PATH_ETC/.env.*
-    set_vars_by_env
     echo "${NOW}" > $APP_PATH_ETC/deployment_datetime.txt
+}
 
+terraform_app_path_opt() {
     echo ""
     echo "|---------------------------|"
     echo "| Terraforming APP_PATH_OPT |"
@@ -67,12 +55,13 @@ terraform() {
     git push deployment $GIT_BRANCH
     ln -s $APP_PATH_WORKTREE/edge/git-hooks/post-receive $APP_PATH_BARE/hooks/post-receive
 
-    set_symbolic_link
-    echo "${NOW}" > $APP_PATH_UPSTREAM/deployment_datetime.txt
-    cd -
+    git submodule update --init --recursive
 
-    # # TODO move it for deploy() fn
-    # # TODO move to a proper function
+    cd -
+    echo "${NOW}" > $APP_PATH_UPSTREAM/deployment_datetime.txt
+}
+
+terraform_app_path_mnt() {
     # echo ""
     # echo "|-----------------------|"
     # echo "| Creating APP_PATH_MNT |"
@@ -100,42 +89,51 @@ terraform() {
     # # TODO implement a function to manage /etc/fstab - maybe use 999_adc-<ENV>.fstab
     # # sudo mount -a -fstab deployment_conf/999_adc.fstab
     # ln -sf $APP_PATH_MNT-$TARGET_ENV $APP_PATH_MNT
+}
 
-    # # TODO move to a proper function
-    # echo ""
-    # echo "|---------------------------|"
-    # echo "| Creating APP_PATH_VAR_WWW |"
-    # echo "|---------------------------|"
-    # echo "$APP_PATH_VAR_WWW"
-    # sudo a2dissite $PMS_SYSTEM_BASE_DNS*
-    # if grep -q "^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
-    #     sudo sed -i.bkp "s/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
-    # else
-    #     echo "export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
-    # fi
+terraform_app_path_var_www_app() {
+    # TODO implement load balance apache
+    echo ""
+    echo "|---------------------------|"
+    echo "| Creating APP_PATH_VAR_WWW |"
+    echo "|---------------------------|"
+    echo "$APP_PATH_VAR_WWW - app: local webserver"
+    sudo a2dissite $PMS_SYSTEM_BASE_DNS*
+    echo "VARS ::: $PMS_SYSTEM_BASE_DNS ::: $PMS_SYSTEM_ACRONYM ::: $APP_PATH_VAR_WWW"
+    if grep -q "^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
+        sudo sed -i.bkp "s/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
+    else
+        echo "export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
+    fi
     # unset ITER
     # ITER=0
-    # for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]}
-    # do
-    #     if [ "${ITER}" == "0" ];
-    #     then
-    #         sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project $APP_PATH_VAR_WWW
-    #         sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf
-    #     else
-    #         sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project "$APP_PATH_VAR_WWW"-$django_project
-    #         sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf
-    #     fi
-    #     ITER=$(expr $ITER + 1)
-    # done
-    # # TODO move www-data and other defaults from ubuntu to conf var
-    # sudo chown -R $TARGET_SERVER_USER:www-data $APP_PATH_VAR_WWW*
-    # sudo chown -R $TARGET_SERVER_USER:www-data /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS*
-    # sudo a2ensite $PMS_SYSTEM_BASE_DNS*
-    # sudo apachectl configtest
-    # sudo service apache2 restart
+    # ITER=$(expr $ITER + 1)
+    for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]}
+    do
+        # if [ "${ITER}" == "0" ];
+        if [ "${django_project}" == "backoffice" ];
+        then
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project $APP_PATH_VAR_WWW
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf
+        else
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project "$APP_PATH_VAR_WWW"-$django_project
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf
+        fi
+    done
+    # TODO move www-data and other defaults from ubuntu to conf var
+    sudo chown -R $TARGET_SERVER_USER:www-data $APP_PATH_VAR_WWW*
+    sudo chown -R $TARGET_SERVER_USER:www-data /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS*
+    sudo a2ensite $PMS_SYSTEM_BASE_DNS*
+    sudo apachectl configtest
+    sudo service apache2 restart
+}
 
-    # echo "--- Finished local apache. Setting the proxy server."
-
+terraform_app_path_var_www_proxy() {
+    echo ""
+    echo "|---------------------------|"
+    echo "| Creating APP_PATH_VAR_WWW |"
+    echo "|---------------------------|"
+    echo "$APP_PATH_VAR_WWW - Setting the proxy server."
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2dissite $PMS_SYSTEM_BASE_DNS*"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -f /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS*"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "
@@ -165,6 +163,38 @@ terraform() {
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2ensite $PMS_SYSTEM_BASE_DNS*"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo apachectl configtest"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo service apache2 restart"
+}
+
+# TODO transform terraform fn into case branch in main.sh
+terraform() {
+    # Assume there is no env yet! Just basic vars (without file's dependent values)
+    # $1 :: set the target env
+
+    # FIXME - ?: (staticfiles.W004) The directory '/opt/adc/backend/worktree/local/api/setup/static' in the STATICFILES_DIRS setting does not exist.
+
+    # Tasks to deploy - perform more tasks like migrate and run test, the output of these commands will be shown on the push screen
+    # * filesystem /mnt/storage_sistemas
+    # ** se certificar que as pastas /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/pedido_ajuda e /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/photo_guia_atendimento/ existem!
+    # * /etc/hosts
+
+    echo "Terraforming for env $1"
+    echo "======================="
+    set_vars $1 "" ""
+
+    terraform_app_path_etc
+
+    set_vars_by_env
+
+    terraform_app_path_opt
+
+    set_symbolic_link
+
+    # # TODO move it for deploy() fn and TEST IT
+    # terraform_app_path_mnt
+
+    # TODO move to a proper function
+    terraform_app_path_var_www_app
+    # terraform_app_path_var_www_proxy
 
     # echo ""
     # echo "|---------------------------|"

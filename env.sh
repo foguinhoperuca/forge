@@ -143,7 +143,7 @@ set_symbolic_link() {
         ln -s $APP_PATH_ETC/.env.$python_project.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.env
     done
 
-    # FIXME mise-en-place should stay in /etc or .credentials!?
+    # FIXME mise-en-place should stay in /etc or .credentials!? If stay in /etc it could be copied from .credentials and be replaced DEFAULT_TARGET_ENV with ENV in terraform
     chmod 600 $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.*
     chmod 600 $APP_PATH_ETC/.pgpass.*
     chmod 600 $APP_PATH_ETC/.target-server.*

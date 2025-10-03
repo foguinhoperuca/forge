@@ -107,6 +107,18 @@ patch-git-upstream: patch-git
 # 	@cd ../bot
 # 	@ctags -e -R --options=.ctags .
 
+# sshx:
+# 	clear
+# 	date
+# 	ssh -X $(SERVER) "cd /opt/gecon_bot; source /opt/gecon_bot/venv/bin/activate; python3 /opt/gecon_bot/gecon_bot/app.py --no-headless --log normal --debug NORMAL --bot_browser FIREFOX cpfl_low --routine obtain"
+# 	date
+
+# kill-firefox:
+# 	@clear
+# 	@date
+# 	ps aux | grep firefox | grep -v grep | awk '{print $2}' | sudo xargs kill -9
+# 	@date
+
 SEARCH_SRC_STR ?= "PMS_SYSTEM_NAME"
 SEARCH_TYPE ?= "SUMMARY"
 search-in-source-code:
