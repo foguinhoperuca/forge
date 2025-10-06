@@ -64,12 +64,6 @@ set_vars() {
     esac
     echo ""
     echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 :: INTERRUPTS: $4 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
-    
-    # # FIXME This part depends from set_symbolic_link. Should be there?
-    # if [[ "$4" != "INTERRUPTS" ]];
-    # then
-    #     set_vars_by_env
-    # fi
 }
 
 set_vars_by_env() {

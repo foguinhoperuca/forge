@@ -62,11 +62,11 @@ terraform_app_path_opt() {
 }
 
 terraform_app_path_mnt() {
-    # echo ""
-    # echo "|-----------------------|"
-    # echo "| Creating APP_PATH_MNT |"
-    # echo "|-----------------------|"
-    # echo "$APP_PATH_MNT"
+    echo ""
+    echo "|-----------------------|"
+    echo "| Creating APP_PATH_MNT |"
+    echo "|-----------------------|"
+    echo "$APP_PATH_MNT"
     # umount -q $APP_PATH_MNT*
     # rm -f $APP_PATH_MNT
     # for env_available in ${ENVS_AVAILABLE[@]};
@@ -202,4 +202,123 @@ terraform() {
     # echo "|---------------------------|"
     # echo "$APP_PATH_VAR_LOG"
     # echo "TODO implement log file for app"
+}
+
+deploy_app_path_opt() {
+    echo ""
+    echo "|------------------------|"
+    echo "| Deploying APP_PATH_OPT |"
+    echo "|------------------------|"
+    echo "$APP_PATH_OPT"
+
+    rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
+    mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
+    git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
+    echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
+    # FIXME maybe can be an error with master != prod for symlink
+    rm -f $APP_PATH_DOCUMENT_ROOT
+    ln -s $APP_PATH_WORKTREE/$GIT_BRANCH $APP_PATH_DOCUMENT_ROOT
+    set_symbolic_link
+
+}
+
+deploy_venv() {
+    for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
+    do
+        echo ""
+        echo "----------------------------------------------"
+        echo "----- Install libs for ${python_project} -----"
+        echo "----------------------------------------------"
+        rm -rf $APP_PATH_DOCUMENT_ROOT/$python_project/venv
+        python3 -m venv $APP_PATH_DOCUMENT_ROOT/$python_project/venv
+        source $APP_PATH_DOCUMENT_ROOT/$python_project/venv/bin/activate
+        pip install -r $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt
+        deactivate
+    done
+}
+
+deploy_collectstatic() {
+    for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]};
+    do
+        echo ""
+        echo "----------------------------------------------"
+        echo "----- Install libs for ${django_project} -----"
+        echo "----------------------------------------------"
+        source $APP_PATH_DOCUMENT_ROOT/$django_project/venv/bin/activate
+        python3 $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py collectstatic -c --no-input
+        deactivate
+    done
+}
+
+deploy() {
+    # Assume that set_vars was setted
+
+    if [ "$GIT_BRANCH" == "edge" ] || [ "$GIT_BRANCH" == "upstream" ];
+    then
+        echo "CAN'T deploy on EDGE or UPSTREAM (do not deploy a remote worktree - only from bare.git) - stoping..."
+        return 1
+    fi
+
+    echo "Deploying for env $TARGET_ENV branch $GIT_BRANCH"
+    echo "================================================"
+    
+    deploy_app_path_opt
+
+    deploy_venv
+    deploy_collectstatic
+
+    # TODO
+    # - build env files
+    # - run unittest/pytests
+    # - migration
+
+    # cd $APP_PATH_WORKTREE/$GIT_BRANCH # FIXME need it!?
+    # if [ "$TARGET_ENV" == "prod" ];
+    # then
+    #     echo "Stop! You are in $TARGET_ENV . Beware with prod before run again"
+    # else
+    #     echo ""
+    #     echo "------------------------------------------------"
+    #     echo "----- Run migrations for env ${TARGET_ENV} -----"
+    #     echo "------------------------------------------------"
+    #     source $APP_PATH_DOCUMENT_ROOT/backoffice/venv/bin/activate
+    #     make db-start
+    #     deactivate
+    # fi
+    # cd -
+
+    # echo ""
+    # echo "|------------------------|"
+    # echo "| Deploying APP_PATH_MNT |"
+    # echo "|------------------------|"
+    # echo "$APP_PATH_MNT"
+    # echo "FIXME using a simple version. Move it to use a function app_path_mnt 'cause in terraform and deploy all tasks is the same"
+    # echo "TODO setar $APP_PATH_MNT para o $GIT_BRANCH que será trabalhado"
+    # # umount -q $APP_PATH_MNT*
+    # # rm -f $APP_PATH_MNT
+    # # if [ "$TARGET_ENV" != "local" ];
+    # # then
+    # #     mount /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$TARGET_ENV"
+    # # fi
+    # # ln -s /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$TARGET_ENV" $APP_PATH_MNT
+
+    # echo ""
+    # echo "|-----------------------------|"
+    # echo "| Deploying APP_PATH_VAR_WWW  |"
+    # echo "|-----------------------------|"
+    # echo "$APP_PATH_VAR_WWW"
+    # echo "TODO must implement something from terraform here?!"
+    # # # FIXME will use filesystem path with -$TARGET_ENV?!
+    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$TARGET_ENV.sorocaba.sp.gov.br.conf
+    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil-api.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$TARGET_ENV-api.sorocaba.sp.gov.br.conf
+
+    # # if grep -q "^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
+    # #     sudo sed -i.bkp "s/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
+    # # else
+    # #     echo "export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
+    # # fi
+    # # TODO configtest result in error should stop deploy
+    # # TODO get the return of apachectl configtest
+    # sudo apachectl configtest
+    # sudo service apache2 restart
 }

@@ -1,3 +1,6 @@
+# .PHONY:
+# 	init clean-db-dev
+
 # Env stuffs
 patch:
 	@clear

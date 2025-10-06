@@ -1,6 +1,3 @@
-.PHONY:
-	init clean-db-dev
-
 db-start: db-terraform db-ddl db-permission django-update-permissions django-users db-fixtures
 	@date
 

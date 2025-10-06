@@ -39,7 +39,7 @@ case $1 in
                 ;;
         esac
         ;;
-    # "deploy") deploy;;
+    "deploy") deploy;;
     # "githook") githook $2 $3 $4;;
     "terraform")
         terraform $2
@@ -57,7 +57,7 @@ case $1 in
         echo "- show [PWD | \"\"]"
         echo "- unenv"
         echo "- env [local | dev | stage | prod] <OPTIONAL_GIT_REPOS> <OPTIONAL_GIT_BRANCH>. GIT_REPOS default is backend; GIT_BRANCH default is same as TARGET_ENV: (now is $TARGET_ENV)."
-        # echo "- deploy"
+        echo "- deploy"
         # echo "- githook - only used by post-receive script"
         # echo "- terraform - prepare devops"
         echo "- is_mounted - validate if mount point is online"
