@@ -1,3 +1,9 @@
+db-admin-script:
+	@psql -v pmsys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f $(DB_ADMIN_SCRIPT)
+
+db-script:
+	@psql -v pmsys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f $(DB_SCRIPT)
+
 db-start: db-terraform db-ddl db-permission django-update-permissions django-users db-fixtures
 	@date
 
@@ -12,7 +18,7 @@ db-terraform:
 	@echo "| TERRAFORMING  |"
 	@echo "|+-------------+|"
 # TODO pass variable in psql call here
-	@psql -v pmsys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f database/terraform.sql
+	@psql -v pmsys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f forge/terraform.sql
 	@echo "|+-------------+|"
 	@echo "| INITIALIZE    |"
 	@echo "|+-------------+|"
