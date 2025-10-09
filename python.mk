@@ -1,7 +1,9 @@
 # Python
+# TODO pass FORGESYS_DB_SCHEMA to update bellow
+django-super-user: FORGESYS_DB_SCHEMA=river # FIXME forced
 django-super-user:
-	@python3 backoffice/manage.py createsuperuser --noinput
-	@psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -c "UPDATE alerta_defesa_civil.auth_user SET first_name = 'Administrador', last_name = 'TI PMS' WHERE id = 1;"
+	# @python3 backoffice/manage.py createsuperuser --noinput
+	@psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -c "UPDATE $(FORGESYS_DB_SCHEMA).auth_user SET first_name = 'Administrator', last_name = 'IT Dept' WHERE id = 1;"
 
 django-users:
 	@echo "|+-------------+|"

@@ -75,6 +75,9 @@ set_vars_by_env() {
     export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
     export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
     export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
+    # TODO implement vars for VOLUME_* from .target-server
+    export TARGET_SERVER_DB_SYS_GRP=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DB_SYS_GRP | cut -d = -f2)
+    export TARGET_SERVER_DBAS=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DBAS | cut -d = -f2)
 
     export PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
     export DB_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '1,1p')
@@ -178,7 +181,8 @@ show_env() {
     echo "|     [$TARGET_ENV] SHOW VARS SYMLINKS   |"
     echo "|+--------------------------------------+|"
     # TODO think about how to show it without env vars... maybe forcing get basic info from $(dirname $0)/.credentials/.mise-en-place.conf
-    FILES=".target-server .pgpass .mise-en-place.conf backoffice/.env bot/.env api/.env api/.google-service-account git-hooks/.mise-en-place.conf git-hooks/forge.sh /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"
+    # TODO add api/.google-service-account to be used as symlink
+    FILES=".target-server .pgpass .mise-en-place.conf backoffice/.env bot/.env api/.env git-hooks/.mise-en-place.conf git-hooks/forge.sh /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"
     ls -lah --color=auto $FILES
 
     if [ "$2" == "DO_BREAK" ];
