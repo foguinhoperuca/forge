@@ -7,7 +7,7 @@ db-script:
 db-start: db-terraform db-ddl db-permission django-update-permissions django-users db-fixtures
 	@date
 
-db-deploy: db-terraform db-ddl db-permission django-update-permissions django-users db-seeds
+db-deploy: db-terraform db-ddl db-permission db-seeds
 	@echo "|+-------------------------+|"
 	@echo "| DEPLOY PROD FROM SCRATCH  |"
 	@echo "|+-------------------------+|"
@@ -37,11 +37,6 @@ db-ddl:
 	@echo "| DDL           |"
 	@echo "|+-------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/ddl.sql
-	@echo "|+-------------+|"
-	@echo "| DB SHAPE      |"
-	@echo "|+-------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/gcm_data/import_sp_sorocaba_sr_cprm.sql
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/joined/final_merged.sql
 
 db-permission:
 	@echo "|+-------------+|"
@@ -60,12 +55,6 @@ db-fixtures: db-seeds
 	@echo "| FIXTURES      |"
 	@echo "|+-------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/fixtures.sql
-
-db-shp:
-	@echo "|+-------------+|"
-	@echo "| DB SHP        |"
-	@echo "|+-------------+|"
-	@shp2pgsql -d -W ISO-8859-1 database/gcm_data/SP_SOROCABA_SR_CPRM.dbf alerta_defesa_civil.alert_spsorocabasrcprm | psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER)
 
 db-show:
 	@echo "|+-------------+|"
