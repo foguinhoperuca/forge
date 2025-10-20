@@ -11,6 +11,7 @@ fi
 
 source $FORGE_PATH/var.sh
 source $FORGE_PATH/env.sh
+source $FORGE_PATH/database.sh
 source $FORGE_PATH/deployment.sh
 source $FORGE_PATH/monitoring.sh
 
@@ -44,8 +45,18 @@ case $1 in
     "terraform")
         terraform $2
         ;;
-    "set_symbolic_link") set_symbolic_link;; # FIXME temp only to test
     "is_mounted") verify_mounted_path_online $2 $3;;
+    "set_symbolic_link") set_symbolic_link;; # FIXME temp only to test
+    "db_script")
+        case $3 in
+            "admin" | "adm")
+                db_script "$DB_ADMIN_HOST" "$DB_ADMIN_PORT" "$DB_ADMIN_DATABASE" "$DB_ADMIN_USER" $2
+                ;;
+            *)
+                db_script "$DB_HOST" "$DB_PORT" "$DB_DATABASE" "$DB_USER" $2
+                ;;
+        esac
+        ;;
     *)
         # TODO better usage message
         echo "-----------"
