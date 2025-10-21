@@ -40,13 +40,12 @@ case $1 in
                 ;;
         esac
         ;;
-    "deploy") deploy;;
     # "githook") githook $2 $3 $4;;
+    "deploy") deploy;;
     "terraform")
         terraform $2
         ;;
     "is_mounted") verify_mounted_path_online $2 $3;;
-    "set_symbolic_link") set_symbolic_link;; # FIXME temp only to test
     "db_script")
         case $3 in
             "admin" | "adm")
@@ -57,6 +56,20 @@ case $1 in
                 ;;
         esac
         ;;
+    "db_backup")
+        case $3 in
+            "full")
+                db_backup_full $DB_DATABASE
+                ;;
+            "partial")
+                db_backup_partial $DB_DATABASE $DB_USER
+                ;;
+            *)
+                echo "No backup was recognized: $3"
+                ;;
+        esac
+        ;;
+    "set_symbolic_link") set_symbolic_link;; # FIXME temp only to test
     *)
         # TODO better usage message
         echo "-----------"
@@ -68,8 +81,10 @@ case $1 in
         echo "- show [PWD | \"\"]"
         echo "- unenv"
         echo "- env [local | dev | stage | prod] <OPTIONAL_GIT_REPOS> <OPTIONAL_GIT_BRANCH>. GIT_REPOS default is backend; GIT_BRANCH default is same as TARGET_ENV: (now is $TARGET_ENV)."
-        echo "- deploy"
         # echo "- githook - only used by post-receive script"
-        # echo "- terraform - prepare devops"
+        echo "- deploy"
+        echo "- terraform - prepare devops"
         echo "- is_mounted - validate if mount point is online"
+        echo "- db_script <DB_SCRIPT> [admin|adm|""] - execute <DB_SCRIPT> as admin or not"
+        echo "- db_backup_full - create a backup full from database"
 esac

@@ -165,6 +165,11 @@ terraform_app_path_var_www_proxy() {
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo service apache2 restart"
 }
 
+app_path_base_backup_database() {
+    TODO plan about: ln -s /var/backups/postgresql/$DB_DATABASE /mnt/storage_sistemas/$FRG_SYSTEM_ACRONYM/backups/db/
+    echo "TODO implement create and mount an datbase backup folder"
+}
+
 # TODO transform terraform fn into case branch in main.sh
 terraform() {
     # Assume there is no env yet! Just basic vars (without file's dependent values)

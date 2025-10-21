@@ -36,6 +36,8 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
+    # TODO implement it!
+    export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
     export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
     export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
     export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
