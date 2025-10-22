@@ -27,7 +27,7 @@ terraform_app_path_opt() {
     echo "$APP_PATH_OPT"
     sudo rm -rf $APP_PATH_OPT
     sudo mkdir -p $APP_PATH_WORKTREE
-    sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER /opt/${PMS_SYSTEM_ACRONYM}/
+    sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER /opt/${FORGE_SYSTEM_ACRONYM}/
 
     ln -s $APP_PATH_ORIGIN_EDGE $APP_PATH_WORKTREE/edge
 
@@ -46,7 +46,7 @@ terraform_app_path_opt() {
     # TODO on deploy set correct APP_PATH_WORKTREE/TARGET_ENV for $APP_PATH_DOCUMENT_ROOT
     ln -s $APP_PATH_UPSTREAM $APP_PATH_DOCUMENT_ROOT
 
-    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone http://$GIT_USER@$GIT_BASE_URL/$PMS_SYSTEM_BASE_DNS.git $APP_PATH_UPSTREAM
+    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone http://$GIT_USER@$GIT_BASE_URL/$FORGE_SYSTEM_BASE_DNS.git $APP_PATH_UPSTREAM
     cd $APP_PATH_UPSTREAM
     git config credential.helper store
     git fetch -a $APP_PATH_UPSTREAM
@@ -75,7 +75,7 @@ terraform_app_path_mnt() {
     #     then
     #         for media_file_available in ${DJANGO_MEDIA_FILE_AVAILABLE[@]};
     #         do
-    #             sudo mkdir -p /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$env_available"/media/"$media_file_available"/
+    #             sudo mkdir -p /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$env_available"/media/"$media_file_available"/
     #         done
     #     fi
     # done
@@ -84,7 +84,7 @@ terraform_app_path_mnt() {
 
     # if [ "$TARGET_ENV" != "local" ];
     # then
-    #     mount /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$TARGET_ENV"
+    #     mount /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$TARGET_ENV"
     # fi
     # # TODO implement a function to manage /etc/fstab - maybe use 999_adc-<ENV>.fstab
     # # sudo mount -a -fstab deployment_conf/999_adc.fstab
@@ -98,12 +98,12 @@ terraform_app_path_var_www_app() {
     echo "| Creating APP_PATH_VAR_WWW |"
     echo "|---------------------------|"
     echo "$APP_PATH_VAR_WWW - app: local webserver"
-    sudo a2dissite $PMS_SYSTEM_BASE_DNS*
-    echo "VARS ::: $PMS_SYSTEM_BASE_DNS ::: $PMS_SYSTEM_ACRONYM ::: $APP_PATH_VAR_WWW"
-    if grep -q "^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
-        sudo sed -i.bkp "s/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
+    sudo a2dissite $FORGE_SYSTEM_BASE_DNS*
+    echo "VARS ::: $FORGE_SYSTEM_BASE_DNS ::: $FORGE_SYSTEM_ACRONYM ::: $APP_PATH_VAR_WWW"
+    if grep -q "^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
+        sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
     else
-        echo "export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
+        echo "export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
     fi
     # unset ITER
     # ITER=0
@@ -114,16 +114,16 @@ terraform_app_path_var_www_app() {
         if [ "${django_project}" == "backoffice" ];
         then
             sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project $APP_PATH_VAR_WWW
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf
         else
             sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project "$APP_PATH_VAR_WWW"-$django_project
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf
+            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf
         fi
     done
     # TODO move www-data and other defaults from ubuntu to conf var
     sudo chown -R $TARGET_SERVER_USER:www-data $APP_PATH_VAR_WWW*
-    sudo chown -R $TARGET_SERVER_USER:www-data /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS*
-    sudo a2ensite $PMS_SYSTEM_BASE_DNS*
+    sudo chown -R $TARGET_SERVER_USER:www-data /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS*
+    sudo a2ensite $FORGE_SYSTEM_BASE_DNS*
     sudo apachectl configtest
     sudo service apache2 restart
 }
@@ -134,19 +134,19 @@ terraform_app_path_var_www_proxy() {
     echo "| Creating APP_PATH_VAR_WWW |"
     echo "|---------------------------|"
     echo "$APP_PATH_VAR_WWW - Setting the proxy server."
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2dissite $PMS_SYSTEM_BASE_DNS*"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -f /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS*"
+    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2dissite $FORGE_SYSTEM_BASE_DNS*"
+    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -f /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS*"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "
-    #     if grep -q '^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=' /etc/apache2/envvars; then
-    #         sudo sed -i.bkp 's/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/' /etc/apache2/envvars
+    #     if grep -q '^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=' /etc/apache2/envvars; then
+    #         sudo sed -i.bkp 's/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/' /etc/apache2/envvars
     #     else
-    #         echo 'export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"' | sudo tee -a /etc/apache2/envvars > /dev/null
+    #         echo 'export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"' | sudo tee -a /etc/apache2/envvars > /dev/null
     #     fi
     # "
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -rf $APP_PATH_OPT"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo mkdir -p $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo chown $TARGET_SERVER_PROXY_USER:$TARGET_SERVER_PROXY_USER -R /opt/$PMS_SYSTEM_ACRONYM"
-    # scp webserver/apache/proxy_server/$PMS_SYSTEM_BASE_DNS* $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR:$APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/
+    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo chown $TARGET_SERVER_PROXY_USER:$TARGET_SERVER_PROXY_USER -R /opt/$FORGE_SYSTEM_ACRONYM"
+    # scp webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS* $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR:$APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo chown $TARGET_SERVER_PROXY_USER:www-data -R $APP_PATH_DOCUMENT_ROOT"
     # unset ITER
     # ITER=0
@@ -154,13 +154,13 @@ terraform_app_path_var_www_proxy() {
     # do
     #     if [ "${ITER}" == "0" ];
     #     then
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf"
+    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf"
     #     else
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf"
+    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf"
     #     fi
     #     ITER=$(expr $ITER + 1)
     # done
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2ensite $PMS_SYSTEM_BASE_DNS*"
+    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2ensite $FORGE_SYSTEM_BASE_DNS*"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo apachectl configtest"
     # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo service apache2 restart"
 }
@@ -303,9 +303,9 @@ deploy() {
     # # rm -f $APP_PATH_MNT
     # # if [ "$TARGET_ENV" != "local" ];
     # # then
-    # #     mount /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$TARGET_ENV"
+    # #     mount /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$TARGET_ENV"
     # # fi
-    # # ln -s /mnt/storage_sistemas/"$PMS_SYSTEM_BASE_DNS"-"$TARGET_ENV" $APP_PATH_MNT
+    # # ln -s /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$TARGET_ENV" $APP_PATH_MNT
 
     # echo ""
     # echo "|-----------------------------|"
@@ -314,13 +314,13 @@ deploy() {
     # echo "$APP_PATH_VAR_WWW"
     # echo "TODO must implement something from terraform here?!"
     # # # FIXME will use filesystem path with -$TARGET_ENV?!
-    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$TARGET_ENV.sorocaba.sp.gov.br.conf
-    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil-api.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$PMS_SYSTEM_BASE_DNS-$TARGET_ENV-api.sorocaba.sp.gov.br.conf
+    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$TARGET_ENV.sorocaba.sp.gov.br.conf
+    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil-api.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$TARGET_ENV-api.sorocaba.sp.gov.br.conf
 
-    # # if grep -q "^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
-    # #     sudo sed -i.bkp "s/^export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
+    # # if grep -q "^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
+    # #     sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
     # # else
-    # #     echo "export ${PMS_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
+    # #     echo "export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
     # # fi
     # # TODO configtest result in error should stop deploy
     # # TODO get the return of apachectl configtest

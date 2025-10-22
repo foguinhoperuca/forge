@@ -6,7 +6,7 @@ verify_mounted_path_online() {
 
     if [ -z $1 ];
     then
-        path=$PMS_SYSTEM_BASE_DNS
+        path=$FORGE_SYSTEM_BASE_DNS
     fi
 
     if [ -z $2 ];

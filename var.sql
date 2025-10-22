@@ -17,7 +17,7 @@
 \if :{?forgesys_role}
   \echo 'Already setted forgesys_role -->' :forgesys_dbas
 \else
-  \set forgesys_role `echo "$(:forgesys_path/forge.sh show | grep PMS_SYSTEM_NAME | cut -d = -f2)_app"`
+  \set forgesys_role `echo "$(:forgesys_path/forge.sh show | grep FORGE_SYSTEM_NAME | cut -d = -f2)_app"`
 \endif      
 
 \if :{?forgesys_db}
@@ -29,10 +29,10 @@
 \if :{?forgesys_schema}
   \echo 'Already setted forgesys_schema -->' :forgesys_dbas
 \else
-  \set forgesys_schema `echo "$(:forgesys_path/forge.sh show | grep PMS_SYSTEM_NAME | cut -d = -f2)"`
+  \set forgesys_schema `echo "$(:forgesys_path/forge.sh show | grep FORGE_SYSTEM_NAME | cut -d = -f2)"`
 \endif      
 
--- FIXME use ACRONYM instead full name PMS_SYSTEM_NAME
+-- FIXME use ACRONYM instead full name FORGE_SYSTEM_NAME
 \if :{?forgesys_user}
   \echo 'Already setted forgesys_user -->' :forgesys_dbas
 \else

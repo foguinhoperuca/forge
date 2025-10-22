@@ -122,7 +122,7 @@ patch-git-upstream: patch-git
 # 	ps aux | grep firefox | grep -v grep | awk '{print $2}' | sudo xargs kill -9
 # 	@date
 
-SEARCH_SRC_STR ?= "PMS_SYSTEM_NAME"
+SEARCH_SRC_STR ?= "FORGE_SYSTEM_NAME"
 SEARCH_TYPE ?= "SUMMARY"
 search-in-source-code:
 	@clear

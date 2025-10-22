@@ -16,10 +16,10 @@ set_vars() {
     # FIXME DEPLOYMENT_FILE path is hardcoded. Should receive project's path here to have access to .credentials
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
 
-    export PMS_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep PMS_SYSTEM_ACRONYM | cut -d = -f2)
-    export PMS_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep PMS_SYSTEM_BASE_DNS | cut -d = -f2)
-    # FIXME [REVIEW IT!!] PMS_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by PMS_SYSTEM_ACRONYM?!
-    export PMS_SYSTEM_NAME="$(echo $PMS_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
+    export FORGE_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
+    export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
+    # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
+    export FORGE_SYSTEM_NAME="$(echo $FORGE_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
     if [ "$2" == "" ];
     then
         export GIT_REPOS="backend"
@@ -27,11 +27,11 @@ set_vars() {
         export GIT_REPOS=$2
     fi
     # FIXME APP_PATH_ORIGIN_EDGE shouldn't be $HOME but /home/$TARGET_SERVER_USER/
-    export APP_PATH_ORIGIN_EDGE="${HOME}/universal/projects/pms/${PMS_SYSTEM_ACRONYM}/$GIT_REPOS"
-    export APP_PATH_ETC="/etc/${PMS_SYSTEM_ACRONYM}"
-    export APP_PATH_VAR_WWW="/var/www/${PMS_SYSTEM_BASE_DNS}"
-    export APP_PATH_MNT="/mnt/storage_sistemas/${PMS_SYSTEM_BASE_DNS}" # FIXME use BASE_DNS or SYSTEM_ACRONYM !?
-    export APP_PATH_OPT="/opt/${PMS_SYSTEM_ACRONYM}/${GIT_REPOS}"
+    export APP_PATH_ORIGIN_EDGE="${HOME}/universal/projects/pms/${FORGE_SYSTEM_ACRONYM}/$GIT_REPOS"
+    export APP_PATH_ETC="/etc/${FORGE_SYSTEM_ACRONYM}"
+    export APP_PATH_VAR_WWW="/var/www/${FORGE_SYSTEM_BASE_DNS}"
+    export APP_PATH_MNT="/mnt/storage_sistemas/${FORGE_SYSTEM_BASE_DNS}" # FIXME use BASE_DNS or SYSTEM_ACRONYM !?
+    export APP_PATH_OPT="/opt/${FORGE_SYSTEM_ACRONYM}/${GIT_REPOS}"
     export APP_PATH_BARE="$APP_PATH_OPT/bare.git"
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
