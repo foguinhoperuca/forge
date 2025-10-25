@@ -195,3 +195,18 @@ show_env() {
         read break
     fi
 }
+
+# TODO implement it!
+generate_conf_file() {
+	if [ "$1" == "" ];
+    then
+        echo ""
+        echo "--- Load env"
+        echo ""
+		ENV_DESIRED=$TARGET_ENV
+    fi
+
+	# TODO read all files in .credentials/ and generate equivalent for env
+
+	kpcli --readonly --kdb "<PATH_TO_.KDBX>" --pwfile "<PATH_FILE_WITH_MASTER_PASSWORD>" --command 'show -f "/PATH/TO/ENTRY"' | grep -E 'Pass:'
+}
