@@ -13,7 +13,7 @@ db-deploy: db-terraform db-ddl db-permission db-seeds
 	@echo "|+-------------------------+|"
 	@date
 
-db-terraform: 
+db-terraform:
 	@echo "|+-------------+|"
 	@echo "| TERRAFORMING  |"
 	@echo "|+-------------+|"
