@@ -14,7 +14,7 @@ declare -a SYMBOLIC_LINK_FILES=(
 )
 
 
-# FIXME upstream and edge should be considered as env or just folder in worktree? Should separate git checkout worktree (lcoal | dev |Z stage | prod) from full git repos (upstream | edge)
+# FIXME upstream and edge should be considered as env or just folder in worktree? Should separate git checkout worktree (local | dev | stage | prod) from full git repos (upstream | edge)
 declare -a ENVS_AVAILABLE=(
     "local"
     "dev"
@@ -22,6 +22,13 @@ declare -a ENVS_AVAILABLE=(
     "prod"
     "upstream"
     "edge"
+)
+
+declare -a WORKFLOW_ENVS_AVAILABLE=(
+	"local"
+    "dev"
+    "stage"
+    "prod"
 )
 
 declare -a PYTHON_PROJECTS_AVAILABLE=(

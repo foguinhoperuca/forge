@@ -211,3 +211,8 @@ __marimo__/
 *#*
 *.swp
 *.swo
+.mise-en-place.conf
+.*.local
+.*.dev
+.*.stage
+.*.prod

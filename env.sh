@@ -214,53 +214,69 @@ generate_conf_file() {
 		TARGET_ENTRY=$ENV_DESIRED
 		CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d' | cut -d = -f1)
 		case $FILE_SAMPLE in
-			# "pgpass")
-			# 	CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
-			# 	;;
-			# "mise-en-place.conf")
-			# 	TARGET_ENTRY="ingredient"
-			# 	;;
-			"env.api")
-				# echo "CONTENT --> $CONTENT"
+			"pgpass")
+				CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
+				;;
+			"mise-en-place.conf")
+				TARGET_ENTRY="ingredient"
 				;;
 			*)
-				echo "--------------------"
-				echo "Skip $FILE_SAMPLE for test purpose only"
-				echo "--------------------"
-				continue
+				# echo "--------------------"
+				# echo "Skip $FILE_SAMPLE for test purpose only"
+				# echo "--------------------"
+				# continue
 				;;
 		esac
 
 		echo ""
-		echo "========================================================"
-		echo "FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY"
-		echo "========================================================"
+		echo "+==================================================================================================+"
+		echo "| FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY ::: ENV_DESIRED --> $ENV_DESIRED |"
+		echo "+==================================================================================================+"
 		echo ""
+		case $FILE_SAMPLE in
+			"mise-en-place.conf")
+				DESTINY=.credentials/."$FILE_SAMPLE"
+				;;
+			*)
+				DESTINY=.credentials/."$FILE_SAMPLE"."$TARGET_ENTRY"
+				;;
+		esac
+		:> $DESTINY
 
 		# TODO implement fn arg "ALL" to generate all entries for all envs
-		IFS='\n'
+
+		IFS=$'\n'
 		for LINE in $CONTENT;
 		do
-			# TODO skip line start with # or is blank
-			# FIXME skip not working
-			# echo "LINE --> $LINE"
-			if [[ -z "$LINE" || "$LINE" =~ ^[[:space:]]*$ ]]; then
-				echo "\"$LINE\" is blank or empty."
+			if [[ "$LINE" == \#* ]]; then
 				continue
-			elif [[ "$LINE" == \#* ]]; then
-				echo "\"$LINE\" starts with '#'."
-				continue
-			else
-				echo "\"$LINE\" does not start with '#' and is not blank."
 			fi
+
 			IFS=':' read -r -a ENTRIES <<< "$LINE"
+			BUILD_UP_LINE=""
 			for ENTRY in "${ENTRIES[@]}"; do
-				# FIXME --key ".credentials/sample.keyx" not working
-				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/sample-keepass-password.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//')
-				# echo "$ENTRY --> $SECRET"
-				echo ""
-				# TODO generate file
+				SECRET="XPTO"
+				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/sample-keepass-password.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
+				case $FILE_SAMPLE in
+					"pgpass")
+						BUILD_UP_LINE+="$SECRET"":"
+						;;
+					*)
+						BUILD_UP_LINE+="$ENTRY""=""$SECRET"
+						;;
+				esac
 			done
+
+			case $FILE_SAMPLE in
+				"pgpass")
+					echo ${BUILD_UP_LINE%:} >> $DESTINY
+					# echo ${BUILD_UP_LINE%:}
+					;;
+				*)
+					echo $BUILD_UP_LINE >> $DESTINY
+					# echo $BUILD_UP_LINE
+					;;
+			esac
 		done
 	done
 }

@@ -41,7 +41,28 @@ case $1 in
         esac
         ;;
     "genenv")
-        generate_conf_file  $2
+		# TODO use var WORKFLOW_ENVS_AVAILABLE in code bellow
+		echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
+		for ENV_TRG in ${ENVS_AVAILABLE[@]};
+		do
+			# if [[ "$2" == ${WORKFLOW_ENVS_AVAILABLE[@]} ]];
+			if [[ "$2" == @(local|dev|stage|prod) ]];
+			then
+				echo "IS VALID ENV ::: $2"
+				# generate_conf_file $2
+				break
+			fi
+
+			if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
+			then
+				echo ""
+				echo "************************************"
+				echo "|| Genereting env files for $ENV_TRG"
+				echo "************************************"
+				echo ""
+				# generate_conf_file $ENV_TRG
+			fi
+		done
         ;;
     # "githook") githook $2 $3 $4;;
     "deploy") deploy;;
