@@ -196,8 +196,8 @@ show_env() {
     fi
 }
 
-# TODO implement it!
 generate_conf_file() {
+	ENV_DESIRED=$1
 	if [ "$1" == "" ];
     then
         echo ""
@@ -205,8 +205,62 @@ generate_conf_file() {
         echo ""
 		ENV_DESIRED=$TARGET_ENV
     fi
+	echo ""
+	echo "ENV_DESIRED --> $ENV_DESIRED"
+	echo ""
 
-	# TODO read all files in .credentials/ and generate equivalent for env
+	for FILE_SAMPLE in $(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g);
+	do
+		TARGET_ENTRY=$ENV_DESIRED
+		CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d' | cut -d = -f1)
+		case $FILE_SAMPLE in
+			# "pgpass")
+			# 	CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
+			# 	;;
+			# "mise-en-place.conf")
+			# 	TARGET_ENTRY="ingredient"
+			# 	;;
+			"env.api")
+				# echo "CONTENT --> $CONTENT"
+				;;
+			*)
+				echo "--------------------"
+				echo "Skip $FILE_SAMPLE for test purpose only"
+				echo "--------------------"
+				continue
+				;;
+		esac
 
-	kpcli --readonly --kdb "<PATH_TO_.KDBX>" --pwfile "<PATH_FILE_WITH_MASTER_PASSWORD>" --command 'show -f "/PATH/TO/ENTRY"' | grep -E 'Pass:'
+		echo ""
+		echo "========================================================"
+		echo "FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY"
+		echo "========================================================"
+		echo ""
+
+		# TODO implement fn arg "ALL" to generate all entries for all envs
+		IFS='\n'
+		for LINE in $CONTENT;
+		do
+			# TODO skip line start with # or is blank
+			# FIXME skip not working
+			# echo "LINE --> $LINE"
+			if [[ -z "$LINE" || "$LINE" =~ ^[[:space:]]*$ ]]; then
+				echo "\"$LINE\" is blank or empty."
+				continue
+			elif [[ "$LINE" == \#* ]]; then
+				echo "\"$LINE\" starts with '#'."
+				continue
+			else
+				echo "\"$LINE\" does not start with '#' and is not blank."
+			fi
+			IFS=':' read -r -a ENTRIES <<< "$LINE"
+			for ENTRY in "${ENTRIES[@]}"; do
+				# FIXME --key ".credentials/sample.keyx" not working
+				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/sample-keepass-password.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//')
+				# echo "$ENTRY --> $SECRET"
+				echo ""
+				# TODO generate file
+			done
+		done
+	done
 }

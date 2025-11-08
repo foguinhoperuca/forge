@@ -40,6 +40,9 @@ case $1 in
                 ;;
         esac
         ;;
+    "genenv")
+        generate_conf_file  $2
+        ;;
     # "githook") githook $2 $3 $4;;
     "deploy") deploy;;
     "terraform")
@@ -81,6 +84,7 @@ case $1 in
         echo "- show [PWD | \"\"]"
         echo "- unenv"
         echo "- env [local | dev | stage | prod] <OPTIONAL_GIT_REPOS> <OPTIONAL_GIT_BRANCH>. GIT_REPOS default is backend; GIT_BRANCH default is same as TARGET_ENV: (now is $TARGET_ENV)."
+        echo "- genenv [local | dev | stage | prod | all]"
         # echo "- githook - only used by post-receive script"
         echo "- deploy"
         echo "- terraform - prepare devops"
