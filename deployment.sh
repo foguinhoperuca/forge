@@ -1,25 +1,60 @@
 #!/bin/bash
 
 terraform_app_path_etc() {
+    set -eu
+
     echo ""
     echo "|---------------------------|"
     echo "| Terraforming APP_PATH_ETC |"
     echo "|---------------------------|"
     echo "$APP_PATH_ETC"
-    export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk '{print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
-    sudo rm -rf $APP_PATH_ETC
-    sudo mkdir $APP_PATH_ETC
-    # TODO copy each file - this way gnu core utils 8.32 will complain
-    sudo cp ${APP_PATH_ORIGIN_EDGE}/.credentials/.* $APP_PATH_ETC/
-    sudo rm $APP_PATH_ETC/.*.sample
-    sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER $APP_PATH_ETC/
-    sudo chmod 600 -R $APP_PATH_ETC/.pgpass.* $APP_PATH_ETC/.pgpass.*
-    sudo chown $TARGET_SERVER_USER:www-data $APP_PATH_ETC/.env.*
-    sudo chmod 640 -R $APP_PATH_ETC/.env.*
-    echo "${NOW}" > $APP_PATH_ETC/deployment_datetime.txt
+
+    DRY_RUN=${DRY_RUN:-0}
+    if [[ "$DRY_RUN" == "1" ]]; then
+        echo "[DRY-RUN] Would remove and recreate: $APP_PATH_ETC"
+        echo "[DRY-RUN] Would copy files from: $APP_PATH_ORIGIN_EDGE/.credentials"
+
+        return 0
+    fi
+
+    if ! validate_safe_path "$APP_PATH_ETC"; then
+        echo "[FATAL] Unsafe APP_PATH_ETC: '$APP_PATH_ETC'"
+        exit 1
+    fi
+
+    if [[ -z "${APP_PATH_ETC:-}" || "$APP_PATH_ETC" == "/" || "$APP_PATH_ETC" == "/etc" ]]; then
+        echo "[FATAL] ERROR: Invalid APP_PATH_ETC='$APP_PATH_ETC'" >&2
+        exit 1
+    fi
+
+    case "$APP_PATH_ETC" in
+        /etc/*) : ;;
+        *)
+            echo "APP_PATH_ETC must BE **UNDER** /etc";
+            exit 1
+            ;;
+    esac
+
+    export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
+
+    echo "MANUAL TEST"
+    # sudo rm -rf -- "${APP_PATH_ETC:?}/"*
+    # sudo mkdir -p "$APP_PATH_ETC"
+
+    # # TODO copy each file - this way gnu core utils 8.32 will complain
+    # sudo cp "${APP_PATH_ORIGIN_EDGE}/.credentials/".* "$APP_PATH_ETC/"
+    # sudo rm -f "$APP_PATH_ETC"/.*.sample
+    # sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" "$APP_PATH_ETC/"
+    # sudo chmod 600 -R "$APP_PATH_ETC"/.pgpass.* "$APP_PATH_ETC"/.pgpass.*
+    # sudo chown "$TARGET_SERVER_USER:www-data" "$APP_PATH_ETC"/.env.*
+    # sudo chmod 640 -R "$APP_PATH_ETC"/.env.*
+
+    # echo "${NOW}" | sudo tee "$APP_PATH_ETC"/deployment_datetime.txt > /dev/null
 }
 
 terraform_app_path_opt() {
+    set -eu
+
     echo ""
     echo "|---------------------------|"
     echo "| Terraforming APP_PATH_OPT |"
@@ -216,6 +251,7 @@ deploy_app_path_opt() {
     echo "|------------------------|"
     echo "$APP_PATH_OPT"
 
+    # FIXME should protect rm -rf !!
     rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
     mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
     git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
@@ -224,7 +260,6 @@ deploy_app_path_opt() {
     rm -f $APP_PATH_DOCUMENT_ROOT
     ln -s $APP_PATH_WORKTREE/$GIT_BRANCH $APP_PATH_DOCUMENT_ROOT
     set_symbolic_link
-
 }
 
 deploy_venv() {
@@ -253,6 +288,14 @@ deploy_collectstatic() {
         python3 $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py collectstatic -c --no-input
         deactivate
     done
+}
+
+complement_deploy() {
+    echo ""
+    echo "|--------------------------------|"
+    echo "| [FORGE] Deploying APP_PATH_OPT |"
+    echo "|--------------------------------|"
+    echo "$APP_PATH_OPT"
 }
 
 deploy() {
@@ -326,4 +369,6 @@ deploy() {
     # # TODO get the return of apachectl configtest
     # sudo apachectl configtest
     # sudo service apache2 restart
+
+    complement_deploy
 }

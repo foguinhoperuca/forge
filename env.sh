@@ -119,11 +119,17 @@ unset_symbolic_link() {
     rm -f $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
 }
 
+complement_set_symbolic_link() {
+    echo "|+-----------------------------------------------+|"
+    echo "| [FORGE] COMPLEMENT for set symbiolic link logic |"
+    echo "|+-----------------------------------------------+|"
+}
+
 set_symbolic_link() {
     unset_symbolic_link
 
     echo ""
-    echo "Setting symbolic link"
+    echo "[FORGE] Setting symbolic link"
     echo ""
 
     ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
@@ -147,8 +153,11 @@ set_symbolic_link() {
     chmod 600 $APP_PATH_ETC/.pgpass.*
     chmod 600 $APP_PATH_ETC/.target-server.*
     chmod 640 $APP_PATH_ETC/.env.*
+
+    complement_set_symbolic_link
 }
 
+# TODO use other technics tho tet $1 and $2 is NULL
 show_env() {
     # Show variables in memory to use in all devops tasks
     # $1 :: ["PWD" | NULL] - control if sensitive data must be showed again separated
@@ -159,7 +168,6 @@ show_env() {
     echo "|+------------------------------+|"
     date
 
-    # TODO migrate vars to use system ACRONYM in start?!
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
 	do
         var_name="$var"
@@ -174,6 +182,7 @@ show_env() {
         echo "|+-------------------------------------------+|"
         echo "DB_PASS=$DB_PASS"
         echo "DB_ADMIN_PASS=$DB_ADMIN_PASS"
+        # TODO show primary and FOREIGN DB
         echo "DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD"
         echo "API_AUTHORIZATION_TOKEN=$API_AUTHORIZATION_TOKEN"
     fi
@@ -184,8 +193,7 @@ show_env() {
     echo "|+--------------------------------------+|"
     # TODO think about how to show it without env vars... maybe forcing get basic info from $(dirname $0)/.credentials/.mise-en-place.conf
     # TODO add api/.google-service-account to be used as symlink
-    FILES=".target-server .pgpass .mise-en-place.conf backoffice/.env bot/.env api/.env git-hooks/.mise-en-place.conf git-hooks/forge.sh /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"
-    ls -lah --color=auto $FILES
+    ls -lah --color=auto $CONF_FILES
 
     if [ "$2" == "DO_BREAK" ];
     then
@@ -311,6 +319,7 @@ generate_conf_file() {
 	done
 }
 
+# TODO finish it!
 cp_secrets() {
 	DESTINY=$1
 	if [[ -z "$DESTINY" ]];
@@ -327,10 +336,10 @@ cp_secrets() {
 	CP_FILES=$(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g)
 	echo "$CP_FILES"
 	
-	rm -f .*~
-	rm -f *~
-	rm -f .credentials/.*~
-	rm -f .credentials/*~
+	# rm -f .*~
+	# rm -f *~
+	# rm -f .credentials/.*~
+	# rm -f .credentials/*~
 	scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
 	# $APP_PATH_WORKTREE/edge
 	# scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_WORKTREE)/edge/

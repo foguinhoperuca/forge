@@ -14,8 +14,10 @@ verify_mounted_path_online() {
         env=$TARGET_ENV
     fi
 
+    echo ""
     echo "---------------------------------------------------------------"
     echo "[$NOW] Validating mounted path for $1 ($path) and env $2 ($env)"
+    echo "---------------------------------------------------------------"
     echo ""
     mounted=$(df -h | grep $path | grep $env)
     if [ $? -eq 0 ];
