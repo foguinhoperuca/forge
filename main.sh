@@ -42,14 +42,18 @@ case $1 in
         ;;
     "genenv")
 		# TODO use var WORKFLOW_ENVS_AVAILABLE in code bellow
-		echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
+		# echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
 		for ENV_TRG in ${ENVS_AVAILABLE[@]};
 		do
 			# if [[ "$2" == ${WORKFLOW_ENVS_AVAILABLE[@]} ]];
 			if [[ "$2" == @(local|dev|stage|prod) ]];
 			then
-				echo "IS VALID ENV ::: $2"
-				# generate_conf_file $2
+				echo ""
+				echo "************************************"
+				echo "|| Genereting env for valid: $2"
+				echo "************************************"
+				echo ""
+				generate_conf_file $2
 				break
 			fi
 
@@ -60,16 +64,23 @@ case $1 in
 				echo "|| Genereting env files for $ENV_TRG"
 				echo "************************************"
 				echo ""
-				# generate_conf_file $ENV_TRG
+				generate_conf_file $ENV_TRG
 			fi
 		done
         ;;
+	"cp-secrets")
+		cp_secrets $1
+		;;
     # "githook") githook $2 $3 $4;;
-    "deploy") deploy;;
+    "deploy")
+		deploy
+		;;
     "terraform")
         terraform $2
         ;;
-    "is_mounted") verify_mounted_path_online $2 $3;;
+    "is_mounted")
+		verify_mounted_path_online $2 $3
+		;;
     "db_script")
         case $3 in
             "admin" | "adm")

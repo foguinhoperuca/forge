@@ -166,7 +166,7 @@ terraform_app_path_var_www_proxy() {
 }
 
 app_path_base_backup_database() {
-    TODO plan about: ln -s /var/backups/postgresql/$DB_DATABASE /mnt/storage_sistemas/$FRG_SYSTEM_ACRONYM/backups/db/
+    # TODO plan about: ln -s /var/backups/postgresql/$DB_DATABASE /mnt/storage_sistemas/$FRG_SYSTEM_ACRONYM/backups/db/
     echo "TODO implement create and mount an datbase backup folder"
 }
 

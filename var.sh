@@ -24,6 +24,7 @@ declare -a ENVS_AVAILABLE=(
     "edge"
 )
 
+# TODO use it!
 declare -a WORKFLOW_ENVS_AVAILABLE=(
 	"local"
     "dev"

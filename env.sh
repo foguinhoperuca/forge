@@ -196,6 +196,34 @@ show_env() {
     fi
 }
 
+generate_secret() {
+	PW_LEN=$1
+	if [ -z "$PW_LEN" ];
+	then
+		echo "No PW_LEN specified and not set. Usage: $0 PW_LEN. Default is 64." >&2
+		PW_LEN="64"
+	fi
+	
+	local len=${1:-$PW_LEN}
+	local raw=$(( (len * 3 + 3) / 4 ))
+	gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
+}
+
+
+encrypt_file() {
+	local file="$1"
+	if [ -n "${GPG_RECIPIENT:-}" ]; then
+		# public-key encryption
+		gpg --yes --batch --trust-model always --output "${file}.gpg" --encrypt --recipient "$GPG_RECIPIENT" "$file"
+	elif [ -n "${GPG_PASSPHRASE:-}" ]; then
+		# symmetric encryption using provided passphrase
+		gpg --yes --batch --passphrase "$GPG_PASSPHRASE" --symmetric --cipher-algo AES256 --output "${file}.gpg" "$file"
+	else
+		echo "Neither GPG_RECIPIENT nor GPG_PASSPHRASE set. Cannot create encrypted copy." >&2
+		return 2
+	fi
+}
+
 generate_conf_file() {
 	ENV_DESIRED=$1
 	if [ "$1" == "" ];
@@ -241,7 +269,7 @@ generate_conf_file() {
 				DESTINY=.credentials/."$FILE_SAMPLE"."$TARGET_ENTRY"
 				;;
 		esac
-		:> $DESTINY
+		: > $DESTINY
 
 		# TODO implement fn arg "ALL" to generate all entries for all envs
 
@@ -255,8 +283,10 @@ generate_conf_file() {
 			IFS=':' read -r -a ENTRIES <<< "$LINE"
 			BUILD_UP_LINE=""
 			for ENTRY in "${ENTRIES[@]}"; do
-				SECRET="XPTO"
-				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/sample-keepass-password.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
+				SECRET=$(generate_secret "16")
+				# TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
+
+				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
 				case $FILE_SAMPLE in
 					"pgpass")
 						BUILD_UP_LINE+="$SECRET"":"
@@ -279,4 +309,45 @@ generate_conf_file() {
 			esac
 		done
 	done
+}
+
+cp_secrets() {
+	DESTINY=$1
+	if [[ -z "$DESTINY" ]];
+	then
+		DESTINY="etc"
+	fi
+
+	ENV_CP=$2
+	if [[ -z "$ENV_CP" ]];
+	then
+		ENV_CP="local"
+	fi
+
+	CP_FILES=$(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g)
+	echo "$CP_FILES"
+	
+	rm -f .*~
+	rm -f *~
+	rm -f .credentials/.*~
+	rm -f .credentials/*~
+	scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
+	# $APP_PATH_WORKTREE/edge
+	# scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_WORKTREE)/edge/
+
+	# 	scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
+	# 	scp .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
+	# # ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
+
+	# case $DESTINY in
+	# 	"etc")
+	# 		echo "cp to etc only"
+	# 		;;
+	# 	"edge")
+	# 		echo "cp to edge"
+	# 		;;
+	# 	*)
+	# 		echo "cp to etc and edge"
+	# 		;;
+	# esac
 }

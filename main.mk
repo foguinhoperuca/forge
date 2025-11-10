@@ -25,7 +25,7 @@ patch-git-upstream: PATCH_GIT_TARGET=$(APP_PATH_UPSTREAM)
 patch-git-upstream: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_WORKTREE)
 patch-git-upstream: patch-git
 
-# # TODO cp secrets to /etc/adc - move it to forge.sh
+# # TODO cp secrets to /etc/<FORGE_SYS> - move it to forge.sh
 # # TODO set array var to credential's files.
 # cp-secrets:
 # 	@clear
