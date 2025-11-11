@@ -65,11 +65,17 @@ terraform_app_path_opt() {
     sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER /opt/${FORGE_SYSTEM_ACRONYM}/
 
     ln -s $APP_PATH_ORIGIN_EDGE $APP_PATH_WORKTREE/edge
+    # TODO test creation forge in bare.git
+    cd $APP_PATH_WORKTREE/edge
+    git submodule update --init --recursive
+    cd -
 
     git init --bare $APP_PATH_BARE
     rm $APP_PATH_BARE/hooks/*
-    ln -s $APP_PATH_WORKTREE/edge/forge.sh $APP_PATH_BARE/hooks/forge.sh
     ln -s $APP_PATH_WORKTREE/edge/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf
+    ln -s $APP_PATH_WORKTREE/edge/forge.sh $APP_PATH_BARE/hooks/forge.sh
+    # TODO test creation forge in bare.git
+    ln -s $APP_PATH_WORKTREE/edge/forge $APP_PATH_BARE/hooks/forge
 
     for env_available in ${ENVS_AVAILABLE[@]};
     do
@@ -260,6 +266,15 @@ deploy_app_path_opt() {
     rm -f $APP_PATH_DOCUMENT_ROOT
     ln -s $APP_PATH_WORKTREE/$GIT_BRANCH $APP_PATH_DOCUMENT_ROOT
     set_symbolic_link
+
+    # TODO test creation forge in bare.git
+    cd $APP_PATH_WORKTREE/edge
+    git submodule update --init --recursive
+    cd -
+    # TODO test this logic also!! creation forge in bare.git
+    cd $APP_PATH_DOCUMENT_ROOT
+    git submodule update --init --recursive
+    cd -
 }
 
 deploy_venv() {
