@@ -292,10 +292,9 @@ deploy_collectstatic() {
 
 complement_deploy() {
     echo ""
-    echo "|--------------------------------|"
-    echo "| [FORGE] Deploying APP_PATH_OPT |"
-    echo "|--------------------------------|"
-    echo "$APP_PATH_OPT"
+    echo "|---------------------------|"
+    echo "| [FORGE] COMPLEMENT Deploy |"
+    echo "|---------------------------|"
 }
 
 deploy() {
@@ -319,6 +318,7 @@ deploy() {
     # - build env files
     # - run unittest/pytests
     # - migration
+    # - restart apache
 
     # cd $APP_PATH_WORKTREE/$GIT_BRANCH # FIXME need it!?
     # if [ "$TARGET_ENV" == "prod" ];

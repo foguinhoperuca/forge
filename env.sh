@@ -20,6 +20,9 @@ set_vars() {
     export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
     export FORGE_SYSTEM_NAME="$(echo $FORGE_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
+    export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
+    export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
+    export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
     if [ "$2" == "" ];
     then
         export GIT_REPOS="backend"
@@ -38,9 +41,6 @@ set_vars() {
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
-    export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
-    export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
-    export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
 
     # ENVIRONMENT specific variables
     case $1 in
@@ -65,7 +65,7 @@ set_vars() {
             ;;
     esac
     echo ""
-    echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 :: INTERRUPTS: $4 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
+    echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
 }
 
 set_vars_by_env() {
@@ -93,14 +93,16 @@ set_vars_by_env() {
     export DB_ADMIN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '2,2p')
     export DB_ADMIN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '2,2p')
 
-    export STR_DJANGO_ADMIN_PASS=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV
-    export DJANGO_SUPERUSER_USERNAME=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_USERNAME | cut -d = -f2)
-    export DJANGO_SUPERUSER_PASSWORD=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_PASSWORD | cut -d = -f2)
-    export DJANGO_SUPERUSER_EMAIL=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_EMAIL | cut -d = -f2)
-    export DJANGO_SUPERUSER_FIRSTNAME=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_FIRSTNAME | cut -d = -f2)
-    export DJANGO_SUPERUSER_LASTNAME=$(cat $STR_DJANGO_ADMIN_PASS | grep DJANGO_SUPERUSER_LASTNAME | cut -d = -f2)
+    # TODO add custom confs from api, backoffice and bot
+    export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV
+    export DJANGO_SUPERUSER_USERNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_USERNAME | cut -d = -f2)
+    export DJANGO_SUPERUSER_PASSWORD=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_PASSWORD | cut -d = -f2)
+    export DJANGO_SUPERUSER_EMAIL=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_EMAIL | cut -d = -f2)
+    export DJANGO_SUPERUSER_FIRSTNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_FIRSTNAME | cut -d = -f2)
+    export DJANGO_SUPERUSER_LASTNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_LASTNAME | cut -d = -f2)
 
-    # TODO add AUTHORIZATION_TOKEN HERE (adc) - api
+    export API_ENV_FILE=$APP_PATH_ETC/.env.api.$TARGET_ENV
+    export API_AUTHORIZATION_TOKEN=$(cat $API_ENV_FILE | grep API_AUTHORIZATION_TOKEN | cut -d = -f2)
 
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
 }
