@@ -25,22 +25,21 @@ patch-git-upstream: PATCH_GIT_TARGET=$(APP_PATH_UPSTREAM)
 patch-git-upstream: PATCH_GIT_DIFF_FILE_LOCATION=$(APP_PATH_WORKTREE)
 patch-git-upstream: patch-git
 
-# # TODO cp secrets to /etc/<FORGE_SYS> - move it to forge.sh
-# # TODO set array var to credential's files.
-# cp-secrets:
-# 	@clear
-# 	@echo "|+-------------+|"
-# 	@echo "| COPY SECRETS  |"
-# 	@echo "|+-------------+|"
-# 	@date
-# 	@rm -f .*~
-# 	@rm -f *~
-# 	@rm -f .credentials/.*~
-# 	@rm -f .credentials/*~
-# 	scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
-# 	scp .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
-# # ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
-# 	@date
+cp-secrets:
+	@clear
+	@echo "|+--------------------+|"
+	@echo "|  FORGE COPY SECRETS  |"
+	@echo "|+--------------------+|"
+	@date
+	rm -f .*~
+	rm -f *~
+	rm -f .credentials/.*~
+	rm -f .credentials/*~
+	rm -f .credentials/secrets/.*~
+	rm -f .credentials/secrets/*~
+	@./forge.sh cp-secrets all
+	# ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
+	@date
 
 # deploy-apache-conf:
 # 	@echo "|+-------------+|"

@@ -247,6 +247,16 @@ generate_conf_file() {
 	echo "ENV_DESIRED --> $ENV_DESIRED"
 	echo ""
 
+    # TODO implement using git submodule to store all secrets. That will have an layout as:
+    # -- secrets/public_keys/
+    # ---- devs/
+    # ---- machines/
+    # -- secrets/projects/
+    # ---- $FORGE_SYSTEM_ACRONYM - project_alpha
+    # ---- $FORGE_SYSTEM_ACRONYM - project_beta
+    # ---- $FORGE_SYSTEM_ACRONYM - project_gamma
+    # ---- ...
+
 	for FILE_SAMPLE in $(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g);
 	do
 		TARGET_ENTRY=$ENV_DESIRED
@@ -323,42 +333,70 @@ generate_conf_file() {
 
 # TODO finish it!
 cp_secrets() {
-	DESTINY=$1
-	if [[ -z "$DESTINY" ]];
-	then
-		DESTINY="etc"
-	fi
+    # set -eu
 
-	ENV_CP=$2
-	if [[ -z "$ENV_CP" ]];
-	then
-		ENV_CP="local"
-	fi
+    # TODO do a better logic: TARGET_ENV can be not defined
+	ENV_CP=$1
+    case "$ENV_CP" in
+		"ALL"|"all")
+            for TRG in ${WORKFLOW_ENVS_AVAILABLE[@]};
+            do
+                CP_FILES_ETC+="$(ls .credentials/.*.sample | sed -e s/\.sample/\.$TRG/g | sed -e s/\.conf\.$TRG/\.conf/g) "
+                CP_FILES_ETC=$(echo $CP_FILES_ETC | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
+                CP_FILES_EDGE+="$(ls .credentials/.*.sample | sed -e s/\.credentials\\//\.credentials\\/secrets\\//g | sed -e s/\.sample/\.$TRG\.gpg/g | sed -e s/conf\.$TRG/conf/g) "
+                CP_FILES_EDGE=$(echo $CP_FILES_EDGE | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
+            done
+			;;
+		*)
+            if [[ -z "$ENV_CP" ]];
+	        then
+                ENV_CP=$TARGET_ENV
+	        fi
+            CP_FILES_ETC=$(ls .credentials/.*.sample  | sed -e s/\.sample/\.$ENV_CP/g | sed -e s/\.conf\.$ENV_CP/\.conf/g)
+            CP_FILES_EDGE=$(ls .credentials/.*.sample | sed -e s/\.credentials\\//\.credentials\\/secrets\\//g | sed -e s/\.sample/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.$ENV_CP/\.conf/g)
+			;;
+	esac
 
-	CP_FILES=$(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g)
-	echo "$CP_FILES"
-	
-	# rm -f .*~
-	# rm -f *~
-	# rm -f .credentials/.*~
-	# rm -f .credentials/*~
-	scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
-	# $APP_PATH_WORKTREE/edge
-	# scp $CP_FILES $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_WORKTREE)/edge/
+    # FIXME not copying .mise-en-place.conf to $EDGE/.credentials - that's essential today 'cause syslimk came from there...
 
-	# 	scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
-	# 	scp .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(APP_PATH_ETC)/
-	# # ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
+    ETC_DEPLOYMENT="$APP_PATH_ETC/"
+    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/secrets/"
+    # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
 
-	# case $DESTINY in
-	# 	"etc")
-	# 		echo "cp to etc only"
-	# 		;;
-	# 	"edge")
-	# 		echo "cp to edge"
-	# 		;;
-	# 	*)
-	# 		echo "cp to etc and edge"
-	# 		;;
-	# esac
+    # FIXME fix FORGE_TEST to use secrets2 *INSIDE* original intention
+    FORGE_TEST=${FORGE_TEST:-0}
+    if [[ "$FORGE_TEST" == "1" ]];
+    then
+        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/secrets2/"
+        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/secrets2/"
+    fi
+
+    DRY_RUN=${DRY_RUN:-0}
+    if [[ "$DRY_RUN" == "1" ]]; then
+        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST"
+        echo "-------------------------------------------"
+        echo "[DRY-RUN] CP_FILES_ETC --> $ENV_CP :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR :: $APP_PATH_ETC :: $ETC_DEPLOYMENT"
+        echo $CP_FILES_ETC
+        echo ""
+        echo "====="
+        echo ""
+        echo "[DRY-RUN] CP_FILES_EDGE --> $ENV_CP :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR :: $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
+        echo $CP_FILES_EDGE
+        echo "-------------------------------------------"
+        echo ""
+
+        return 0
+    fi
+
+    echo "cp to $ETC_DEPLOYMENT"
+    scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+    echo "====="
+    echo "cp to $EDGE_DEPLOYMENT"
+    scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+
+    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment.txt"
+
+    # TODO set value of DEFAULT_TARGET_ENV in .mise-en-place.conf
+    # FIXME need sed -i to backup change?!
+    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $ETC_DEPLOYMENT/.mise-en-place.conf"
 }

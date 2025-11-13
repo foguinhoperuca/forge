@@ -17,7 +17,6 @@ source $FORGE_PATH/deployment.sh
 source $FORGE_PATH/monitoring.sh
 
 main() {
-
     # TODO implement bash completation
     case $1 in
         "show")
@@ -72,7 +71,7 @@ main() {
 		    done
             ;;
 	    "cp-secrets")
-		    cp_secrets $1
+		    cp_secrets $2
 		    ;;
         # "githook") githook $2 $3 $4;;
         "deploy")
