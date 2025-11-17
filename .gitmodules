@@ -1,0 +1,3 @@
+[submodule ".credentials/upstream"]
+	path = .credentials/upstream
+	url = git@github.com:foguinhoperuca/forge-secrets.git

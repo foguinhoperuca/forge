@@ -1,3 +1,4 @@
+# BEWARE TO NOT store this plain file into repository. Also, replace <THIS_SECRET_FILE>.target-env-example to <THIS_SECRET_FILE>.[local | dev | stage | prod] 
 # General conf per env
 TARGET_SERVER_ADDR=<TARGET_ENV_ADDRESS>
 TARGET_SERVER_USER=<TARGET_ENV_USER>

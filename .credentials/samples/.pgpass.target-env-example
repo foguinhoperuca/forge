@@ -1,3 +1,4 @@
+# BEWARE TO NOT store this plain file into repository. Also, replace <THIS_SECRET_FILE>.target-env-example to <THIS_SECRET_FILE>.[local | dev | stage | prod] 
 # Each line is a connection
 # Primary database hold main data
 PRIMARY_ADDRESS:PRIMARY_PORT:PRIMARY_DATABASE:PRIMARY_SYS_USERNAME:PRIMARY_SYS_PASSWORD
