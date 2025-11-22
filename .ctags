@@ -1,0 +1,11 @@
+--exclude=.git
+--exclude=__pycache__
+--exclude=tests 
+--exclude=venv 
+--exclude=static 
+--exclude=media 
+--exclude=.mypy_cache 
+--exclude=*~
+--exclude=*#
+--exclude=tags
+--exclude=TAGS
