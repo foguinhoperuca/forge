@@ -171,10 +171,10 @@ show_env() {
     date
 
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
-	do
+    do
         var_name="$var"
         echo "$var_name=${!var_name}"
-	done
+    done
 
     if [[ "$1" == "PWD" ]];
     then
@@ -207,45 +207,44 @@ show_env() {
 }
 
 generate_secret() {
-	PW_LEN=$1
-	if [ -z "$PW_LEN" ];
-	then
-		echo "No PW_LEN specified and not set. Usage: $0 PW_LEN. Default is 64." >&2
-		PW_LEN="64"
-	fi
-	
-	local len=${1:-$PW_LEN}
-	local raw=$(( (len * 3 + 3) / 4 ))
-	gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
+    PW_LEN=$1
+    if [ -z "$PW_LEN" ];
+    then
+        echo "No PW_LEN specified and not set. Usage: $0 PW_LEN. Default is 64." >&2
+        PW_LEN="64"
+    fi
+
+    local len=${1:-$PW_LEN}
+    local raw=$(( (len * 3 + 3) / 4 ))
+    gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
 }
 
-
 encrypt_file() {
-	local file="$1"
-	if [ -n "${GPG_RECIPIENT:-}" ]; then
-		# public-key encryption
-		gpg --yes --batch --trust-model always --output "${file}.gpg" --encrypt --recipient "$GPG_RECIPIENT" "$file"
-	elif [ -n "${GPG_PASSPHRASE:-}" ]; then
-		# symmetric encryption using provided passphrase
-		gpg --yes --batch --passphrase "$GPG_PASSPHRASE" --symmetric --cipher-algo AES256 --output "${file}.gpg" "$file"
-	else
-		echo "Neither GPG_RECIPIENT nor GPG_PASSPHRASE set. Cannot create encrypted copy." >&2
-		return 2
-	fi
+    local file="$1"
+    if [ -n "${GPG_RECIPIENT:-}" ]; then
+        # public-key encryption
+        gpg --yes --batch --trust-model always --output "${file}.gpg" --encrypt --recipient "$GPG_RECIPIENT" "$file"
+    elif [ -n "${GPG_PASSPHRASE:-}" ]; then
+        # symmetric encryption using provided passphrase
+        gpg --yes --batch --passphrase "$GPG_PASSPHRASE" --symmetric --cipher-algo AES256 --output "${file}.gpg" "$file"
+    else
+        echo "Neither GPG_RECIPIENT nor GPG_PASSPHRASE set. Cannot create encrypted copy." >&2
+        return 2
+    fi
 }
 
 generate_conf_file() {
-	ENV_DESIRED=$1
-	if [ "$1" == "" ];
+    ENV_DESIRED=$1
+    if [ "$1" == "" ];
     then
         echo ""
         echo "--- Load env"
         echo ""
-		ENV_DESIRED=$TARGET_ENV
+        ENV_DESIRED=$TARGET_ENV
     fi
-	echo ""
-	echo "ENV_DESIRED --> $ENV_DESIRED"
-	echo ""
+    echo ""
+    echo "ENV_DESIRED --> $ENV_DESIRED"
+    echo ""
 
     # TODO implement using git submodule to store all secrets. That will have an layout as:
     # -- secrets/public_keys/
@@ -257,146 +256,146 @@ generate_conf_file() {
     # ---- $FORGE_SYSTEM_ACRONYM - project_gamma
     # ---- ...
 
-	for FILE_SAMPLE in $(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g);
-	do
-		TARGET_ENTRY=$ENV_DESIRED
-		CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d' | cut -d = -f1)
-		case $FILE_SAMPLE in
-			"pgpass")
-				CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
-				;;
-			"mise-en-place.conf")
-				TARGET_ENTRY="ingredient"
-				;;
-			*)
-				# echo "--------------------"
-				# echo "Skip $FILE_SAMPLE for test purpose only"
-				# echo "--------------------"
-				# continue
-				;;
-		esac
+    for FILE_SAMPLE in $(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g);
+    do
+        TARGET_ENTRY=$ENV_DESIRED
+        CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d' | cut -d = -f1)
+        case $FILE_SAMPLE in
+            "pgpass")
+                CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
+                ;;
+            "mise-en-place.conf")
+                TARGET_ENTRY="ingredient"
+                ;;
+            *)
+                # echo "--------------------"
+                # echo "Skip $FILE_SAMPLE for test purpose only"
+                # echo "--------------------"
+                # continue
+                ;;
+        esac
 
-		echo ""
-		echo "+==================================================================================================+"
-		echo "| FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY ::: ENV_DESIRED --> $ENV_DESIRED |"
-		echo "+==================================================================================================+"
-		echo ""
-		case $FILE_SAMPLE in
-			"mise-en-place.conf")
-				DESTINY=.credentials/."$FILE_SAMPLE"
-				;;
-			*)
-				DESTINY=.credentials/."$FILE_SAMPLE"."$TARGET_ENTRY"
-				;;
-		esac
-		: > $DESTINY
+        echo ""
+        echo "+==================================================================================================+"
+        echo "| FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY ::: ENV_DESIRED --> $ENV_DESIRED |"
+        echo "+==================================================================================================+"
+        echo ""
+        case $FILE_SAMPLE in
+            "mise-en-place.conf")
+                DESTINY=.credentials/."$FILE_SAMPLE"
+                ;;
+            *)
+                DESTINY=.credentials/."$FILE_SAMPLE"."$TARGET_ENTRY"
+                ;;
+        esac
+        : > $DESTINY
 
-		# TODO implement fn arg "ALL" to generate all entries for all envs
+        # TODO implement fn arg "ALL" to generate all entries for all envs
 
-		IFS=$'\n'
-		for LINE in $CONTENT;
-		do
-			if [[ "$LINE" == \#* ]]; then
-				continue
-			fi
+        IFS=$'\n'
+        for LINE in $CONTENT;
+        do
+            if [[ "$LINE" == \#* ]]; then
+                continue
+            fi
 
-			IFS=':' read -r -a ENTRIES <<< "$LINE"
-			BUILD_UP_LINE=""
-			for ENTRY in "${ENTRIES[@]}"; do
-				SECRET=$(generate_secret "16")
-				# TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
+            IFS=':' read -r -a ENTRIES <<< "$LINE"
+            BUILD_UP_LINE=""
+            for ENTRY in "${ENTRIES[@]}"; do
+                SECRET=$(generate_secret "16")
+                # TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
 
-				# SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
-				case $FILE_SAMPLE in
-					"pgpass")
-						BUILD_UP_LINE+="$SECRET"":"
-						;;
-					*)
-						BUILD_UP_LINE+="$ENTRY""=""$SECRET"
-						;;
-				esac
-			done
+                # SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
+                case $FILE_SAMPLE in
+                    "pgpass")
+                        BUILD_UP_LINE+="$SECRET"":"
+                        ;;
+                    *)
+                        BUILD_UP_LINE+="$ENTRY""=""$SECRET"
+                        ;;
+                esac
+            done
 
-			case $FILE_SAMPLE in
-				"pgpass")
-					echo ${BUILD_UP_LINE%:} >> $DESTINY
-					# echo ${BUILD_UP_LINE%:}
-					;;
-				*)
-					echo $BUILD_UP_LINE >> $DESTINY
-					# echo $BUILD_UP_LINE
-					;;
-			esac
-		done
-	done
+            case $FILE_SAMPLE in
+                "pgpass")
+                    echo ${BUILD_UP_LINE%:} >> $DESTINY
+                    # echo ${BUILD_UP_LINE%:}
+                    ;;
+                *)
+                    echo $BUILD_UP_LINE >> $DESTINY
+                    # echo $BUILD_UP_LINE
+                    ;;
+            esac
+        done
+    done
 }
 
-# TODO finish it!
 cp_secrets() {
     # set -eu
 
     # TODO do a better logic: TARGET_ENV can be not defined
-	ENV_CP=$1
+    ENV_CP=$1
     case "$ENV_CP" in
-		"ALL"|"all")
+        "ALL"|"all")
             for TRG in ${WORKFLOW_ENVS_AVAILABLE[@]};
             do
-                CP_FILES_ETC+="$(ls .credentials/.*.sample | sed -e s/\.sample/\.$TRG/g | sed -e s/\.conf\.$TRG/\.conf/g) "
-                CP_FILES_ETC=$(echo $CP_FILES_ETC | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
-                CP_FILES_EDGE+="$(ls .credentials/.*.sample | sed -e s/\.credentials\\//\.credentials\\/secrets\\//g | sed -e s/\.sample/\.$TRG\.gpg/g | sed -e s/conf\.$TRG/conf/g) "
-                CP_FILES_EDGE=$(echo $CP_FILES_EDGE | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
+                CP_FILES_ETC+="$(ls  .credentials/samples/.*example | grep -v mise-en-place | sed -e "s#\.credentials/samples#$APP_PATH_ETC#g" | sed -e s/\.target-env-example/\.$TRG/g) "
+                CP_FILES_EDGE+="$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$TRG\.gpg/g | sed -e s/\.conf.example/\.conf\.gpg/g) "
             done
-			;;
-		*)
+            CP_FILES_ETC=$(echo $CP_FILES_ETC | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
+            CP_FILES_EDGE=$(echo $CP_FILES_EDGE | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
+            ;;
+        *)
             if [[ -z "$ENV_CP" ]];
-	        then
+            then
                 ENV_CP=$TARGET_ENV
-	        fi
-            CP_FILES_ETC=$(ls .credentials/.*.sample  | sed -e s/\.sample/\.$ENV_CP/g | sed -e s/\.conf\.$ENV_CP/\.conf/g)
-            CP_FILES_EDGE=$(ls .credentials/.*.sample | sed -e s/\.credentials\\//\.credentials\\/secrets\\//g | sed -e s/\.sample/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.$ENV_CP/\.conf/g)
-			;;
-	esac
+            fi
+            CP_FILES_ETC=$(ls .credentials/samples/.*example  | grep -v mise-en-place | sed -e "s|\.credentials/samples|$APP_PATH_ETC|g" | sed -e "s/\.target-env-example/\.$ENV_CP/g" | sed -e "s/\.conf\.example/\.conf/g")
+            CP_FILES_EDGE=$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.example/\.conf\.gpg/g)
+            ;;
+    esac
 
-    # FIXME not copying .mise-en-place.conf to $EDGE/.credentials - that's essential today 'cause syslimk came from there...
-
-    ETC_DEPLOYMENT="$APP_PATH_ETC/"
-    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/secrets/"
+    ETC_DEPLOYMENT="$APP_PATH_ETC"
+    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure"
+    MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
     # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
 
-    # FIXME fix FORGE_TEST to use secrets2 *INSIDE* original intention
     FORGE_TEST=${FORGE_TEST:-0}
     if [[ "$FORGE_TEST" == "1" ]];
     then
-        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/secrets2/"
-        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/secrets2/"
+        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/cp_secrets_tests"
+        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/cp_secrets_tests"
+        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/cp_secrets_tests"
     fi
 
     DRY_RUN=${DRY_RUN:-0}
-    if [[ "$DRY_RUN" == "1" ]]; then
-        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST"
+    if [[ "$DRY_RUN" == "1" ]];
+    then
+        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR"
         echo "-------------------------------------------"
-        echo "[DRY-RUN] CP_FILES_ETC --> $ENV_CP :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR :: $APP_PATH_ETC :: $ETC_DEPLOYMENT"
+        echo "[DRY-RUN] CP_FILES_ETC --> $ENV_CP :: $APP_PATH_ETC :: $ETC_DEPLOYMENT"
         echo $CP_FILES_ETC
         echo ""
-        echo "====="
-        echo ""
-        echo "[DRY-RUN] CP_FILES_EDGE --> $ENV_CP :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR :: $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
+        echo "================"
+        echo "[DRY-RUN] CP_FILES_EDGE --> $ENV_CP :: $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
         echo $CP_FILES_EDGE
-        echo "-------------------------------------------"
+        echo ""
+        echo "================"
+        echo "[DRY-RUN] CP_FILES_MISE_EN_PLACE $MISE_EN_PLACE_DEPLOYMENT"
         echo ""
 
         return 0
     fi
 
-    echo "cp to $ETC_DEPLOYMENT"
+    echo "cp ETC to $ETC_DEPLOYMENT"
     scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
     echo "====="
-    echo "cp to $EDGE_DEPLOYMENT"
+    echo "cp EDGE to $EDGE_DEPLOYMENT"
     scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+    echo "====="
+    echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT"
+    scp .credentials/.mise-en-place.conf "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
 
-    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment.txt"
-
-    # TODO set value of DEFAULT_TARGET_ENV in .mise-en-place.conf
-    # FIXME need sed -i to backup change?!
-    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $ETC_DEPLOYMENT/.mise-en-place.conf"
+    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment.txt"
 }
