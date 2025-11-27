@@ -55,7 +55,7 @@ main() {
 				    echo "|| Genereting env for valid: $2"
 				    echo "************************************"
 				    echo ""
-				    generate_conf_file $2
+				    generate_conf_file $2 $3
 				    break
 			    fi
 
@@ -66,7 +66,7 @@ main() {
 				    echo "|| Genereting env files for $ENV_TRG"
 				    echo "************************************"
 				    echo ""
-				    generate_conf_file $ENV_TRG
+				    generate_conf_file $ENV_TRG $3
 			    fi
 		    done
             ;;

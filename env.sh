@@ -41,6 +41,7 @@ set_vars() {
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
+    export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="secrets_output"
 
     # ENVIRONMENT specific variables
     case $1 in
@@ -159,7 +160,7 @@ set_symbolic_link() {
     complement_set_symbolic_link
 }
 
-# TODO use other technics tho tet $1 and $2 is NULL
+# TODO use other technics tho test $1 and $2 is NULL
 show_env() {
     # Show variables in memory to use in all devops tasks
     # $1 :: ["PWD" | NULL] - control if sensitive data must be showed again separated
@@ -234,63 +235,55 @@ encrypt_file() {
 }
 
 generate_conf_file() {
+    # Generate conf file from samples. It would grab secrets into remote vault, local vault (keepass) or be generated here
+    # [MANDATORY] $1 :: define environment desired to be generate. ALL is implemented in the call of this function.
+    # [MANDATORY] $2 :: define $SOURCE_SECRETS [passbolt | keepass | new]
+    # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
+    # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $DEBUG :: show debug messages
+
     ENV_DESIRED=$1
     if [ "$1" == "" ];
     then
-        echo ""
-        echo "--- Load env"
-        echo ""
         ENV_DESIRED=$TARGET_ENV
+        echo ""
+        echo "--- Load env ${ENV_DESIRED}"
+        echo ""
     fi
-    echo ""
-    echo "ENV_DESIRED --> $ENV_DESIRED"
-    echo ""
+    SOURCE_SECRETS=$2
+    if [ "$2" == "" ];
+    then
+        SOURCE_SECRETS="new"
+        echo ""
+        echo "--- Source Secrets ${SOURCE_SECRETS}"
+        echo ""
+    fi
+    DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
 
-    # TODO implement using git submodule to store all secrets. That will have an layout as:
-    # -- secrets/public_keys/
-    # ---- devs/
-    # ---- machines/
-    # -- secrets/projects/
-    # ---- $FORGE_SYSTEM_ACRONYM - project_alpha
-    # ---- $FORGE_SYSTEM_ACRONYM - project_beta
-    # ---- $FORGE_SYSTEM_ACRONYM - project_gamma
-    # ---- ...
-
-    for FILE_SAMPLE in $(ls .credentials/.*.sample | sed -e s/\.credentials\\/\.//g | sed -e s/\.sample//g);
+    for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
     do
-        TARGET_ENTRY=$ENV_DESIRED
-        CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d' | cut -d = -f1)
-        case $FILE_SAMPLE in
-            "pgpass")
-                CONTENT=$(cat .credentials/."$FILE_SAMPLE".sample | sed '1d')
-                ;;
-            "mise-en-place.conf")
-                TARGET_ENTRY="ingredient"
-                ;;
-            *)
-                # echo "--------------------"
-                # echo "Skip $FILE_SAMPLE for test purpose only"
-                # echo "--------------------"
-                # continue
-                ;;
-        esac
+        TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
+        DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
+        CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
-        echo ""
-        echo "+==================================================================================================+"
-        echo "| FILE_SAMPLE --> $FILE_SAMPLE ::: TARGET_ENTRY --> $TARGET_ENTRY ::: ENV_DESIRED --> $ENV_DESIRED |"
-        echo "+==================================================================================================+"
-        echo ""
-        case $FILE_SAMPLE in
-            "mise-en-place.conf")
-                DESTINY=.credentials/."$FILE_SAMPLE"
-                ;;
-            *)
-                DESTINY=.credentials/."$FILE_SAMPLE"."$TARGET_ENTRY"
-                ;;
-        esac
-        : > $DESTINY
+        DEBUG=${DEBUG:-0}
+        if [[ "$DEBUG" == "1" ]];
+        then
+            echo ""
+            echo "+===================================================================================================================================="
+            echo "| [DEBUG] DRY_RUN -> $DRY_RUN :: FILE_SAMPLE -> $FILE_SAMPLE :: TARGET_ENTRY -> $TARGET_ENTRY :: ENV_DESIRED -> $ENV_DESIRED :: DESTINY -> $DESTINY :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES"
+            echo "+===================================================================================================================================="
+            echo "------------------------------------------- <CONTENT>  -------------------------------------------"
+            echo "$CONTENT"
+            echo "------------------------------------------- </CONTENT> -------------------------------------------"
+            echo "------------------------------------------- <RESULT>  --------------------------------------------"
+        fi
 
-        # TODO implement fn arg "ALL" to generate all entries for all envs
+        DRY_RUN=${DRY_RUN:-0}
+        if [[ "$DRY_RUN" != "1" ]];
+        then
+            : > $DESTINY
+        fi
 
         IFS=$'\n'
         for LINE in $CONTENT;
@@ -302,12 +295,23 @@ generate_conf_file() {
             IFS=':' read -r -a ENTRIES <<< "$LINE"
             BUILD_UP_LINE=""
             for ENTRY in "${ENTRIES[@]}"; do
-                SECRET=$(generate_secret "16")
                 # TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
+                # TODO make sense to grab secrets from .*.gpg files?!
+                case $SOURCE_SECRETS in
+                    "keepass")
+                        # FIXME use correct sample.kdbx and pwfile (pass.txt) - implement some strategy to grab pass.txt (it should be encrypted with gpg)
+                        SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
+                        ;;
+                    "passbolt")
+                        SECRET="TODO implement client to get REMOTE ENTRY using PASSBOLT"
+                        ;;
+                    *)
+                        SECRET=$(generate_secret "16")
+                        ;;
+                esac
 
-                # SECRET=$(kpcli --readonly --kdb ".credentials/sample.kdbx" --pwfile ".credentials/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
                 case $FILE_SAMPLE in
-                    "pgpass")
+                    ".pgpass")
                         BUILD_UP_LINE+="$SECRET"":"
                         ;;
                     *)
@@ -316,18 +320,41 @@ generate_conf_file() {
                 esac
             done
 
-            case $FILE_SAMPLE in
-                "pgpass")
-                    echo ${BUILD_UP_LINE%:} >> $DESTINY
-                    # echo ${BUILD_UP_LINE%:}
-                    ;;
-                *)
-                    echo $BUILD_UP_LINE >> $DESTINY
-                    # echo $BUILD_UP_LINE
-                    ;;
-            esac
+            if [[ "$DRY_RUN" != "1" ]];
+            then
+                case $FILE_SAMPLE in
+                    ".pgpass")
+                        echo ${BUILD_UP_LINE%:} >> $DESTINY
+                        DEBUG=${DEBUG:-0}
+                        if [[ "$DEBUG" == "1" ]];
+                        then
+                            echo ${BUILD_UP_LINE%:}
+                        fi
+                        ;;
+                    *)
+                        echo $BUILD_UP_LINE >> $DESTINY
+                        if [[ "$DEBUG" == "1" ]];
+                        then
+                            echo $BUILD_UP_LINE
+                        fi
+                        ;;
+                esac
+            fi
         done
+        if [[ "$DEBUG" == "1" ]];
+        then
+            echo "------------------------------------------- </RESULT> -------------------------------------------"
+        fi
     done
+
+    echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
+
+    if [[ "$DEPLOY_GENERATED_FILES" == "1" ]];
+    then
+        echo "Copying generated files to deploy target..."
+        cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.mise-en-place.conf" ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" ".credentials/"
+        cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
+    fi
 }
 
 cp_secrets() {
@@ -363,9 +390,9 @@ cp_secrets() {
     FORGE_TEST=${FORGE_TEST:-0}
     if [[ "$FORGE_TEST" == "1" ]];
     then
-        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/cp_secrets_tests"
-        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/cp_secrets_tests"
-        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/cp_secrets_tests"
+        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
+        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
+        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
     fi
 
     DRY_RUN=${DRY_RUN:-0}
@@ -397,5 +424,5 @@ cp_secrets() {
     scp .credentials/.mise-en-place.conf "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
     ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
 
-    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment.txt"
+    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
 }

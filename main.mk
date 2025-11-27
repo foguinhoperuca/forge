@@ -35,8 +35,9 @@ cp-secrets:
 	rm -f *~
 	rm -f .credentials/.*~
 	rm -f .credentials/*~
-	rm -f .credentials/secrets/.*~
-	rm -f .credentials/secrets/*~
+# # FIXME correct path of credentials
+# 	rm -f .credentials/secrets/.*~
+# 	rm -f .credentials/secrets/*~
 	@./forge.sh cp-secrets all
 	# ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
 	@date
