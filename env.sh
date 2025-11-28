@@ -39,9 +39,9 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
+    export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="secrets_output"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
-    export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="secrets_output"
 
     # ENVIRONMENT specific variables
     case $1 in
@@ -78,9 +78,11 @@ set_vars_by_env() {
     export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
     export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
     export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
-    # TODO implement vars for VOLUME_* from .target-server
     export TARGET_SERVER_DB_SYS_GRP=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DB_SYS_GRP | cut -d = -f2)
     export TARGET_SERVER_DBAS=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DBAS | cut -d = -f2)
+    export TARGET_SERVER_VOLUME_USERNAME=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_USERNAME | cut -d = -f2)
+    export TARGET_SERVER_VOLUME_PASSWORD=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_PASSWORD | cut -d = -f2)
+    export TARGET_SERVER_VOLUME_DOMAIN=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_DOMAIN | cut -d = -f2)
 
     export PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
     export DB_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '1,1p')
@@ -93,6 +95,16 @@ set_vars_by_env() {
     export DB_ADMIN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '2,2p')
     export DB_ADMIN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '2,2p')
     export DB_ADMIN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '2,2p')
+    export DB_FOREIGN_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '3,3p')
+    export DB_FOREIGN_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '3,3p')
+    export DB_FOREIGN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '3,3p')
+    export DB_FOREIGN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '3,3p')
+    export DB_FOREIGN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '3,3p')
+    export DB_FOREIGN_ADMIN_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '4,4p')
+    export DB_FOREIGN_ADMIN_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '4,4p')
+    export DB_FOREIGN_ADMIN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '4,4p')
+    export DB_FOREIGN_ADMIN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '4,4p')
+    export DB_FOREIGN_ADMIN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '4,4p')
 
     # TODO add custom confs from api, backoffice and bot
     export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV

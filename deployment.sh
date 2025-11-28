@@ -238,7 +238,6 @@ terraform() {
     # # TODO move it for deploy() fn and TEST IT
     # terraform_app_path_mnt
 
-    # TODO move to a proper function
     terraform_app_path_var_www_app
     # terraform_app_path_var_www_proxy
 
@@ -328,6 +327,14 @@ deploy() {
 
     deploy_venv
     deploy_collectstatic
+
+    # TODO tasks to implement (security)
+    # - Secret scan
+    # - SCA (scan dependencies)
+    # - SAST (statical code analisis)
+    # - Build
+    # - Unit/Integration tests
+    # - DAST (dynamic test)
 
     # TODO
     # - build env files
