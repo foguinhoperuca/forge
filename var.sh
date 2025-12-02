@@ -6,7 +6,7 @@
 NOW=$(date +"%Y-%m-%dT%H-%M-%S")
 
 # TODO migrate vars to use system ACRONYM in start?!
-CUSTOM_VARS_FRAGMENT="FORGE_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|AUTHORIZATION|DEPLOYMENT"
+CUSTOM_VARS_FRAGMENT="FORGE_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|AUTHORIZATION|DEPLOYMENT|ENV_FILE"
 
 # FIXME hard codedd adc here. Shoul use APP_PATH - but if no env var is loaded?!
 # /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"
