@@ -147,6 +147,8 @@ set_symbolic_link() {
     echo "[FORGE] Setting symbolic link"
     echo ""
 
+    # TODO update files: only need ln -s hooks*/forge and ln -s hooks*/post-receive
+    # TODO make forge.sh recoginize .credentials/.mise-en-place.conf
     ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# GIT_BRANCH=<GIT_BRANCH_NAME> :: should be the real git branch that in this repository will be deployed.
+# By now there is the limitation: $GIT_BRANCH should be a valid env (with conf files .*.<ENV>)
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source $SCRIPT_DIR/forge/main.sh > /dev/null
+set_vars "" "" "" "" > /dev/null
+
+while read oldrev newrev ref
+do
+    if [ "$ref" = "refs/heads/$TARGET_ENV" ];
+    then
+        DRY_RUN=${DRY_RUN:-0}
+        if [[ "$DRY_RUN" == "1" ]];
+        then
+            echo "[DRY_RUN] DRY_RUN...: $DRY_RUN :: original SCRIPT_DIR: ${SCRIPT_DIR}"
+            echo "[DRY_RUN] TARGET_ENV: ${TARGET_ENV} :: Using DEPLOYMENT_FILE: ${DEPLOYMENT_FILE}"
+            echo "-------------------------------------------"
+
+            exit 0
+        fi
+        echo "[EXEC-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
+        deploy
+    else
+        echo "[NO-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Doing nothing: only the '${GIT_BRANCH}' branch may be deployed on this server."
+    fi
+done
