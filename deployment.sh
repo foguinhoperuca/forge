@@ -37,7 +37,14 @@ terraform_app_path_etc() {
 
     export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
 
-    echo "MANUAL TEST"
+    echo "TODO generate files from gpg encrypted files in .credentials"
+    ENV_DESIRED="local"
+    for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
+    do
+        DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+        echo "gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/encrypted/secure/${DEST}.gpg"
+        echo "${NOW}" | sudo tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
+    done
     # sudo rm -rf -- "${APP_PATH_ETC:?}/"*
     # sudo mkdir -p "$APP_PATH_ETC"
 

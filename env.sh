@@ -7,6 +7,12 @@ unset_vars() {
     done
 }
 
+complement_set_vars() {
+    echo "|+-----------------------------------------------+|"
+    echo "| [FORGE] COMPLEMENT for set vars logic           |"
+    echo "|+-----------------------------------------------+|"
+}
+
 set_vars() {
     # [MANDATORY] $1 :: define main TARGET_ENV
     # [OPTIONAL]  $2 :: define GIT_REPOS different from default
@@ -39,6 +45,7 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
+    # FIXME .credentials/secrets_output/.gitignore should be added in host repository?
     export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="secrets_output"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
@@ -67,6 +74,14 @@ set_vars() {
     esac
     echo ""
     echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
+
+    complement_set_vars
+}
+
+complement_set_vars_by_env() {
+    echo "|+-----------------------------------------------+|"
+    echo "| [FORGE] COMPLEMENT for set vars by env logic    |"
+    echo "|+-----------------------------------------------+|"
 }
 
 set_vars_by_env() {
@@ -118,6 +133,8 @@ set_vars_by_env() {
     export API_AUTHORIZATION_TOKEN=$(cat $API_ENV_FILE | grep API_AUTHORIZATION_TOKEN | cut -d = -f2)
 
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
+
+    complement_set_vars_by_env
 }
 
 unset_symbolic_link() {
@@ -136,7 +153,7 @@ unset_symbolic_link() {
 
 complement_set_symbolic_link() {
     echo "|+-----------------------------------------------+|"
-    echo "| [FORGE] COMPLEMENT for set symbiolic link logic |"
+    echo "| [FORGE] COMPLEMENT for set symbolic link logic  |"
     echo "|+-----------------------------------------------+|"
 }
 
