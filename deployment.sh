@@ -37,26 +37,19 @@ terraform_app_path_etc() {
 
     export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
 
-    echo "TODO generate files from gpg encrypted files in .credentials"
-    ENV_DESIRED="local"
-    for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
-    do
-        DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-        echo "gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/encrypted/secure/${DEST}.gpg"
-        echo "${NOW}" | sudo tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
-    done
-    # sudo rm -rf -- "${APP_PATH_ETC:?}/"*
-    # sudo mkdir -p "$APP_PATH_ETC"
+    generate_conf_file "${TARGET_ENV}" "gpg"
 
-    # # TODO copy each file - this way gnu core utils 8.32 will complain
-    # sudo cp "${APP_PATH_ORIGIN_EDGE}/.credentials/".* "$APP_PATH_ETC/"
-    # sudo rm -f "$APP_PATH_ETC"/.*.sample
-    # sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" "$APP_PATH_ETC/"
-    # sudo chmod 600 -R "$APP_PATH_ETC"/.pgpass.* "$APP_PATH_ETC"/.pgpass.*
-    # sudo chown "$TARGET_SERVER_USER:www-data" "$APP_PATH_ETC"/.env.*
-    # sudo chmod 640 -R "$APP_PATH_ETC"/.env.*
+    sudo rm -rf -- "${APP_PATH_ETC:?}/".*
+    sudo mkdir -p "$APP_PATH_ETC"
+    # TODO copy each file - this way gnu core utils 8.32 will complain
+    sudo cp "${APP_PATH_ORIGIN_EDGE}/.credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/".*"${TARGET_ENV}" "$APP_PATH_ETC/"
+    sudo rm -f -- "${APP_PATH_ETC:?}/".mise-en-place*
+    sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" "$APP_PATH_ETC/"
+    sudo chmod 600 -R "$APP_PATH_ETC"/.*
+    sudo chown "$TARGET_SERVER_USER:www-data" "$APP_PATH_ETC"/.env.api.* "$APP_PATH_ETC"/.env.backoffice.*
+    sudo chmod 640 -R "$APP_PATH_ETC"/.env.api.* "$APP_PATH_ETC"/.env.backoffice.*
 
-    # echo "${NOW}" | sudo tee "$APP_PATH_ETC"/deployment_datetime.txt > /dev/null
+    echo "${NOW}" | sudo tee "$APP_PATH_ETC"/deployment_datetime.txt > /dev/null
 }
 
 terraform_app_path_opt() {

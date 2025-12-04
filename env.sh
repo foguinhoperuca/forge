@@ -157,6 +157,7 @@ complement_set_symbolic_link() {
     echo "|+-----------------------------------------------+|"
 }
 
+# TODO implement a version to set symlink by [ENV | document_root | edge | upstream]
 set_symbolic_link() {
     unset_symbolic_link
 
@@ -268,7 +269,7 @@ encrypt_file() {
 generate_conf_file() {
     # Generate conf file from samples. It would grab secrets into remote vault, local vault (keepass) or be generated here
     # [MANDATORY] $1 :: define environment desired to be generate. ALL is implemented in the call of this function.
-    # [MANDATORY] $2 :: define $SOURCE_SECRETS [passbolt | keepass | new]
+    # [MANDATORY] $2 :: define $SOURCE_SECRETS [passbolt | keepass | new | gpg]
     # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
@@ -293,6 +294,14 @@ generate_conf_file() {
 
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
     do
+        if [[ "${SOURCE_SECRETS}" == "gpg" ]];
+        then
+            DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+            gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/encrypted/secure/${DEST}.gpg
+            echo "${NOW}" | sudo tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
+            continue
+        fi
+
         TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
         DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
@@ -336,8 +345,12 @@ generate_conf_file() {
                     "passbolt")
                         SECRET="TODO implement client to get REMOTE ENTRY using PASSBOLT"
                         ;;
-                    *)
+                    "new")
                         SECRET=$(generate_secret "16")
+                        ;;
+                    *)
+                        echo "[ERROR] Should do nothing: SOURCE_SECRETS -> ${SOURCE_SECRETS}"
+                        exit 1
                         ;;
                 esac
 
