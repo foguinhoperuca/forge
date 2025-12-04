@@ -77,6 +77,7 @@ main() {
         "deploy")
 		    deploy
 		    ;;
+        "etc_terraform") terraform_app_path_etc;;
         "terraform")
             terraform $2
             ;;
@@ -106,9 +107,6 @@ main() {
                     ;;
             esac
             ;;
-        # FIXME bellow temp only to test
-        "set_symbolic_link") set_symbolic_link;; 
-        "etc_terraform") terraform_app_path_etc;;
         *)
             # TODO better usage message
             echo "-----------"

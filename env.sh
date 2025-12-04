@@ -402,6 +402,12 @@ generate_conf_file() {
 }
 
 cp_secrets() {
+    # copy secrets to desired environment.
+    # [MANDATORY] $1 :: define environment desired to be generate.
+    # [WIP]       $2 :: DEPLOY_GENERATED_FILES define the type of files that will be copied [etc | edge | mise-en-place | all]
+    # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $DEBUG :: show debug messages
+
     # set -eu
 
     # TODO do a better logic: TARGET_ENV can be not defined
@@ -410,7 +416,7 @@ cp_secrets() {
         "ALL"|"all")
             for TRG in ${WORKFLOW_ENVS_AVAILABLE[@]};
             do
-                CP_FILES_ETC+="$(ls  .credentials/samples/.*example | grep -v mise-en-place | sed -e "s#\.credentials/samples#$APP_PATH_ETC#g" | sed -e s/\.target-env-example/\.$TRG/g) "
+                CP_FILES_ETC+="$(ls  .credentials/samples/.*example | grep -v mise-en-place | sed -e "s#samples#$APP_PATH_CREDENTIALS_GENERATED_OUTPUT#g" | sed -e s/\.target-env-example/\.$TRG/g) "
                 CP_FILES_EDGE+="$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$TRG\.gpg/g | sed -e s/\.conf.example/\.conf\.gpg/g) "
             done
             CP_FILES_ETC=$(echo $CP_FILES_ETC | awk '{ for (i=1; i<=NF; i++) if (!seen[$i]++) printf "%s ", $i; printf "\n" }')
@@ -421,7 +427,7 @@ cp_secrets() {
             then
                 ENV_CP=$TARGET_ENV
             fi
-            CP_FILES_ETC=$(ls .credentials/samples/.*example  | grep -v mise-en-place | sed -e "s|\.credentials/samples|$APP_PATH_ETC|g" | sed -e "s/\.target-env-example/\.$ENV_CP/g" | sed -e "s/\.conf\.example/\.conf/g")
+            CP_FILES_ETC=$(ls .credentials/samples/.*example  | grep -v mise-en-place | sed -e "s|samples|$APP_PATH_CREDENTIALS_GENERATED_OUTPUT|g" | sed -e "s/\.target-env-example/\.$ENV_CP/g" | sed -e "s/\.conf\.example/\.conf/g")
             CP_FILES_EDGE=$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.example/\.conf\.gpg/g)
             ;;
     esac
@@ -436,7 +442,7 @@ cp_secrets() {
     then
         ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
         EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
-        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
+        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/cp_tests/"
     fi
 
     DRY_RUN=${DRY_RUN:-0}
@@ -458,15 +464,19 @@ cp_secrets() {
         return 0
     fi
 
+    # TODO implement a logic to choose what gonna be copied: [etc | edge | all]
     echo "cp ETC to $ETC_DEPLOYMENT"
     scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
     echo "====="
     echo "cp EDGE to $EDGE_DEPLOYMENT"
     scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
     echo "====="
-    echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT"
-    scp .credentials/.mise-en-place.conf "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
-    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+    echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
+    scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+    if [[ "${ENV_CP}" != "all" ]];
+    then
+        ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+    fi
 
     ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
 }

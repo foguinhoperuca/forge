@@ -33,13 +33,45 @@ cp-secrets:
 	@date
 	rm -f .*~
 	rm -f *~
-	rm -f .credentials/.*~
-	rm -f .credentials/*~
-# # FIXME correct path of credentials
-# 	rm -f .credentials/secrets/.*~
-# 	rm -f .credentials/secrets/*~
+	rm -f .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/.*~
+	rm -f .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/*~
+	@./forge.sh genenv all gpg
+	@tree -a .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/
+	@echo "---"
+	@cat .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/deployment_datetime.txt
 	@./forge.sh cp-secrets all
-	# ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_ETC); source ./forge.sh export $(TARGET_ENV); ./forge.sh set_symbolic_link"
+	@tree -a $(APP_PATH_ETC)
+	@echo "==="
+	@cat $(APP_PATH_ETC)/deployment_datetime.txt
+	@date
+
+document_root:
+	@clear
+	@date
+	@rm "$(APP_PATH_DOCUMENT_ROOT)"
+	ln -sf "$(APP_PATH_WORKTREE)/$(TARGET_ENV)" "$(APP_PATH_DOCUMENT_ROOT)"
+	@ls -lah --color=auto "$(APP_PATH_WORKTREE)"
+
+post-receive:
+	@clear
+	@date
+	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
+	@date
+
+SEARCH_SRC_STR ?= "FORGE_SYSTEM_NAME"
+SEARCH_TYPE ?= "SUMMARY"
+search-in-source-code:
+	@clear
+	@date
+	@echo "SEARCH_TYPE --> $(SEARCH_TYPE) ::: SEARCH SRC STR --> $(SEARCH_SRC_STR)"
+ifeq ($(SEARCH_TYPE),SUMMARY)
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}'
+else ifeq ($(SEARCH_TYPE),FULL)
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
+endif
+	@echo "-------"
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@echo ""
 	@date
 
 # deploy-apache-conf:
@@ -96,12 +128,6 @@ cp-secrets:
 # 	@echo "--- INSIDE /mnt/storage_sistemas/$(APP_NAME)/:"
 # 	@ls --color=auto -lah /mnt/storage_sistemas/$(APP_NAME)/
 
-# post-receive:
-# 	clear
-# 	date
-# 	echo "abcdef123 fedcba987 refs/heads/master" | ./git-hooks/post-receive
-# 	date
-
 # build-ctags:
 # 	@cd backoffice
 # 	@ctags -e -R --exclude=.git --exclude=__pycache__ --exclude=tests --exclude=venv --exclude=static --exclude=media --exclude=.mypy_cache --exclude=*~ .
@@ -121,20 +147,3 @@ cp-secrets:
 # 	@date
 # 	ps aux | grep firefox | grep -v grep | awk '{print $2}' | sudo xargs kill -9
 # 	@date
-
-SEARCH_SRC_STR ?= "FORGE_SYSTEM_NAME"
-SEARCH_TYPE ?= "SUMMARY"
-search-in-source-code:
-	@clear
-	@date
-	@echo "SEARCH_TYPE --> $(SEARCH_TYPE) ::: SEARCH SRC STR --> $(SEARCH_SRC_STR)"
-ifeq ($(SEARCH_TYPE),SUMMARY)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}'
-else ifeq ($(SEARCH_TYPE),FULL)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
-endif
-	@echo "-------"
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
-	@echo ""
-	@date
-
