@@ -1,11 +1,14 @@
 django-super-user:
+	@echo "|+------------------+|"
+	@echo "| DJANGO SUPER USERS |"
+	@echo "|+------------------+|"
 	@python3 backoffice/manage.py createsuperuser --noinput
 	@psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -c "UPDATE $(FORGE_SYSTEM_NAME).auth_user SET first_name = 'Administrator', last_name = 'IT Dept' WHERE id = 1;"
 
 django-users:
-	@echo "|+-------------+|"
-	@echo "| DJANGO USERS  |"
-	@echo "|+-------------+|"
+	@echo "|+------------+|"
+	@echo "| DJANGO USERS |"
+	@echo "|+------------+|"
 	@python3 database/populate.py
 
 django-update-permissions:

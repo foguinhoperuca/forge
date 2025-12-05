@@ -82,11 +82,11 @@ endif
 # 	@rm -f webserver/apache/$(TARGET_SERVER_TYPE)_server/*~*
 # 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "rm /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/*; mkdir -p /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/"
 # ifeq ($(TARGET_ENV),prod)
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).sorocaba.sp.gov.br.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME).sorocaba.sp.gov.br.conf
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.sorocaba.sp.gov.br.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api.sorocaba.sp.gov.br.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf
 # else
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).sorocaba.sp.gov.br.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-$(TARGET_ENV).sorocaba.sp.gov.br.conf
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.sorocaba.sp.gov.br.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api-$(TARGET_ENV).sorocaba.sp.gov.br.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
 # endif
 # 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "sudo cp /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)* /etc/apache2/sites-available/; sudo apachectl configtest"
 # 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "sudo a2ensite $(APP_NAME)*"

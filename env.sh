@@ -13,6 +13,7 @@ complement_set_vars() {
     echo "|+-----------------------------------------------+|"
 }
 
+# TODO implement a function to read .mise-en-place.conf and load vars from there without be specified before
 set_vars() {
     # [MANDATORY] $1 :: define main TARGET_ENV
     # [OPTIONAL]  $2 :: define GIT_REPOS different from default
@@ -26,6 +27,8 @@ set_vars() {
     export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
     export FORGE_SYSTEM_NAME="$(echo $FORGE_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
+    export FORGE_ORGANIZATION_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_ACRONYM | cut -d = -f2)
+    export FORGE_ORGANIZATION_BASEDNS=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_BASEDNS | cut -d = -f2)
     export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
     export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
     export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
@@ -404,7 +407,7 @@ generate_conf_file() {
 cp_secrets() {
     # copy secrets to desired environment.
     # [MANDATORY] $1 :: define environment desired to be generate.
-    # [WIP]       $2 :: DEPLOY_GENERATED_FILES define the type of files that will be copied [etc | edge | mise-en-place | all]
+    # [WIP]       $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all]
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
 
@@ -431,6 +434,8 @@ cp_secrets() {
             CP_FILES_EDGE=$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.example/\.conf\.gpg/g)
             ;;
     esac
+
+    DEPLOY_GENERATED_FILES=$2
 
     ETC_DEPLOYMENT="$APP_PATH_ETC"
     EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure"

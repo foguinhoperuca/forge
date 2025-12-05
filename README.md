@@ -73,6 +73,7 @@ The system and scripts will only use the path to _/mnt/<OPTIONAL-GROUP>/<FORGE_S
 Also, a special path _/mnt/<OPTIONAL-GROUP>/all_ wuill be used to see all projects files (if it is in same storage).
 
 **TODO organize it and set an default layout.**
+**TODO replace OPTIONAL-ORGANIZATION with FORGE_ORGANIZATION_ACRONYM**
 
 ### Mounted on Server ###
 ```

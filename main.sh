@@ -78,6 +78,7 @@ main() {
 		    deploy
 		    ;;
         "etc_terraform") terraform_app_path_etc;;
+        "apache_terraform") terraform_app_path_var_www_app;;
         "terraform")
             terraform $2
             ;;

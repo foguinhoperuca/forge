@@ -52,6 +52,7 @@ terraform_app_path_etc() {
     echo "${NOW}" | sudo tee "$APP_PATH_ETC"/deployment_datetime.txt > /dev/null
 }
 
+# TODO implement security checks as in terraform_app_path_etc
 terraform_app_path_opt() {
     set -eu
 
@@ -60,7 +61,7 @@ terraform_app_path_opt() {
     echo "| Terraforming APP_PATH_OPT |"
     echo "|---------------------------|"
     echo "$APP_PATH_OPT"
-    sudo rm -rf $APP_PATH_OPT
+    sudo rm -rf "${APP_PATH_OPT:?}"
     sudo mkdir -p $APP_PATH_WORKTREE
     sudo chown -R $TARGET_SERVER_USER:$TARGET_SERVER_USER /opt/${FORGE_SYSTEM_ACRONYM}/
 
@@ -138,33 +139,45 @@ terraform_app_path_var_www_app() {
     echo "|---------------------------|"
     echo "| Creating APP_PATH_VAR_WWW |"
     echo "|---------------------------|"
-    echo "$APP_PATH_VAR_WWW - app: local webserver"
-    sudo a2dissite $FORGE_SYSTEM_BASE_DNS*
-    echo "VARS ::: $FORGE_SYSTEM_BASE_DNS ::: $FORGE_SYSTEM_ACRONYM ::: $APP_PATH_VAR_WWW"
+    echo "${APP_PATH_VAR_WWW} - APP WEBSERVER :: ${FORGE_SYSTEM_BASE_DNS} :: ${FORGE_SYSTEM_ACRONYM}"
+
+    sudo a2dissite "${FORGE_SYSTEM_BASE_DNS:?}"*
+
     if grep -q "^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
-        sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
+        sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-${TARGET_ENV}\"/" /etc/apache2/envvars
     else
-        echo "export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
+        echo "export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-${TARGET_ENV}\"" | sudo tee -a /etc/apache2/envvars > /dev/null
     fi
-    # unset ITER
-    # ITER=0
-    # ITER=$(expr $ITER + 1)
+
     for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]}
     do
-        # if [ "${ITER}" == "0" ];
-        if [ "${django_project}" == "backoffice" ];
+        SYSTEM_DJANGO_PROJECT="$([[ "${django_project}" == "backoffice" ]] && echo "${FORGE_SYSTEM_BASE_DNS}" || echo "${FORGE_SYSTEM_BASE_DNS}-${django_project}")"
+
+        if [ -f "${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf" ];
         then
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project $APP_PATH_VAR_WWW
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf
-        else
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/$django_project "$APP_PATH_VAR_WWW"-$django_project
-            sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/app_server/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf
+            sudo rm -f "/var/www/${SYSTEM_DJANGO_PROJECT}"
+            sudo ln -s "${APP_PATH_DOCUMENT_ROOT}/${django_project}" "/var/www/${SYSTEM_DJANGO_PROJECT}"
+
+            sudo rm -f "/etc/apache2/sites-available/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf"
+            sudo ln -s "${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf" "/etc/apache2/sites-available/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf"
+        fi
+
+        DEBUG=${DEBUG:-0}
+        if [[ "$DEBUG" == "1" ]];
+        then
+            echo "*** ${SYSTEM_DJANGO_PROJECT} --> ${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf ***"
+            echo "ln -s ${APP_PATH_DOCUMENT_ROOT}/${django_project} /var/www/${SYSTEM_DJANGO_PROJECT}"
+            echo "ln -s ${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf" "/etc/apache2/sites-available/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf"
+            echo ""
+            echo "envvars: $(cat /etc/apache2/envvars | grep 'ENV_APP')" 
+            echo "---"
         fi
     done
     # TODO move www-data and other defaults from ubuntu to conf var
-    sudo chown -R $TARGET_SERVER_USER:www-data $APP_PATH_VAR_WWW*
-    sudo chown -R $TARGET_SERVER_USER:www-data /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS*
-    sudo a2ensite $FORGE_SYSTEM_BASE_DNS*
+    sudo chown -R "${TARGET_SERVER_USER:?}":www-data "${APP_PATH_VAR_WWW:?}"*
+    sudo chown -R "${TARGET_SERVER_USER:?}":www-data /etc/apache2/sites-available/"${FORGE_SYSTEM_BASE_DNS:?}"*
+    sudo a2ensite "${FORGE_SYSTEM_BASE_DNS:?}"*
+    # TODO validate return of configtest and restart
     sudo apachectl configtest
     sudo service apache2 restart
 }
@@ -195,9 +208,9 @@ terraform_app_path_var_www_proxy() {
     # do
     #     if [ "${ITER}" == "0" ];
     #     then
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.sorocaba.sp.gov.br.conf"
+    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf"
     #     else
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.sorocaba.sp.gov.br.conf"
+    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf"
     #     fi
     #     ITER=$(expr $ITER + 1)
     # done
@@ -371,26 +384,6 @@ deploy() {
     # #     mount /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$TARGET_ENV"
     # # fi
     # # ln -s /mnt/storage_sistemas/"$FORGE_SYSTEM_BASE_DNS"-"$TARGET_ENV" $APP_PATH_MNT
-
-    # echo ""
-    # echo "|-----------------------------|"
-    # echo "| Deploying APP_PATH_VAR_WWW  |"
-    # echo "|-----------------------------|"
-    # echo "$APP_PATH_VAR_WWW"
-    # echo "TODO must implement something from terraform here?!"
-    # # # FIXME will use filesystem path with -$TARGET_ENV?!
-    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$TARGET_ENV.sorocaba.sp.gov.br.conf
-    # # # sudo ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/alerta-defesa-civil-api.sorocaba.sp.gov.br.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$TARGET_ENV-api.sorocaba.sp.gov.br.conf
-
-    # # if grep -q "^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
-    # #     sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/" /etc/apache2/envvars
-    # # else
-    # #     echo "export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"" | sudo tee -a /etc/apache2/envvars > /dev/null
-    # # fi
-    # # TODO configtest result in error should stop deploy
-    # # TODO get the return of apachectl configtest
-    # sudo apachectl configtest
-    # sudo service apache2 restart
 
     complement_deploy
 }

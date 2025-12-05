@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO replace storage_sistemas by $FORGE_ORGANIZATION_ACRONYM
 verify_mounted_path_online() {
     path=$1
     env=$2
