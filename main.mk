@@ -82,6 +82,31 @@ endif
 	@echo ""
 	@date
 
+build-ctags:
+	# @ctags -e -R --exclude=.git --exclude=__pycache__ --exclude=tests --exclude=venv --exclude=static --exclude=media --exclude=.mypy_cache --exclude=*~ .
+	@clear
+	@date
+	@ctags -e -R --options=.ctags -o backoffice/TAGS backoffice/
+	@ctags -e -R --options=.ctags -o api/TAGS api/
+	@ctags -e -R --options=.ctags -o bot/TAGS bot/
+
+APP_KILL ?= "chrome"
+kill-app:
+	@clear
+	@date
+	ps aux | grep $(APP_KILL) | grep -v grep | awk '{print $$2}' | sudo xargs kill -9
+	@date
+
+MIGRATION_ENTITY ?= "<SET_YOUR_VAR_MIGRATION_ENTITY_TO_RUN_MAKEFILE_REFRESH_MIGRATION>"
+refresh-migration:
+	@clear
+	@date
+	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY) zero
+	@rm backoffice/$(MIGRATION_ENTITY)/migrations/0001_initial.py
+	@python3 backoffice/manage.py makemigrations
+	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY)
+	@date
+
 # deploy-apache-conf:
 # 	@echo "|+-------------+|"
 # 	@echo "| DEPLOY APACHE |"
@@ -136,22 +161,8 @@ endif
 # 	@echo "--- INSIDE /mnt/storage_sistemas/$(APP_NAME)/:"
 # 	@ls --color=auto -lah /mnt/storage_sistemas/$(APP_NAME)/
 
-# build-ctags:
-# 	@cd backoffice
-# 	@ctags -e -R --exclude=.git --exclude=__pycache__ --exclude=tests --exclude=venv --exclude=static --exclude=media --exclude=.mypy_cache --exclude=*~ .
-# 	@cd ../api
-# 	@ctags -e -R --options=.ctags .
-# 	@cd ../bot
-# 	@ctags -e -R --options=.ctags .
-
 # sshx:
 # 	clear
 # 	date
 # 	ssh -X $(SERVER) "cd /opt/gecon_bot; source /opt/gecon_bot/venv/bin/activate; python3 /opt/gecon_bot/gecon_bot/app.py --no-headless --log normal --debug NORMAL --bot_browser FIREFOX cpfl_low --routine obtain"
 # 	date
-
-# kill-firefox:
-# 	@clear
-# 	@date
-# 	ps aux | grep firefox | grep -v grep | awk '{print $2}' | sudo xargs kill -9
-# 	@date
