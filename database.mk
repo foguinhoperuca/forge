@@ -69,6 +69,16 @@ db-migrate:
 	@echo "|+-------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/migrate.sql
 
+MIGRATION_ENTITY ?= "<SET_YOUR_VAR_MIGRATION_ENTITY_TO_RUN_MAKEFILE_REFRESH_MIGRATION>"
+refresh-migration:
+	@clear
+	@date
+	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY) zero
+	@rm backoffice/$(MIGRATION_ENTITY)/migrations/0001_initial.py
+	@python3 backoffice/manage.py makemigrations
+	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY)
+	@date
+
 clean-db:
 	@clear
 	@date

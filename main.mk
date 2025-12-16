@@ -97,16 +97,6 @@ kill-app:
 	ps aux | grep $(APP_KILL) | grep -v grep | awk '{print $$2}' | sudo xargs kill -9
 	@date
 
-MIGRATION_ENTITY ?= "<SET_YOUR_VAR_MIGRATION_ENTITY_TO_RUN_MAKEFILE_REFRESH_MIGRATION>"
-refresh-migration:
-	@clear
-	@date
-	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY) zero
-	@rm backoffice/$(MIGRATION_ENTITY)/migrations/0001_initial.py
-	@python3 backoffice/manage.py makemigrations
-	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY)
-	@date
-
 # deploy-apache-conf:
 # 	@echo "|+-------------+|"
 # 	@echo "| DEPLOY APACHE |"
