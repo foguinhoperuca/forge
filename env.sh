@@ -29,6 +29,7 @@ set_vars() {
     export FORGE_SYSTEM_NAME="$(echo $FORGE_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
     export FORGE_ORGANIZATION_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_ACRONYM | cut -d = -f2)
     export FORGE_ORGANIZATION_BASEDNS=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_BASEDNS | cut -d = -f2)
+    # TODO review it - URL can be used from git remote origin (fetch)
     export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
     export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
     export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
@@ -431,6 +432,7 @@ generate_conf_file() {
         fi
     done
 
+    sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/
     echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
 
     if [[ "$DEPLOY_GENERATED_FILES" == "1" ]];
