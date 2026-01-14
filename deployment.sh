@@ -139,9 +139,19 @@ terraform_app_path_var_www_app() {
     echo "|---------------------------|"
     echo "| Creating APP_PATH_VAR_WWW |"
     echo "|---------------------------|"
-    echo "${APP_PATH_VAR_WWW} - APP WEBSERVER :: ${FORGE_SYSTEM_BASE_DNS} :: ${FORGE_SYSTEM_ACRONYM}"
+    DEBUG=${DEBUG:-0}
+    echo "${APP_PATH_VAR_WWW} - APP WEBSERVER :: ${FORGE_SYSTEM_BASE_DNS} :: ${FORGE_SYSTEM_ACRONYM} :: DEBUG ${DEBUG}"
 
-    sudo a2dissite "${FORGE_SYSTEM_BASE_DNS:?}"*
+    if [[ -e "/etc/apache2/sites-enabled/${FORGE_SYSTEM_BASE_DNS:?}.${FORGE_ORGANIZATION_BASEDNS}.conf" || -e "/etc/apache2/sites-enabled/${FORGE_SYSTEM_BASE_DNS:?}-api.${FORGE_ORGANIZATION_BASEDNS}.conf" ]]; then
+        if [[ "$DEBUG" == "1" ]];
+        then
+            echo ""
+            echo "------------------------------------------- <DEBUG>  -------------------------------------------"
+            echo "[DEBUG] $(ls /etc/apache2/sites-enabled/${FORGE_SYSTEM_BASE_DNS:?}*)"
+            echo "------------------------------------------- </DEBUG> -------------------------------------------"
+        fi
+        sudo a2dissite "${FORGE_SYSTEM_BASE_DNS:?}"*
+    fi
 
     if grep -q "^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=" /etc/apache2/envvars; then
         sudo sed -i.bkp "s/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-${TARGET_ENV}\"/" /etc/apache2/envvars
@@ -162,7 +172,6 @@ terraform_app_path_var_www_app() {
             sudo ln -s "${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf" "/etc/apache2/sites-available/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf"
         fi
 
-        DEBUG=${DEBUG:-0}
         if [[ "$DEBUG" == "1" ]];
         then
             echo "*** ${SYSTEM_DJANGO_PROJECT} --> ${APP_PATH_DOCUMENT_ROOT}/webserver/apache/app_server/${SYSTEM_DJANGO_PROJECT}.${FORGE_ORGANIZATION_BASEDNS}.conf ***"
