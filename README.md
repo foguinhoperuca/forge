@@ -78,10 +78,10 @@ Also, a special path _/mnt/<OPTIONAL-GROUP>/all_ wuill be used to see all projec
 ### Mounted on Server ###
 ```
 |-- mnt
-|---- <OPTIONAL-GROUP>               ::: storage_sistemas should be replaced by <OPTIONAL-GROUP>
-|------ <FORGE_SYSTEM_ACRONYM>       ::: ln -sf /mnt/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>-<TARGET_ENV> /mnt/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>
-|------ <FORGE_SYSTEM_ACRONYM>-all   ::: ln -sf <STORAGE_ROOT>/<FORGE_SYSTEM_ACRONYM> /mnt/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>-all
-|------ <FORGE_SYSTEM_ACRONYM>-<TARGET_ENV> ::: ln -sf <STORAGE_ROOT>/<FORGE_SYSTEM_ACRONYM>/<TARGET_ENV> /mnt/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>-<TARGET_ENV>
+|---- <OPTIONAL-GROUP>                      ::: storage_sistemas should be replaced by <OPTIONAL-GROUP>
+|------ <FORGE_SYSTEM_ACRONYM>              ::: ln -s /mnt/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>-<TARGET_ENV>
+|------ <FORGE_SYSTEM_ACRONYM>-all          ::: ln -s <STORAGE_ROOT>/<FORGE_SYSTEM_ACRONYM>
+|------ <FORGE_SYSTEM_ACRONYM>-<TARGET_ENV> ::: ln -s <STORAGE_ROOT>/<FORGE_SYSTEM_ACRONYM>/<TARGET_ENV>
 ```
 
 ### Expected Organization in Storage ###
@@ -90,7 +90,7 @@ Also, a special path _/mnt/<OPTIONAL-GROUP>/all_ wuill be used to see all projec
 |-- <STORAGE-ROOT>
 |---- <FORGE_SYSTEM_ACRONYM>
 |------ .credentials               ::: backup for sensitive information (if needed)
-|------ <TARGET_ENV>                      ::: by env [local | dev | stage | prod | replica]
+|------ <TARGET_ENV>               ::: by env [local | dev | stage | prod | replica]
 |-------- ANOTHER-SERVICVE-BY-ENV  ::: something that make sense be by <TARGET_ENV>
 |-------- backups                  ::: copy of backup
 |-------- files                    ::: store generic files
@@ -102,7 +102,7 @@ Also, a special path _/mnt/<OPTIONAL-GROUP>/all_ wuill be used to see all projec
 
 **TODO describe it!**
 
-ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/<FORGE_SYSTEM_BASE_DNS>-<DJANGO-PROKJECT>.conf /etc/apache2/sites-available/<FORGE_SYSTEM_BASE_DNS>-<TARGET_ENV>-<DJANGO-PROJECT>.<FORGE_SYSTEM_BASE_DNS>.conf
+ln -s $APP_PATH_WORKTREE/$TARGET_ENV/webserver/apache/app_server/<FORGE_SYSTEM_BASE_DNS>-<DJANGO-PROJECT>.conf /etc/apache2/sites-available/<FORGE_SYSTEM_BASE_DNS>-<TARGET_ENV>-<DJANGO-PROJECT>.<FORGE_SYSTEM_BASE_DNS>.conf
 
 **TODO describe layout**
 - app_path_var_www_app
