@@ -88,7 +88,7 @@ terraform_app_path_opt() {
     # TODO on deploy set correct APP_PATH_WORKTREE/TARGET_ENV for $APP_PATH_DOCUMENT_ROOT
     ln -s $APP_PATH_UPSTREAM $APP_PATH_DOCUMENT_ROOT
 
-    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone http://$GIT_USER@$GIT_BASE_URL/$FORGE_SYSTEM_BASE_DNS.git $APP_PATH_UPSTREAM
+    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
     cd $APP_PATH_UPSTREAM
     git config credential.helper store
     git fetch -a $APP_PATH_UPSTREAM
