@@ -1,6 +1,7 @@
 # Forge #
 
 Set of tools and scripts to create, maintain and run a project. Very (my own) Opinionated. Tired of copy and paste code from one project to another.
+[Code style reference](https://google.github.io/styleguide/shellguide.html "Implementation in forge is WIP")
 
 # File Organization #
 

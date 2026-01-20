@@ -1,0 +1,23 @@
+* Implement checkout of worktree (in deploy) with submodules included
+* Script to add forge to an project
+** Rename forge.sh to mount_etna.sh
+** Doc git clone with submodules already checked out (also in worktree and edge)
+** Doc checkout .mise-en-place.conf
+** Create templates for files: mount_etna.sh (old forge.sh), database/initialize.sql, etc
+* Review symlinks
+** Review .credentials/encrypted and .credentials/pubkey - maybe use .credentials/upstream/<PATH> instead
+** Review the creation of secure in .credentials/upstream/encrypted/secure (or using .credentials/upstream/secure) -> .credentials/secure
+** Review use of .credentials/secret_output to not colide with .credentials/secure (sec in start of words) - also think about use secret_output in /etc/<FORGE_SYSTEM>
+** Create all symlinks doc to be used in project that will use forge
+** Use <ROOT_PROJECT>/doc symlink to wiki of project
+* Create script to database
+** Create database
+** create groups
+*** dba
+*** sysforge
+*** gis_group
+** create users
+*** <dev team>
+** create schemas
+*** public with qgis tables
+*** public with postgis
