@@ -71,7 +71,7 @@ main() {
 		    done
             ;;
 	    "cp-secrets")
-		    cp_secrets $2
+		    cp_secrets $2 $3
 		    ;;
 		"encrypt_multiple")
 			encrypt_multiple;;

@@ -447,11 +447,23 @@ generate_conf_file() {
 cp_secrets() {
     # copy secrets to desired environment.
     # [MANDATORY] $1 :: define environment desired to be generate.
-    # [WIP]       $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all]
+    # [MANDATORY] $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all]
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
 
     # set -eu
+
+    # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
+    ETC_DEPLOYMENT="$APP_PATH_ETC"
+    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure"
+    MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
+    FORGE_TEST=${FORGE_TEST:-0}
+    if [[ "$FORGE_TEST" == "1" ]];
+    then
+        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
+        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
+        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/cp_tests/"
+    fi
 
     # TODO do a better logic: TARGET_ENV can be not defined
     ENV_CP=$1
@@ -476,30 +488,21 @@ cp_secrets() {
     esac
 
     DEPLOY_GENERATED_FILES=$2
-
-    ETC_DEPLOYMENT="$APP_PATH_ETC"
-    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure"
-    MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
-    # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
-
-    FORGE_TEST=${FORGE_TEST:-0}
-    if [[ "$FORGE_TEST" == "1" ]];
+    if [[ -z "$DEPLOY_GENERATED_FILES" ]];
     then
-        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
-        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
-        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/cp_tests/"
+        DEPLOY_GENERATED_FILES="all"
     fi
 
     DRY_RUN=${DRY_RUN:-0}
     if [[ "$DRY_RUN" == "1" ]];
     then
-        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST :: $TARGET_SERVER_USER :: $TARGET_SERVER_ADDR"
+        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: TARGET_SERVER_ADDR $TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
         echo "-------------------------------------------"
-        echo "[DRY-RUN] CP_FILES_ETC --> $ENV_CP :: $APP_PATH_ETC :: $ETC_DEPLOYMENT"
+        echo "[DRY-RUN] CP_FILES_ETC --> $APP_PATH_ETC :: $ETC_DEPLOYMENT"
         echo $CP_FILES_ETC
         echo ""
         echo "================"
-        echo "[DRY-RUN] CP_FILES_EDGE --> $ENV_CP :: $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
+        echo "[DRY-RUN] CP_FILES_EDGE --> $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
         echo $CP_FILES_EDGE
         echo ""
         echo "================"
@@ -509,19 +512,44 @@ cp_secrets() {
         return 0
     fi
 
-    # TODO implement a logic to choose what gonna be copied: [etc | edge | all]
-    echo "cp ETC to $ETC_DEPLOYMENT"
-    scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
-    echo "====="
-    echo "cp EDGE to $EDGE_DEPLOYMENT"
-    scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
-    echo "====="
-    echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
-    scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
-    if [[ "${ENV_CP}" != "all" ]];
-    then
-        ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
-    fi
+    echo "===== Depĺoying to $DEPLOY_GENERATED_FILES"
+    case "$DEPLOY_GENERATED_FILES" in
+        "etc")
+            echo "cp ETC to $ETC_DEPLOYMENT"
+            scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt"
+            ;;
+        "edge")
+            echo "cp EDGE to $EDGE_DEPLOYMENT"
+            scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt"
+            ;;
+        "mise-en-place")
+            echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
+            scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            if [[ "${ENV_CP}" != "all" ]];
+            then
+                ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+            fi
+            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
+            ;;
+        *)
+            echo "cp ETC to $ETC_DEPLOYMENT"
+            scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            echo "====="
 
-    ssh $TARGET_SERVER_USER@$TARGET_SERVER_ADDR "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
+            echo "cp EDGE to $EDGE_DEPLOYMENT"
+            scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            echo "====="
+
+            echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
+            scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            if [[ "${ENV_CP}" != "all" ]];
+            then
+                ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+            fi
+
+            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
+            ;;
+    esac
 }

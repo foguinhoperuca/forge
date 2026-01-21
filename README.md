@@ -3,6 +3,15 @@
 Set of tools and scripts to create, maintain and run a project. Very (my own) Opinionated. Tired of copy and paste code from one project to another.
 [Code style reference](https://google.github.io/styleguide/shellguide.html "Implementation in forge is WIP")
 
+# Initialize Host Project #
+
+Is expected to do the follow tasks:
+- `mkdir -p $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/`
+- `git clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/backend`
+- `cd $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/backend`
+- `gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg`
+- `./mount_etna.sh terraform <TARGET_ENV>`
+
 # File Organization #
 
 ## Terraform ##

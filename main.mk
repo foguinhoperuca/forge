@@ -39,7 +39,7 @@ cp-secrets:
 	@tree -a .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/
 	@echo "---"
 	@cat .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/deployment_datetime.txt
-	@./forge.sh cp-secrets all
+	@./forge.sh cp-secrets all all
 	@tree -a $(APP_PATH_ETC)
 	@echo "==="
 	@cat $(APP_PATH_ETC)/deployment_datetime.txt
