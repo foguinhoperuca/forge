@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Reusable vars in scripts.
-# Should be replaced by VAR+=VAR or re-declared in forge.sh
+# Should be replaced by VAR+=VAR or re-declared in mount_etna.sh
 
 NOW=$(date +"%Y-%m-%dT%H-%M-%S")
 
@@ -10,7 +10,7 @@ CUSTOM_VARS_FRAGMENT="FORGE_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|A
 
 # FIXME hard codedd adc here. Shoul use APP_PATH - but if no env var is loaded?!
 # /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"
-CONF_FILES=".target-server .pgpass .mise-en-place.conf api/.env bot/.env backoffice/.env bot/.env git-hooks/.mise-en-place.conf git-hooks/forge.sh"
+CONF_FILES=".target-server .pgpass .mise-en-place.conf api/.env bot/.env backoffice/.env bot/.env git-hooks/.mise-en-place.conf git-hooks/mount_etna.sh"
 
 declare -a SYMBOLIC_LINK_FILES=(
     ".pgpass"

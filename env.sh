@@ -15,13 +15,33 @@ complement_set_vars() {
 
 # TODO implement a function to read .mise-en-place.conf and load vars from there without be specified before
 set_vars() {
-    # [MANDATORY] $1 :: define main TARGET_ENV
-    # [OPTIONAL]  $2 :: define GIT_REPOS different from default
-    # [OPTIONAL]  $3 :: define GIT_BRANCH different from default
+    # [MANDATORY] $1    :: define main TARGET_ENV
+    # [OPTIONAL]  $2    :: define GIT_REPOS different from default
+    # [OPTIONAL]  $3    :: define GIT_BRANCH different from default
+    # [OPTIONAL]  DEBUG :: for debug code purpose
 
     # PROJECT specific variables
-    # FIXME DEPLOYMENT_FILE path is hardcoded. Should receive project's path here to have access to .credentials
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
+    DEBUG=${DEBUG:-0}
+    if [[ "$DEBUG" == "1" ]];
+    then
+        echo ""
+        echo "+================================================================================================="
+        echo "| [DEBUG] set vars                                                                                "
+        echo "+================================================================================================="
+        echo "------------------------------------------- <CONTENT>  -------------------------------------------"
+        echo "BASH_SOURCE[0] ${BASH_SOURCE[0]}"
+        echo "DEPLOYMENT_FILE $DEPLOYMENT_FILE"
+        echo "------------------------------------------- </CONTENT> -------------------------------------------"
+    fi
+
+    if [[ ! -f "${DEPLOYMENT_FILE}" ]];
+    then
+        echo "|**********************************************|"
+        echo "| --- Creating missing .mise-en-place.conf --- |"
+        echo "|**********************************************|"
+        gpg --quiet --batch --yes --output $DEPLOYMENT_FILE --decrypt $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/secure/.mise-en-place.conf.gpg
+    fi
 
     export FORGE_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
     export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
@@ -152,7 +172,7 @@ unset_symbolic_link() {
     done
 
     rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/forge
-    rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/forge.sh
+    rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/mount_etna.sh
     rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
     rm -f $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
 }
@@ -172,13 +192,13 @@ set_symbolic_link() {
     echo ""
 
     # TODO update files: only need ln -s hooks*/forge and ln -s hooks*/post-receive
-    # TODO make forge.sh recoginize .credentials/.mise-en-place.conf
+    # TODO make mount_etna.sh recoginize .credentials/.mise-en-place.conf
     ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_DOCUMENT_ROOT/.mise-en-place.conf
 
-    ln -s $APP_PATH_ORIGIN_EDGE/forge.sh $APP_PATH_ORIGIN_EDGE/git-hooks/forge.sh
+    ln -s $APP_PATH_ORIGIN_EDGE/mount_etna.sh $APP_PATH_ORIGIN_EDGE/git-hooks/mount_etna.sh
     ln -s $APP_PATH_ORIGIN_EDGE/forge $APP_PATH_ORIGIN_EDGE/git-hooks/forge
 
     ln -s $APP_PATH_ETC/.target-server.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/.target-server

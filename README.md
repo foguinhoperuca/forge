@@ -16,7 +16,7 @@ Is expected to do the follow tasks:
 
 ## Terraform ##
 
-All project need have, at least, the forge.sh script and the configuration's files (you should have the encrypted file and private key to uncrypt it).
+All project need have, at least, the mount_etna.sh script and the configuration's files (you should have the encrypted file and private key to uncrypt it).
 By default, the original project is cloned in _$USER/universal/projects/<OPTIONAL-GROUP>/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/_ and it is called as edge. It will have a symlink into deployment described bellow.
 
 _<OPTIONAL-GROUP>_ is used to group projects form same organization.
@@ -65,12 +65,12 @@ The project will be living under _/opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/_
 /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/
 -- bare.git
 ---- hooks
------- ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/forge.sh forge.sh
+------ ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/mount_etna.sh mount_etna.sh
 ------ ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/.mise-en-place.conf .mise-en-place.conf
 ------ ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/git-hooks/post-receive post-receive
 -- worktree
 ---- <GIT_BRANCH>: [local | dev | stage | prod | proxystage | proxyprod]
----- git clone <GIT_URL> upstream
+---- git clone --recurse-submodules <GIT_URL> upstream
 ---- ln -s <PATH_DEV_REPOS> edge
 ---- ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/<GIT_BRANCH>/ document_root
 ```

@@ -74,7 +74,7 @@ terraform_app_path_opt() {
     git init --bare $APP_PATH_BARE
     rm $APP_PATH_BARE/hooks/*
     ln -s $APP_PATH_WORKTREE/edge/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf
-    ln -s $APP_PATH_WORKTREE/edge/forge.sh $APP_PATH_BARE/hooks/forge.sh
+    ln -s $APP_PATH_WORKTREE/edge/mount_etna.sh $APP_PATH_BARE/hooks/mount_etna.sh
     # TODO test creation forge in bare.git
     ln -s $APP_PATH_WORKTREE/edge/forge $APP_PATH_BARE/hooks/forge
 
@@ -281,10 +281,7 @@ deploy_app_path_opt() {
     # FIXME should protect rm -rf !!
     rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
     mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
-    git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
-    cd $APP_PATH_WORKTREE/$GIT_BRANCH/
-    git submodule update --init --recursive
-    cd -
+    git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout --recurse-submodules -f $GIT_BRANCH
     echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
     # FIXME maybe can be an error with master != prod for symlink
     rm -f $APP_PATH_DOCUMENT_ROOT

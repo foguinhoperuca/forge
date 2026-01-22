@@ -35,11 +35,11 @@ cp-secrets:
 	rm -f *~
 	rm -f .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/.*~
 	rm -f .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/*~
-	@./forge.sh genenv all gpg
+	@./mount_etna.sh genenv all gpg
 	@tree -a .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/
 	@echo "---"
 	@cat .credentials/$(APP_PATH_CREDENTIALS_GENERATED_OUTPUT)/deployment_datetime.txt
-	@./forge.sh cp-secrets all all
+	@./mount_etna.sh cp-secrets all all
 	@tree -a $(APP_PATH_ETC)
 	@echo "==="
 	@cat $(APP_PATH_ETC)/deployment_datetime.txt
@@ -49,7 +49,7 @@ encrypt-secrets:
 	@clear
 	@date
 	@rm -f .credentials/secrets_input/.*.gpg
-	@./forge.sh encrypt_multiple
+	@./mount_etna.sh encrypt_multiple
 	@ls -lah .credentials/secrets_input/
 	@cat .credentials/secrets_input/deployment_datetime.txt
 
