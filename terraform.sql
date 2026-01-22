@@ -1,6 +1,6 @@
 /**
  * Before terraform, must have a "planet" with the follow:
- * - users: postgres, sysforge, dba, view_report, <LOCAL_DBA_USER> (or any MS AD/LDAP user that will access by QGIS);
+ * - users: postgres, view_report, dba, <LOCAL_DBA_USER> (or any MS AD/LDAP user that will access by QGIS);
  * - database: any name but must be one in place;
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */

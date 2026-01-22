@@ -238,8 +238,6 @@ terraform() {
     # Assume there is no env yet! Just basic vars (without file's dependent values)
     # $1 :: set the target env
 
-    # FIXME - ?: (staticfiles.W004) The directory '/opt/adc/backend/worktree/local/api/setup/static' in the STATICFILES_DIRS setting does not exist.
-
     # Tasks to deploy - perform more tasks like migrate and run test, the output of these commands will be shown on the push screen
     # * filesystem /mnt/storage_sistemas
     # ** se certificar que as pastas /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/pedido_ajuda e /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/photo_guia_atendimento/ existem!
@@ -281,7 +279,8 @@ deploy_app_path_opt() {
     # FIXME should protect rm -rf !!
     rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
     mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
-    git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout --recurse-submodules -f $GIT_BRANCH
+    # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
+    git clone --recurse-submodules $APP_PATH_BARE $APP_PATH_WORKTREE/$GIT_BRANCH
     echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
     # FIXME maybe can be an error with master != prod for symlink
     rm -f $APP_PATH_DOCUMENT_ROOT
@@ -290,10 +289,6 @@ deploy_app_path_opt() {
 
     # TODO test creation forge in bare.git
     cd $APP_PATH_WORKTREE/edge
-    git submodule update --init --recursive
-    cd -
-    # TODO test this logic also!! creation forge in bare.git
-    cd $APP_PATH_DOCUMENT_ROOT
     git submodule update --init --recursive
     cd -
 }
@@ -305,6 +300,11 @@ deploy_venv() {
         echo "----------------------------------------------"
         echo "----- Install libs for ${python_project} -----"
         echo "----------------------------------------------"
+        if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt ]];
+        then
+            echo "Project ${python_project} do not have requirements.txt. Skipping..."
+            continue
+        fi
         rm -rf $APP_PATH_DOCUMENT_ROOT/$python_project/venv
         python3 -m venv $APP_PATH_DOCUMENT_ROOT/$python_project/venv
         source $APP_PATH_DOCUMENT_ROOT/$python_project/venv/bin/activate
@@ -320,6 +320,11 @@ deploy_collectstatic() {
         echo "----------------------------------------------"
         echo "----- Install libs for ${django_project} -----"
         echo "----------------------------------------------"
+        if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$django_project/manage.pyt ]];
+        then
+            echo "Project ${django_project} do not have manage.py. Skipping..."
+            continue
+        fi
         source $APP_PATH_DOCUMENT_ROOT/$django_project/venv/bin/activate
         python3 $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py collectstatic -c --no-input
         deactivate
