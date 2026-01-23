@@ -1,4 +1,4 @@
-# BEWARE TO NOT store this plain file into repository. Also, replace <THIS_SECRET_FILE>.target-env-example to <THIS_SECRET_FILE>.[local | dev | stage | prod] 
+# BEWARE TO NOT store this plain file into repository. Also, replace <THIS_SECRET_FILE>.target-env-example to <THIS_SECRET_FILE>.[local | dev | stage | replica | prod] 
 # Each line is a connection
 # Primary database hold main data
 PRIMARY_ADDRESS:PRIMARY_PORT:PRIMARY_DATABASE:PRIMARY_SYS_USERNAME:PRIMARY_SYS_PASSWORD
@@ -6,3 +6,5 @@ PRIMARY_ADDRESS:PRIMARY_PORT:PRIMARY_DATABASE:PRIMARY_ADM_USERNAME:PRIMARY_ADM_P
 # Foreign database hold data expose to direct access for users in postgresql. Also hold data for geoprocessing.
 FOREIGN_ADDRESS:FOREIGN_PORT:FOREIGN_DATABASE:FOREIGN_SYS_USERNAME:FOREIGN_SYS_PASSWORD
 FOREIGN_ADDRESS:FOREIGN_PORT:FOREIGN_DATABASE:FOREIGN_ADM_USERNAME:FOREIGN_ADM_PASSWORD
+# Postgres hold credential to execute a more privileged (but no for all DB!) action using DB postgres
+POSTGRES_ADDRESS:POSTGRES_PORT:POSTGRES_DATABASE:POSTGRES_USERNAME:POSTGRES_PASSWORD

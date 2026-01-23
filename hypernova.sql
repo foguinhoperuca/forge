@@ -20,6 +20,28 @@ CREATE ROLE dba WITH
   NOBYPASSRLS
 ;
 
+DROP ROLE IF EXISTS gis_group;
+CREATE ROLE dba WITH
+  NOLOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS
+;
+
+DROP ROLE IF EXISTS :forgesys_sys_grp;
+CREATE ROLE dba WITH
+  NOLOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS
+;
+
 -- TODO get password for view_report (edit and join all TARGET_SERVER_DB)
 -- REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db FROM view_report;
 DROP ROLE IF EXISTS view_report;
@@ -31,12 +53,9 @@ CREATE ROLE view_report WITH
   NOCREATEROLE
   NOREPLICATION
   NOBYPASSRLS
-  PASSWOR 'A12345678a'
+  PASSWORD 'A12345678a'
 --  PASSWORD :'view_report_pwd'
 ;
-
--- TODO implement gis_group
--- TODO implement forgesys group
 
 -- -- TODO implement here all CREATE extension need.
 -- CREATE EXTENSION pg_stat_statements;

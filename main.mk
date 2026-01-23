@@ -53,11 +53,12 @@ encrypt-secrets:
 	@ls -lah .credentials/secrets_input/
 	@cat .credentials/secrets_input/deployment_datetime.txt
 
+DOCUMENT_ROOT_TARGET ?= $(TARGET_ENV)
 document_root:
 	@clear
 	@date
 	@rm "$(APP_PATH_DOCUMENT_ROOT)"
-	ln -sf "$(APP_PATH_WORKTREE)/$(TARGET_ENV)" "$(APP_PATH_DOCUMENT_ROOT)"
+	ln -sf "$(APP_PATH_WORKTREE)/$(DOCUMENT_ROOT_TARGET)" "$(APP_PATH_DOCUMENT_ROOT)"
 	@ls -lah --color=auto "$(APP_PATH_WORKTREE)"
 
 post-receive:

@@ -16,6 +16,12 @@ db-deploy: db-terraform db-ddl db-permission db-seeds
 	@echo "|+-------------------------+|"
 	@date
 
+db-hypernova:
+	@echo "|+-------------+|"
+	@echo "|   HYPERNOVA   |"
+	@echo "|+-------------+|"
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATAVASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
+
 db-terraform:
 	@echo "|+-------------+|"
 	@echo "| TERRAFORMING  |"
@@ -69,8 +75,7 @@ db-show:
 	@echo "|+--------------------+|"
 	@echo "| SHOW                 |"
 	@echo "|+--------------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/show_types.sql
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -c 'SELECT unnest(enum_range(NULL::alerta_defesa_civil.grau_risco)) AS "Grau de Risco", unnest(enum_range(NULL::alerta_defesa_civil.grau_risco_tipologia_estudo)) AS "Gr Risco Tip Est", unnest(enum_range(NULL::alerta_defesa_civil.grau_vulnerabilidade_topologia_estudo)) AS "Gr Vuln Top Est", unnest(enum_range(NULL::alerta_defesa_civil.intervencao)) AS "Intervenção", unnest(enum_range(NULL::alerta_defesa_civil.natureza)) AS "Natureza";'
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -c "SELECT table_name FROM information_schema.tables WHERE table_schema = '$(DB_ADMIN_DATABASE)' AND table_type = 'BASE TABLE';"
 
 db-migrate:
 	@echo "|+--------------------+|"
