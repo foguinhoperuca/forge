@@ -151,6 +151,11 @@ set_vars_by_env() {
     export DB_POSTGRES_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '5,5p')
     export DB_POSTGRES_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '5,5p')
     export DB_POSTGRES_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '5,5p')
+    export DB_POSTGRES_VIEW_REPORT_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '6,6p')
+    export DB_POSTGRES_VIEW_REPORT_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '6,6p')
+    export DB_POSTGRES_VIEW_REPORT_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '6,6p')
+    export DB_POSTGRES_VIEW_REPORT_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '6,6p')
+    export DB_POSTGRES_VIEW_REPORT_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '6,6p')
 
     # TODO add custom confs from api, backoffice and bot
     export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV

@@ -20,7 +20,13 @@ db-hypernova:
 	@echo "|+-------------+|"
 	@echo "|   HYPERNOVA   |"
 	@echo "|+-------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATAVASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
+
+db-supernova:
+	@echo "|+-------------+|"
+	@echo "|   SUPERNOVA   |"
+	@echo "|+-------------+|"
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/supernova.sql
 
 db-terraform:
 	@echo "|+-------------+|"
