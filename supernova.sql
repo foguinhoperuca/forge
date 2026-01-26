@@ -15,6 +15,7 @@ SET session.forgesys_sys_grp = :'forgesys_sys_grp';
 DO $$
 DECLARE
   lgn TEXT;
+  pwd TEXT;
   fhr TEXT[];
   forgesys_hypernova_roles TEXT[][];
 BEGIN
@@ -26,7 +27,8 @@ BEGIN
   ];
   FOREACH fhr SLICE 1 IN ARRAY forgesys_hypernova_roles LOOP
     lgn := CASE WHEN fhr[2] IS NULL THEN 'NOLOGIN' ELSE 'LOGIN' END;
-    RAISE INFO 'creating: % passwd % :: %', fhr[1], fhr[2], lgn;
+    pwd := CASE WHEN fhr[2] IS NULL THEN NULL ELSE FORMAT('"%1$s"', fhr[2]) END;
+    RAISE INFO 'creating: % passwd % :: % ::: %', fhr[1], fhr[2], lgn, pwd;
     BEGIN
       -- TODO define some strategy to revoke all privileges from every object in host
       -- EXECUTE FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM %$2s;', fhr[1], current_settings('session.forgesys_db'));
@@ -36,7 +38,7 @@ BEGIN
         RAISE NOTICE 'COULD NOT revoke OR drop role % :: will not be re-created!', fhr[1];
     END;
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = fhr[1]) THEN
-      EXECUTE FORMAT('CREATE ROLE %1$s WITH %2$s NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %3$s;', fhr[1], lgn, COALESCE(fhr[2], 'NULL'));
+      EXECUTE FORMAT('CREATE ROLE %1$I WITH %2$s NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %3$L;', fhr[1], lgn, pwd);
     END IF;
   END LOOP;
 END
