@@ -76,6 +76,10 @@ main() {
 		"encrypt_multiple")
 			encrypt_multiple;;
         # "githook") githook $2 $3 $4;;
+        "python_deploy")
+            deploy_venv
+            deploy_collectstatic
+            ;;
         "deploy")
 		    deploy
 		    ;;

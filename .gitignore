@@ -216,3 +216,4 @@ __marimo__/
 .*.dev
 .*.stage
 .*.prod
+*.patch

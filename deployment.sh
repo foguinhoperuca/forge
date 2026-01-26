@@ -317,10 +317,10 @@ deploy_collectstatic() {
     for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]};
     do
         echo ""
-        echo "----------------------------------------------"
-        echo "----- Install libs for ${django_project} -----"
-        echo "----------------------------------------------"
-        if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$django_project/manage.pyt ]];
+        echo "------------------------------------------------------"
+        echo "----- Collect static files for ${django_project} -----"
+        echo "------------------------------------------------------"
+        if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py ]];
         then
             echo "Project ${django_project} do not have manage.py. Skipping..."
             continue
