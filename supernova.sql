@@ -12,7 +12,6 @@ BEGIN
   RAISE NOTICE 'TODO implement task above terraform';
 END $$;
 
- 
 -- -- TODO implement all CREATE extension need.
 -- CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 -- CREATE EXTENSION IF NOT EXISTS postgis;

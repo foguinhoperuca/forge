@@ -98,6 +98,12 @@ kill-app:
 	ps aux | grep $(APP_KILL) | grep -v grep | awk '{print $$2}' | sudo xargs kill -9
 	@date
 
+DIAGRAM ?= "doc/diagrams/model.puml"
+doc-plantuml:
+	@clear
+	@date
+	plantuml -charset UTF-8 -o build/ $(DIAGRAM)
+
 # deploy-apache-conf:
 # 	@echo "|+-------------+|"
 # 	@echo "| DEPLOY APACHE |"
