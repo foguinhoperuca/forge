@@ -16,6 +16,9 @@ REVOKE ALL PRIVILEGES ON SCHEMA public FROM :forgesys_role;
 REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db FROM :forgesys_user;
 REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db FROM :forgesys_role;
 
+REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db_foreign FROM :forgesys_user;
+REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db_foreign FROM :forgesys_role;
+
 DROP SCHEMA IF EXISTS :forgesys_schema CASCADE;
 
 DROP ROLE IF EXISTS :forgesys_user;
