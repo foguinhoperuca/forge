@@ -4,6 +4,8 @@ db-admin-script:
 db-script:
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f $(DB_SCRIPT)
 
+# TODO tasks here should be in more high level. A task with only one command have a bad smell (could be replaced by db-script/db-admin-script)
+
 db-start: db-terraform db-ddl db-permission django-update-permissions django-users db-fixtures
 	@date
 
@@ -94,6 +96,7 @@ db-refresh-migration:
 	@echo "|+--------------------+|"
 	@echo "| REFRESH MIGRATE      |"
 	@echo "|+--------------------+|"
+	@echo "$(MIGRATION_ENTITY)"
 	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY) zero
 	@rm backoffice/$(MIGRATION_ENTITY)/migrations/0001_initial.py
 	@python3 backoffice/manage.py makemigrations
