@@ -5,11 +5,11 @@
 ** DONE Doc checkout .mise-en-place.conf
 ** DONE Rename forge.sh to mount_etna.sh
 * Review symlinks
-** Review .credentials/encrypted and .credentials/pubkey - maybe use .credentials/upstream/<PATH> instead
-** Review the creation of secure in .credentials/upstream/encrypted/secure (or using .credentials/upstream/secure) -> .credentials/secure
-** Review use of .credentials/secret_output to not colide with .credentials/secure (sec in start of words) - also think about use secret_output in /etc/<FORGE_SYSTEM>
-** Create all symlinks doc to be used in project that will use forge
+** DOING Review the creation of secure in .credentials/upstream/encrypted/secure (or using .credentials/upstream/secure) -> .credentials/secure
+** Create all symlinks doc to be used in project that will use forge - create a fuction ("genesis" for repository)
 ** Use <ROOT_PROJECT>/doc symlink to wiki of project
+** DONE Review use of .credentials/secret_output to not colide with .credentials/secure (sec in start of words) - also think about use secret_output in /etc/<FORGE_SYSTEM>
+** DONE Review .credentials/encrypted and .credentials/pubkey - maybe use .credentials/upstream/<PATH> instead
 * Create script to database
 ** Create database
 ** create groups

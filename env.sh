@@ -70,9 +70,10 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
-    # FIXME .credentials/secrets_output/.gitignore should be added in host repository?
-    export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="secrets_output"
-	export APP_PATH_CREDENTIALS_GENERATED_INPUT="secrets_input"
+    # FIXME .credentials/secrets_output/.gitignore should be added in host repository? .credentials/cp_tests should be created in terraform (it shoulkd have .gitignore in host repository too?)?
+    export APP_PATH_OUT_TEST="cp_tests"
+    export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="output_secrets"
+	export APP_PATH_CREDENTIALS_GENERATED_INPUT=".credentials/secure"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
 
@@ -307,7 +308,7 @@ encrypt_multiple() {
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
     GPG_RECIPIENTS=""
-    for pubkey in $(ls .credentials/encrypted/secure/*.asc);
+    for pubkey in $(ls .credentials/secure/*.asc);
     do
         GPG_RECIPIENTS+="-r $(gpg --show-keys --with-colons $pubkey | awk -F':' '$1=="pub"{print $5}') "
     done
@@ -329,13 +330,13 @@ encrypt_multiple() {
         DEBUG=${DEBUG:-0}
         if [[ "$DEBUG" == "1" ]];
         then
-            echo .credentials/$APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
+            echo $APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
             echo "---------------"
         fi
 
-        gpg --batch --yes -e -o .credentials/$APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
+        gpg --batch --yes -e -o $APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
     done
-    echo "${NOW}" | sudo tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_INPUT/deployment_datetime.txt > /dev/null
+    echo "${NOW}" | sudo tee $APP_PATH_CREDENTIALS_GENERATED_INPUT/deployment_datetime.txt > /dev/null
 }
 
 generate_conf_file() {
@@ -369,7 +370,7 @@ generate_conf_file() {
         if [[ "${SOURCE_SECRETS}" == "gpg" ]];
         then
             DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-            gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/encrypted/secure/${DEST}.gpg
+            gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/secure/${DEST}.gpg
             echo "${NOW}" | sudo tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
             continue
         fi
@@ -412,7 +413,7 @@ generate_conf_file() {
                 case $SOURCE_SECRETS in
                     "keepass")
                         # FIXME use correct sample.kdbx and pwfile (pass.txt) - implement some strategy to grab pass.txt (it should be encrypted with gpg)
-                        SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
+                        SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
                         ;;
                     "passbolt")
                         SECRET="TODO implement client to get REMOTE ENTRY using PASSBOLT"
@@ -485,14 +486,29 @@ cp_secrets() {
 
     # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
     ETC_DEPLOYMENT="$APP_PATH_ETC"
-    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/encrypted/secure"
+    EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/secure"
     MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
     FORGE_TEST=${FORGE_TEST:-0}
     if [[ "$FORGE_TEST" == "1" ]];
     then
-        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
-        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"
-        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/cp_tests/"
+        ETC_DEPLOYMENT="${ETC_DEPLOYMENT}/${APP_PATH_OUT_TEST}"
+        EDGE_DEPLOYMENT="${EDGE_DEPLOYMENT}/${APP_PATH_OUT_TEST}"
+        MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_OUT_TEST}"
+
+        # TODO create folder if not exist!
+        if [[ -e $ETC_DEPLOYMENT ]]; then
+            mkdir $ETC_DEPLOYMENT
+        fi
+
+        # TODO create folder if not exist!
+        if [[ -e $EDGE_DEPLOYMENT ]]; then
+            mkdir $EDGE_DEPLOYMENT
+        fi
+
+        # TODO create folder if not exist!
+        if [[ -e $MISE_EN_PLACE_DEPLOYMENT ]]; then
+            mkdir $MISE_EN_PLACE_DEPLOYMENT
+        fi
     fi
 
     # TODO do a better logic: TARGET_ENV can be not defined

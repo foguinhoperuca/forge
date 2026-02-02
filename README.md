@@ -40,9 +40,13 @@ You can see all details of each file inside of _.credentials/samples/<CONFIG-FIL
 All secrets and sensitive information will be stored in _<ROOT-HOST-PROJECT>/.credentials_.
 
 ```
+|-- .mise-en-place               ::: official local for main initial conf file
+|-- output_secrets               ::: transactional folder to hold uncrypted secrets before it be sended to a proper local [etc | edge | .mise-en-place]
+|-- samples                      ::: symlink for _root-host-project/forge/samples_ need by forge's scripts;
+|-- secure                       ::: symlink to your main credential's encrypted data;
+|-- cp_tests                     ::: transactional folder to hold uncrypted secrets - test purpose only (also used in /etc/<FORGE_SYSTEM_ACRONYM> and .credentials/secure)
 |-- upstream                     ::: use **git sparse-checkout** to get data from sensitive's repository;
-|---- encrypted                  ::: all data encrypted ust live here;
-|------ secure                   ::: symlink to your main project;
+|---- encrypted                  ::: all data encrypted must live here;
 |------ <FORGE_SYSTEM_ACRONYM>   ::: various folders;
 |-------- *.gpg                  ::: encrypted data per ser;
 |-------- *.asc                  ::: symlkink to pyblic keys stored in ../../pubkeys (2 levels above);
@@ -50,9 +54,8 @@ All secrets and sensitive information will be stored in _<ROOT-HOST-PROJECT>/.cr
 |------ computer                 ::: stored public keys from computers, server, etc, dev machine, etc.;
 |------ dev                      ::: stored public keys from developers;
 |------ env                      ::: stored public keys from environments (keys that can be in various environments - docker, local, dev, stage, prod, replica-server);
-|-- encrypted                    ::: symlink for _upstream/encrypted_ or "physical" folder that will store all layout described here;
-|-- pubkeys                      ::: symlink for _upstream/pubkeys_ or "physical" folder that will store all layout described here;
-|-- samples                      ::: symlink for _root-host-project/forge/samples_ need by forge's scripts;
+~|-- encrypted                    ::: symlink for _upstream/encrypted_ or "physical" folder that will store all layout described here;~
+~|-- pubkeys                      ::: symlink for _upstream/pubkeys_ or "physical" folder that will store all layout described here;~
 ```
 
 Eventually, you can use this layout directly in your project instead of use it as git submodule.
@@ -69,7 +72,7 @@ The project will be living under _/opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/_
 ------ ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/.mise-en-place.conf .mise-en-place.conf
 ------ ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/edge/git-hooks/post-receive post-receive
 -- worktree
----- <GIT_BRANCH>: [local | dev | stage | prod | proxystage | proxyprod]
+---- <GIT_BRANCH>: [local | dev | stage | prod | replica<99> | proxystage | proxyprod]
 ---- git clone --recurse-submodules <GIT_URL> upstream
 ---- ln -s <PATH_DEV_REPOS> edge
 ---- ln -s /opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/worktree/<GIT_BRANCH>/ document_root
