@@ -88,6 +88,9 @@ main() {
         "terraform")
             terraform $2
             ;;
+        "genesis")
+            genesis
+            ;;
         "is_mounted")
 		    verify_mounted_path_online $2 $3
 		    ;;

@@ -70,7 +70,7 @@ set_vars() {
     export APP_PATH_WORKTREE="$APP_PATH_OPT/worktree"
     export APP_PATH_DOCUMENT_ROOT="$APP_PATH_WORKTREE/document_root"
     export APP_PATH_UPSTREAM="$APP_PATH_WORKTREE/upstream"
-    # FIXME .credentials/secrets_output/.gitignore should be added in host repository? .credentials/cp_tests should be created in terraform (it shoulkd have .gitignore in host repository too?)?
+    # FIXME .credentials/output_secrets/.gitignore should be added in host repository? .credentials/cp_tests should be created in terraform (it shoulkd have .gitignore in host repository too?)?
     export APP_PATH_OUT_TEST="cp_tests"
     export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="output_secrets"
 	export APP_PATH_CREDENTIALS_GENERATED_INPUT=".credentials/secure"
@@ -276,33 +276,6 @@ show_env() {
     fi
 }
 
-generate_secret() {
-    PW_LEN=$1
-    if [ -z "$PW_LEN" ];
-    then
-        echo "No PW_LEN specified and not set. Usage: $0 PW_LEN. Default is 64." >&2
-        PW_LEN="64"
-    fi
-
-    local len=${1:-$PW_LEN}
-    local raw=$(( (len * 3 + 3) / 4 ))
-    gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
-}
-
-encrypt_file() {
-    local file="$1"
-    if [ -n "${GPG_RECIPIENT:-}" ]; then
-        # public-key encryption
-        gpg --yes --batch --trust-model always --output "${file}.gpg" --encrypt --recipient "$GPG_RECIPIENT" "$file"
-    elif [ -n "${GPG_PASSPHRASE:-}" ]; then
-        # symmetric encryption using provided passphrase
-        gpg --yes --batch --passphrase "$GPG_PASSPHRASE" --symmetric --cipher-algo AES256 --output "${file}.gpg" "$file"
-    else
-        echo "Neither GPG_RECIPIENT nor GPG_PASSPHRASE set. Cannot create encrypted copy." >&2
-        return 2
-    fi
-}
-
 encrypt_multiple() {
     # encrypt secret files using all pubkeys availiable per project.
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
@@ -496,18 +469,18 @@ cp_secrets() {
         MISE_EN_PLACE_DEPLOYMENT="${MISE_EN_PLACE_DEPLOYMENT}/${APP_PATH_OUT_TEST}"
 
         # TODO create folder if not exist!
-        if [[ -e $ETC_DEPLOYMENT ]]; then
-            mkdir $ETC_DEPLOYMENT
+        if [[ ! -e $ETC_DEPLOYMENT ]]; then
+            mkdir -p $ETC_DEPLOYMENT
         fi
 
         # TODO create folder if not exist!
-        if [[ -e $EDGE_DEPLOYMENT ]]; then
-            mkdir $EDGE_DEPLOYMENT
+        if [[ ! -e $EDGE_DEPLOYMENT ]]; then
+            mkdir -p $EDGE_DEPLOYMENT
         fi
 
         # TODO create folder if not exist!
-        if [[ -e $MISE_EN_PLACE_DEPLOYMENT ]]; then
-            mkdir $MISE_EN_PLACE_DEPLOYMENT
+        if [[ ! -e $MISE_EN_PLACE_DEPLOYMENT ]]; then
+            mkdir -p $MISE_EN_PLACE_DEPLOYMENT
         fi
     fi
 
@@ -532,6 +505,7 @@ cp_secrets() {
             CP_FILES_EDGE=$(ls .credentials/samples/.*example | sed -e s/samples/encrypted\\/secure/g | sed -e s/\.target-env-example/\.$ENV_CP\.gpg/g | sed -e s/\.conf\.example/\.conf\.gpg/g)
             ;;
     esac
+    CP_FILES_MISE_EN_PLACE=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf"
 
     DEPLOY_GENERATED_FILES=$2
     if [[ -z "$DEPLOY_GENERATED_FILES" ]];
@@ -553,6 +527,7 @@ cp_secrets() {
         echo ""
         echo "================"
         echo "[DRY-RUN] CP_FILES_MISE_EN_PLACE $MISE_EN_PLACE_DEPLOYMENT"
+        echo $CP_FILES_MISE_EN_PLACE
         echo ""
 
         return 0
@@ -572,7 +547,7 @@ cp_secrets() {
             ;;
         "mise-en-place")
             echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
-            scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            scp "$CP_FILES_MISE_EN_PLACE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
             if [[ "${ENV_CP}" != "all" ]];
             then
                 ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
@@ -589,7 +564,7 @@ cp_secrets() {
             echo "====="
 
             echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
-            scp ".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/.mise-en-place.conf" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            scp "${CP_FILES_MISE_EN_PLACE}" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
             if [[ "${ENV_CP}" != "all" ]];
             then
                 ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"

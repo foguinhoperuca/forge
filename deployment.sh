@@ -1,5 +1,89 @@
 #!/bin/bash
 
+genesis() {
+    # Prepare the *REPOSITORY* to be used with forge. Also show which requirements is already set.
+    # [OPTIONAL] $DRY_RUN :: define if generated files will be deployed to each target
+
+    declare -a FILES_GENESIS=(
+        # Credentials
+        "/etc/${FORGE_SYSTEM_ACRONYM}/cp_tests/.gitignore"
+        ".credentials/cp_tests/.gitignore"
+        ".credentials/secure/cp_tests/.gitignore"
+        ".credentials/samples"
+        ".credentials/secure"
+        ".credentials/upstream/.gitignore"
+
+        # FORGE
+        "forge/.gitgnore"
+
+        # DOC
+        "doc/.gitgnore"
+
+        # DATABASE
+        "database/bigbang.sql"
+        "database/hypernova.sql"
+        "database/supernova.sql"
+        "database/terraform.sql"
+
+        "database/initialize.sql"
+        "database/independent.sql"
+        "database/ddl.sql"
+        "database/permissions.sql"
+
+        "database/migrate.sql"
+
+        "database/delete.sql"
+        "database/drop.sql"
+
+        "database/seeds.sql"
+        "database/fixtures.sql"
+        "database/populate.py"
+
+        # Python Projects
+        "backoffice/.gitignore"
+        "api/.gitignore"
+        "bot/.gitignore"
+
+        # Web server
+        "webserver/*/app_server/${FORGE_SYSTEM_BASE_DNS}.${FORGE_ORGANIZATION_BASEDNS}.conf"
+        "webserver/*/proxy_server/${FORGE_SYSTEM_BASE_DNS}.${FORGE_ORGANIZATION_BASEDNS}.conf"
+
+        # Git && Basic Files
+        "git-hooks/.gitignore"
+        ".gitignore"
+
+        ".ctags"
+        "README.md"
+        "CHANGELOG.md"
+        "LICENSE"
+        "todo.org"
+        "Makefile"
+        "mount_etna.sh"
+        "cron.sh"
+        "deployment_conf/logrotate.conf"
+    )
+
+    DRY_RUN=${DRY_RUN:-0}
+    for filename in ${FILES_GENESIS[@]};
+    do
+        echo "${filename} testing..."
+        if [[ ! -e $filename ]];
+        then
+            echo "---------------------------------------"
+            echo "DO NOT exists! Creating ${filename} ..."
+            echo "---------------------------------------"
+
+            echo "TODO implement DRY RUN return and then implement create folder and the the file"
+            # if [[ "$DRY_RUN" == "1" ]];
+            # then
+            #     return 0
+            # fi
+            # mkdir -p $(dirname $filename)
+            # touch "${filename}"
+        fi
+    done
+}
+
 terraform_app_path_etc() {
     set -eu
 

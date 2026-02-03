@@ -32,3 +32,30 @@ validate_safe_path() {
 
     return 0
 }
+
+encrypt_file() {
+    local file="$1"
+    if [ -n "${GPG_RECIPIENT:-}" ]; then
+        # public-key encryption
+        gpg --yes --batch --trust-model always --output "${file}.gpg" --encrypt --recipient "$GPG_RECIPIENT" "$file"
+    elif [ -n "${GPG_PASSPHRASE:-}" ]; then
+        # symmetric encryption using provided passphrase
+        gpg --yes --batch --passphrase "$GPG_PASSPHRASE" --symmetric --cipher-algo AES256 --output "${file}.gpg" "$file"
+    else
+        echo "Neither GPG_RECIPIENT nor GPG_PASSPHRASE set. Cannot create encrypted copy." >&2
+        return 2
+    fi
+}
+
+generate_secret() {
+    PW_LEN=$1
+    if [ -z "$PW_LEN" ];
+    then
+        echo "No PW_LEN specified and not set. Usage: $0 PW_LEN. Default is 64." >&2
+        PW_LEN="64"
+    fi
+
+    local len=${1:-$PW_LEN}
+    local raw=$(( (len * 3 + 3) / 4 ))
+    gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
+}
