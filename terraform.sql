@@ -10,6 +10,14 @@
 --
 -- Droping/Revoking objects in correct order
 --
+
+-- TODO migrate to use CALL forge_revoke_privileges and encapsulate schema commands separated
+-- CALL forge_revoke_privileges(:'forgesys_schema', :'forgesys_user');
+-- \i :forgesys_path/forge/deashing_forge.sql
+
+-- TODO move all it to utils.sql
+
+
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :forgesys_role;
 REVOKE ALL PRIVILEGES ON SCHEMA public FROM :forgesys_role;
 
