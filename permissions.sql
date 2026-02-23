@@ -90,7 +90,7 @@ BEGIN
         n.nspname = current_setting('session.forgesys_schema')
         AND p.prokind IN ('f', 'p')
     ORDER BY
-      object_type,
+      object_type DESC,
       owner_username,
       object_name,
       oid
