@@ -77,6 +77,7 @@ set_vars() {
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
 
+    # FIXME TARGET_ENV Replica It should not be confused with the replica environment.
     # ENVIRONMENT specific variables
     case $1 in
         "local" | "dev" | "stage" | "prod")
@@ -276,6 +277,7 @@ show_env() {
     fi
 }
 
+# TODO encrypt files per env
 encrypt_multiple() {
     # encrypt secret files using all pubkeys availiable per project.
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
