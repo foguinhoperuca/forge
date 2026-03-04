@@ -48,10 +48,10 @@ cp-secrets:
 encrypt-secrets:
 	@clear
 	@date
-	@rm -f .credentials/secrets_input/.*.gpg
+	@rm -f $(APP_PATH_CREDENTIALS_GENERATED_INPUT)/.*.gpg
 	@./mount_etna.sh encrypt_multiple
-	@ls -lah .credentials/secrets_input/
-	@cat .credentials/secrets_input/deployment_datetime.txt
+	@ls -lah $(APP_PATH_CREDENTIALS_GENERATED_INPUT)
+	@cat $(APP_PATH_CREDENTIALS_GENERATED_INPUT)/deployment_datetime.txt
 
 DOCUMENT_ROOT_TARGET ?= $(TARGET_ENV)
 document_root:
