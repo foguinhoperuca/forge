@@ -26,23 +26,21 @@ db-deploy: db-terraform db-ddl db-permission db-seeds
 	@echo "|+-------------------------+|"
 	@date
 
-db-hypernova:
+db-bigbang:
 	@echo "|+-------------+|"
 	@echo "|   HYPERNOVA   |"
 	@echo "|+-------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
-
-db-supernova:
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="hypernova.sql" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
 	@echo "|+-------------+|"
 	@echo "|   SUPERNOVA   |"
 	@echo "|+-------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/supernova.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="supernova.sql" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/supernova.sql
 
 db-terraform:
 	@echo "|+-------------+|"
 	@echo "| TERRAFORMING  |"
 	@echo "|+-------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f database/terraform.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="terraform.sql" -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) -f database/terraform.sql
 	@echo "|+--------------------+|"
 	@echo "| INITIALIZE           |"
 	@echo "|+--------------------+|"
@@ -50,7 +48,12 @@ db-terraform:
 	@echo "|+--------------------+|"
 	@echo "| MIGRATE DJANGO       |"
 	@echo "|+--------------------+|"
-	@python3 backoffice/manage.py migrate
+	@if [ -f "backoffice/manage.py" ]; then \
+		echo "Found migrate file!!"; \
+		python3 backoffice/manage.py migrate; \
+	else \
+		echo "NOT FOUND MIGRATE FILE!!"; \
+	fi
 	@date
 
 db-ddl:
@@ -67,13 +70,7 @@ db-permission:
 	@echo "|+--------------------+|"
 	@echo "| PERMISSION           |"
 	@echo "|+--------------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/permissions.sql
-
-import-permission-superuser:
-	@echo "|+--------------------+|"
-	@echo "| PERMISSION SUPERUSER |"
-	@echo "|+--------------------+|"
-	@psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/permissions_superuser.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="permissions.sql" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/permissions.sql
 
 db-seeds:
 	@echo "|+--------------------+|"

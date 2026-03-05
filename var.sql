@@ -71,6 +71,7 @@
 \echo '|---------------------------------------------------------|'
 \echo '| SHOW SCRIPT VARIABLES                                   |'
 \echo '|---------------------------------------------------------|'
+\echo '| forgesys_script-->' :forgesys_script
 \echo '| forgesys_path-->' :forgesys_path
 \echo '| forgesys_dbas -->' :forgesys_dbas
 \echo '| forgesys_sys_grp -->' :forgesys_sys_grp

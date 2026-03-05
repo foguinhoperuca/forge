@@ -96,5 +96,18 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA :forgesys_schema GRANT EXECUTE               
 GRANT CONNECT ON DATABASE :forgesys_db TO :forgesys_user;
 GRANT CONNECT ON DATABASE :forgesys_db TO :forgesys_role;
 GRANT USAGE ON SCHEMA public TO :forgesys_role;
-GRANT SELECT, REFERENCES ON TABLE public.qgis_projects TO :forgesys_role;
-GRANT SELECT, REFERENCES ON TABLE public.spatial_ref_sys TO :forgesys_role;
+
+DO $$
+  DECLARE
+    forgesys_role TEXT;
+  BEGIN
+    SELECT current_setting('session.forgesys_role') INTO forgesys_role;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'qgis_projects') THEN
+      EXECUTE FORMAT('GRANT SELECT, REFERENCES ON TABLE public.qgis_projects TO %1$s;', forgesys_role);
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'spatial_ref_sys') THEN
+      EXECUTE FORMAT('GRANT SELECT, REFERENCES ON TABLE public.spatial_ref_sys TO %1$s;', forgesys_role);
+    END IF;
+  END
+$$;
