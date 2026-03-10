@@ -11,4 +11,4 @@ echo "--------------------------- forged in Mount Etna ==> $SCRIPT_DIR ---------
 
 # Put all customization of forge before call it
 
-main $@
+erupt $@

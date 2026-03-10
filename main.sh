@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# FORGE_PATH=$(dirname $0)
 export FORGE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Setted FORGE_PATH to $FORGE_PATH"
 if [[ "$FORGE_PATH" == "." ]];
@@ -16,8 +15,23 @@ source $FORGE_PATH/database.sh
 source $FORGE_PATH/deployment.sh
 source $FORGE_PATH/monitoring.sh
 
+# TODO use _forge inside mount_etna.sh to add custom completion
+_forge() {
+    local cur prev opts
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="option1 option2 --help --version"
+
+    COMPREPLY=($(compgen -W "show unenv env genenv cp-secrets encrypt_multiple python_deploy deploy etc_terraform apache_terraform terraform genesis is_mounted db_script db_backup"))
+}
+complete -F _forge erupt
+
+# TODO remove it - rename all calls to mount_etna function
 main() {
-    # TODO implement bash completation
+    erupt $@
+}
+
+erupt() {
     case $1 in
         "show")
             clear
@@ -105,7 +119,7 @@ main() {
             esac
             ;;
         "db_backup")
-            case $3 in
+            case $2 in
                 "full")
                     db_backup_full $DB_DATABASE
                     ;;
