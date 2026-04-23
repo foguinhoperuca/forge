@@ -8,6 +8,7 @@
 \i :forgesys_path/forge/var.sql
 
 DROP DATABASE IF EXISTS :forgesys_db;
+DROP DATABASE IF EXISTS :forgesys_db_foreign;
 
 SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
 SET session.forgesys_sys_grp = :'forgesys_sys_grp';
@@ -46,7 +47,6 @@ $$;
 
 CREATE DATABASE :forgesys_db;
 ALTER DATABASE :forgesys_db OWNER TO postgres;
-
 -- TODO create default permissions on database
 GRANT ALL ON DATABASE :forgesys_db TO postgres WITH GRANT OPTION;
 GRANT CREATE, CONNECT ON DATABASE :forgesys_db TO dba; -- FIXME options: CREATE, CONNECT, TEMPORARY (or ALL)
@@ -54,3 +54,10 @@ GRANT CONNECT ON DATABASE :forgesys_db TO gis_group;
 GRANT CONNECT ON DATABASE :forgesys_db TO view_report;
 
 -- TODO implement get all dbas in .pgpass credential file
+
+CREATE DATABASE :forgesys_db_foreign;
+ALTER DATABASE :forgesys_db_foreign OWNER TO postgres;
+GRANT ALL ON DATABASE :forgesys_db_foreign TO postgres WITH GRANT OPTION;
+GRANT CREATE, CONNECT ON DATABASE :forgesys_db_foreign TO dba; -- FIXME options: CREATE, CONNECT, TEMPORARY (or ALL)
+GRANT CONNECT ON DATABASE :forgesys_db_foreign TO gis_group;
+GRANT CONNECT ON DATABASE :forgesys_db_foreign TO view_report;
