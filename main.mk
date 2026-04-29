@@ -53,6 +53,12 @@ encrypt-secrets:
 	@ls -lah $(APP_PATH_CREDENTIALS_GENERATED_INPUT)
 	@cat $(APP_PATH_CREDENTIALS_GENERATED_INPUT)/deployment_datetime.txt
 
+decrypt-miseenplace:
+	@clear
+	@date
+	@gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg
+	@date
+
 DOCUMENT_ROOT_TARGET ?= $(TARGET_ENV)
 document_root:
 	@clear

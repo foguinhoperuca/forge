@@ -1,3 +1,10 @@
+db-postgres-admin-script:
+	@if [ -z "$(DB_SCRIPT)" ]; then \
+		echo "Error: DB_SCRIPT is not set or is empty"; \
+		exit 1; \
+	fi
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f $(DB_SCRIPT)
+
 db-admin-script:
 	@if [ -z "$(DB_SCRIPT)" ]; then \
 		echo "Error: DB_SCRIPT is not set or is empty"; \

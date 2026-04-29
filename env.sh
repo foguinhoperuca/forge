@@ -459,7 +459,7 @@ cp_secrets() {
 
     # set -eu
 
-    # scp .credentials/.mise-en-place.conf .credentials/.env.* .credentials/.google-service-account* .credentials/.pgpass.* .credentials/.target-server.* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
+    # scp .credentials/.google-service-account* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
     ETC_DEPLOYMENT="$APP_PATH_ETC"
     EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/secure"
     MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
@@ -535,6 +535,7 @@ cp_secrets() {
         return 0
     fi
 
+    # FIXME $TARGET_SERVER_USER and $TARGET_SERVER_ADDR may be empty. How to rethink it?
     echo "===== Depĺoying to $DEPLOY_GENERATED_FILES"
     case "$DEPLOY_GENERATED_FILES" in
         "etc")
