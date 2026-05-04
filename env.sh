@@ -43,6 +43,8 @@ set_vars() {
         gpg --quiet --batch --yes --output $DEPLOYMENT_FILE --decrypt $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/secure/.mise-en-place.conf.gpg
     fi
 
+    export DEFAULT_TARGET_ENV=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_ENV | cut -d = -f2)
+    export DEFAULT_TARGET_SERVER_USER=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_SERVER_USER | cut -d = -f2)
     export FORGE_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
     export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
@@ -316,11 +318,11 @@ encrypt_multiple() {
 
 generate_conf_file() {
     # Generate conf file from samples. It would grab secrets into remote vault, local vault (keepass) or be generated here
-    # [MANDATORY] $1 :: define environment desired to be generate. ALL is implemented in the call of this function.
-    # [MANDATORY] $2 :: define $SOURCE_SECRETS [passbolt | keepass | new | gpg]
+    # [MANDATORY] $1 ENV_DESIRED          :: define environment desired to be generate [local | dev | stage | replica | prod]. ALL is implemented in the call of this function.
+    # [MANDATORY] $2 SOURCE_SECRETS       :: define $SOURCE_SECRETS [gpg | passbolt | keepass | new]
     # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
-    # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $DEBUG :: show debug messages
+    # [OPTIONAL]  $DRY_RUN                :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $DEBUG                  :: show debug messages
 
     ENV_DESIRED=$1
     if [ "$1" == "" ];
@@ -439,6 +441,9 @@ generate_conf_file() {
         fi
     done
 
+    # TODO validate TARGET_SERVER_USER is defined
+    # TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
+    TARGET_SERVER_USER="${DEFAULT_TARGET_SERVER_USER}"
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/
     echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
 
@@ -453,7 +458,7 @@ generate_conf_file() {
 cp_secrets() {
     # copy secrets to desired environment.
     # [MANDATORY] $1 :: define environment desired to be generate.
-    # [MANDATORY] $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all]
+    # [MANDATORY] $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all].
     # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
 
@@ -535,7 +540,7 @@ cp_secrets() {
         return 0
     fi
 
-    # FIXME $TARGET_SERVER_USER and $TARGET_SERVER_ADDR may be empty. How to rethink it?
+    # FIXME $TARGET_SERVER_USER and $TARGET_SERVER_ADDR may be empty. How to rethink it? Ans>: **use DEFAULT_TARGET_SERVER_USER** and create a DEFAULT_TARGET_SERVER_ADDR
     echo "===== Depĺoying to $DEPLOY_GENERATED_FILES"
     case "$DEPLOY_GENERATED_FILES" in
         "etc")

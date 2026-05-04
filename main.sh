@@ -16,15 +16,23 @@ source $FORGE_PATH/deployment.sh
 source $FORGE_PATH/monitoring.sh
 
 # TODO use _forge inside mount_etna.sh to add custom completion
-_forge() {
+_forge_completation() {
     local cur prev opts
-    cur=${COMP_WORDS[COMP_CWORD]}
+
+    COMPREPLY=()
+
+    # cur=${COMP_WORDS[COMP_CWORD]}
+    cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    cmd="${COMP_WORDS[1]}"
     opts="option1 option2 --help --version"
 
-    COMPREPLY=($(compgen -W "show unenv env genenv cp-secrets encrypt_multiple python_deploy deploy etc_terraform apache_terraform terraform genesis is_mounted db_script db_backup"))
+    local commands="show unenv env genenv cp-secrets encrypt_multiple python_deploy deploy etc_terraform apache_terraform terraform genesis is_mounted db_script db_backup"
+
+    COMPREPLY=($(compgen -W "${commands}"))
 }
-complete -F _forge erupt
+complete -F _forge_completation erupt
 
 # TODO remove it - rename all calls to mount_etna function
 main() {
