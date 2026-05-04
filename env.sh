@@ -221,6 +221,7 @@ set_symbolic_link() {
     for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
     do
         ln -s $APP_PATH_ETC/.env.$python_project.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.env
+        ln -s $APP_PATH_ETC/.pgpass.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.pgpass
     done
 
     # FIXME mise-en-place should stay in /etc or .credentials!? If stay in /etc it could be copied from .credentials and be replaced DEFAULT_TARGET_ENV with ENV in terraform

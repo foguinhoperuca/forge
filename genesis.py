@@ -7,6 +7,7 @@ from typing import List, Optional
 import django
 from dotenv import load_dotenv
 # import psycopg2  # noqa: E402
+import pgtoolkit.pgpass as pgt
 
 
 sys.path.append('../backoffice/')
@@ -107,3 +108,14 @@ def forge_create_default_users_groups(create_system_user: bool = False) -> None:
     # TODO implement user as IT Staff from os.getenv('TARGET_SERVER_DBAS')
     for username in str(os.getenv('TARGET_SERVER_DBAS')).split(','):
         create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}', is_superuser=False, is_staff=True)
+
+
+if __name__ == "__main__":
+    print('Executing genesis')
+    # with open('.pgpass', 'r') as fo:
+    with open(os.path.join(os.path.dirname(__file__), '../.pgpass'), 'r') as fo:  # noqa: E501
+        cfg = pgt.parse(fo)
+        print(f'{cfg.lines[0]=} --> {cfg.lines[0].hostname=} :: {cfg.lines[0].port=} :: {cfg.lines[0].database=} :: {cfg.lines[0].username=} :: {cfg.lines[0].password=}')  # noqa: E501
+        print('---------------------------------------------------------')
+        for index, line in enumerate(cfg.lines):
+            print(f'{index=} --> {line.hostname=} :: {line.port=} :: {line.database=} :: {line.username=} :: {line.password=}')  # noqa: E501

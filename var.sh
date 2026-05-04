@@ -13,8 +13,11 @@ CUSTOM_VARS_FRAGMENT="FORGE_SYSTEM|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|A
 CONF_FILES=".target-server .pgpass .mise-en-place.conf api/.env bot/.env backoffice/.env bot/.env git-hooks/.mise-en-place.conf git-hooks/mount_etna.sh"
 
 declare -a SYMBOLIC_LINK_FILES=(
-    ".pgpass"
     ".target-server"
+    ".pgpass"
+    "api/.pgpass"
+    "backoffice/.pgpass"
+    "bot/.pgpass"
     "api/.env"
     "backoffice/.env"
     "bot/.env"
