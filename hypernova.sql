@@ -7,6 +7,8 @@
 
 \i :forgesys_path/forge/var.sql
 
+-- TODO new database role (user) is need: tester
+
 DROP DATABASE IF EXISTS :forgesys_db;
 DROP DATABASE IF EXISTS :forgesys_db_foreign;
 
