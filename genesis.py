@@ -2,7 +2,7 @@ from enum import StrEnum
 import os
 import string
 import sys
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import django
 from dotenv import load_dotenv
@@ -107,7 +107,23 @@ def forge_create_default_users_groups(create_system_user: bool = False) -> None:
 
     # TODO implement user as IT Staff from os.getenv('TARGET_SERVER_DBAS')
     for username in str(os.getenv('TARGET_SERVER_DBAS')).split(','):
-        create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}', is_superuser=False, is_staff=True)
+        create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}', is_superuser=False, is_staff=True)  # noqa: E501
+
+
+def get_config_value(*sources: str | None, var_name: str, not_show_debug: Tuple[str] = ('DB_ENGINE', 'DB_SCHEMA')) -> str:  # noqa: E501
+    """
+    Get config values the follow order: .env (py) > .pgpass > os environment
+    """
+    invalid_values: Tuple[str] = (None, '', '<OPTIONAL>',)
+    value: str = next((s for s in sources if s not in invalid_values), None)
+
+    if var_name not in not_show_debug:
+        print(f'{var_name=} {value=} {tuple((s for s in sources if s not in invalid_values))}')  # noqa: E501
+
+    if value is None:
+        raise ValueError(f'{var_name} not found (is empty | None)!!')
+
+    return value
 
 
 if __name__ == "__main__":

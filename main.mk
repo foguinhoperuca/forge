@@ -80,12 +80,12 @@ search-in-source-code:
 	@date
 	@echo "SEARCH_TYPE --> $(SEARCH_TYPE) ::: SEARCH SRC STR --> $(SEARCH_SRC_STR)"
 ifeq ($(SEARCH_TYPE),SUMMARY)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}'
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}'
 else ifeq ($(SEARCH_TYPE),FULL)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
 endif
-	@echo "-------"
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir={forge,tmp,venv,__pycache__,tests} --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@echo "------- WORD COUNT -------"
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
 	@echo ""
 	@date
 
