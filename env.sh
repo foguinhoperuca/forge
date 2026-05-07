@@ -160,6 +160,11 @@ set_vars_by_env() {
     export DB_POSTGRES_VIEW_REPORT_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '6,6p')
     export DB_POSTGRES_VIEW_REPORT_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '6,6p')
     export DB_POSTGRES_VIEW_REPORT_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '6,6p')
+    export DB_POSTGRES_APP_TESTER_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '7,7p')
+    export DB_POSTGRES_APP_TESTER_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '7,7p')
+    export DB_POSTGRES_APP_TESTER_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '7,7p')
+    export DB_POSTGRES_APP_TESTER_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '7,7p')
+    export DB_POSTGRES_APP_TESTER_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '7,7p')
 
     # TODO add custom confs from api, backoffice and bot
     export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV
@@ -221,7 +226,6 @@ set_symbolic_link() {
     for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
     do
         ln -s $APP_PATH_ETC/.env.$python_project.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.env
-        ln -s $APP_PATH_ETC/.pgpass.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.pgpass
     done
 
     # FIXME mise-en-place should stay in /etc or .credentials!? If stay in /etc it could be copied from .credentials and be replaced DEFAULT_TARGET_ENV with ENV in terraform

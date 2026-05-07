@@ -1,6 +1,8 @@
 \i :forgesys_path/forge/var.sql
 \i :forgesys_path/forge/deashing_forge.sql
 
+SET client_min_messages TO DEBUG1;
+
 CREATE OR REPLACE PROCEDURE forge_revoke_privileges(IN pvlg_role_user VARCHAR) LANGUAGE plpgsql AS
 $BODY$
   DECLARE
@@ -29,52 +31,78 @@ $BODY$
       
       -- SEQUENCES
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON SEQUENCES FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- TABLES
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON TABLES FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- FUNCTIONS
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON FUNCTIONS FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- SCHEMA
       cmd := FORMAT('ALTER SCHEMA  %1$s OWNER TO postgres;', forgesys_schema);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- DATABASE
       cmd := FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM %2$s;', forgesys_db, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
     END IF;
   END;
+$BODY$;
+
+-- FIXME those bellow already in session by var.sql file!?
+SET session.forgesys_sys_grp = :'forgesys_sys_grp';
+SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
+SET session.forgesys_app_tester_pwd = :'forgesys_app_tester_pwd';
+-- SET session.forgesys_db = :'forgesys_db';
+CREATE OR REPLACE PROCEDURE forge_create_user(IN lgn VARCHAR, IN passwd VARCHAR, IN permissions VARCHAR) LANGUAGE plpgsql AS
+$BODY$
+  DECLARE
+    pwd TEXT;
+  BEGIN
+    RAISE DEBUG '[ADMIN PROCEDURE] creating: % passwd % permissions: %', lgn, passwd, permissions;
+    pwd := CASE WHEN passwd IS NULL THEN NULL ELSE FORMAT('"%1$s"', passwd) END;
+    BEGIN
+      -- TODO define some strategy to revoke all privileges from every object in host
+      -- EXECUTE FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM %$2s;', fhr[1], current_settings('session.forgesys_db'));
+      EXECUTE FORMAT('DROP ROLE IF EXISTS %1$s;', lgn);
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE WARNING '[ADMIN PROCEDURE] COULD NOT revoke OR drop role % :: will not be re-created!', lgn;
+    END;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = lgn) THEN
+      EXECUTE FORMAT('CREATE ROLE %1$I WITH %2$s %3$L;', lgn, permissions, pwd);
+    END IF;
+  END
 $BODY$;

@@ -73,19 +73,24 @@ post-receive:
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 
+# --exclude-dir=forge
 SEARCH_SRC_STR ?= "FORGE_SYSTEM_NAME"
-SEARCH_TYPE ?= "SUMMARY"
-search-in-source-code:
+search-src:
 	@clear
 	@date
-	@echo "SEARCH_TYPE --> $(SEARCH_TYPE) ::: SEARCH SRC STR --> $(SEARCH_SRC_STR)"
-ifeq ($(SEARCH_TYPE),SUMMARY)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}'
-else ifeq ($(SEARCH_TYPE),FULL)
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
-endif
 	@echo "------- WORD COUNT -------"
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=forge --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@echo "SEARCH_SRC_STR = $(SEARCH_SRC_STR)"
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@echo "------- WORD COUNT -------"
+	@echo ""
+
+search-src-summary: search-src
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}'
+	@echo ""
+	@date
+
+search-src-full: search-src
+	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
 	@echo ""
 	@date
 

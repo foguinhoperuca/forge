@@ -1,48 +1,32 @@
 /**
  * Hypernova will create the basic for each system to live on:
- * - users: postgres, view_report, dba role, dba_person;
+ * - users: postgres, view_report, app_tester, sys_grp, dba_role, dba_person;
  * - database: any name but must be one in place. Default name will be alura (and variations: alura_prod, alura_stage, alura_homolog, alura_dev, alura_local) or gis (with same variations);
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
-\i :forgesys_path/forge/var.sql
-
--- TODO new database role (user) is need: tester
+\i :forgesys_path/forge/utils.sql
+SET client_min_messages TO ERROR;
 
 DROP DATABASE IF EXISTS :forgesys_db;
 DROP DATABASE IF EXISTS :forgesys_db_foreign;
 
-SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
-SET session.forgesys_sys_grp = :'forgesys_sys_grp';
--- SET session.forgesys_db = :'forgesys_db';
 DO $$
 DECLARE
-  lgn TEXT;
-  pwd TEXT;
-  fhr TEXT[];
   forgesys_hypernova_roles TEXT[][];
+  fhr TEXT[];
 BEGIN
   forgesys_hypernova_roles := ARRAY[
-    ['dba', NULL],
-    ['gis_group', NULL],
-    [current_setting('session.forgesys_sys_grp'), NULL],
-    ['view_report', current_setting('session.forgesys_view_report_pwd')]
+    ['dba', NULL, 'NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'],
+    ['gis_group', NULL, 'NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'],
+    [current_setting('session.forgesys_sys_grp'), NULL, 'NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'],
+    ['view_report', current_setting('session.forgesys_view_report_pwd'), 'LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'],
+    ['app_tester', current_setting('session.forgesys_app_tester_pwd'), 'LOGIN NOSUPERUSER INHERIT CREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD']
   ];
   FOREACH fhr SLICE 1 IN ARRAY forgesys_hypernova_roles LOOP
-    lgn := CASE WHEN fhr[2] IS NULL THEN 'NOLOGIN' ELSE 'LOGIN' END;
-    pwd := CASE WHEN fhr[2] IS NULL THEN NULL ELSE FORMAT('"%1$s"', fhr[2]) END;
-    RAISE INFO 'creating: % passwd % :: % ::: %', fhr[1], fhr[2], lgn, pwd;
-    BEGIN
-      -- TODO define some strategy to revoke all privileges from every object in host
-      -- EXECUTE FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM %$2s;', fhr[1], current_settings('session.forgesys_db'));
-      EXECUTE FORMAT('DROP ROLE IF EXISTS %1$s;', fhr[1]);
-    EXCEPTION
-      WHEN OTHERS THEN
-        RAISE NOTICE 'COULD NOT revoke OR drop role % :: will not be re-created!', fhr[1];
-    END;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = fhr[1]) THEN
-      EXECUTE FORMAT('CREATE ROLE %1$I WITH %2$s NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %3$L;', fhr[1], lgn, pwd);
-    END IF;
+    RAISE INFO '[HYPERNOVA] creating: % passwd % permissions: %', fhr[1], fhr[2], fhr[3];
+    -- TODO remove privileges for all users before re-create it using forge_revoke_privileges()!!
+    CALL forge_create_user(fhr[1], fhr[2], fhr[3]);
   END LOOP;
 END
 $$;
