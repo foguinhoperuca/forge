@@ -5,7 +5,7 @@
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
-\i :forgesys_path/forge/var.sql
+-- \i :forgesys_path/forge/var.sql
 
 DO $$
 BEGIN

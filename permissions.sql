@@ -1,12 +1,6 @@
 /**
  * Set default permissions for objects in database.
- * | User/Group    | Descr                                     | Role                                                                                                    |
- * |---------------+-------------------------------------------+---------------------------------------------------------------------------------------------------------|
- * | postgres      | database super admin                      | God.                                                                                                    |
- * | dba           | database administrators - team of project | Database administrator. Full access.                                                                    |
- * | :forgesys     | system user (programmatic access)         | Software-mediated access. Owner of most objects. API and other software                                 |
- * | :forgesys_app | end user with database access             | Direct access to the database on an indivudual basis, but with more restricted access. Use of QGIS app. |
- * | view_report   | read-only user                            | For report purpose only. Should not interfere with the system only observe it.                          |
+ * See more details in README.
  */
 
 -- TODO

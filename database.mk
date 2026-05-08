@@ -35,6 +35,10 @@ db-deploy: db-terraform db-ddl db-permission db-seeds
 
 db-bigbang:
 	@echo "|+-------------+|"
+	@echo "|  SINGULARITY  |"
+	@echo "|+-------------+|"
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="singularity.sql" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql
+	@echo "|+-------------+|"
 	@echo "|   HYPERNOVA   |"
 	@echo "|+-------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="hypernova.sql" -h $(DB_POSTGRES_HOST) -p $(DB_POSTGRES_PORT) -d $(DB_POSTGRES_DATABASE) -U $(DB_POSTGRES_USER) -f database/hypernova.sql

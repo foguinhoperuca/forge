@@ -1,4 +1,3 @@
-* Use database/script.sql as symlink when no customization is needed
 * Integrate with passbolt
 * Implement checkout of worktree (in deploy) with submodules included
 * Script to add forge to an project
@@ -7,6 +6,7 @@
 ** DONE Create all symlinks doc to be used in project that will use forge - create a fuction ("genesis" for repository)
 ** DONE Doc checkout .mise-en-place.conf
 ** DONE Rename forge.sh to mount_etna.sh
+* DONE Use database/script.sql as symlink when no customization is needed
 * DONE Review symlinks
 ** DONE Use <ROOT_PROJECT>/doc symlink to wiki of project
 ** DONE Review the creation of secure in .credentials/upstream/encrypted/secure (or using .credentials/upstream/secure) -> .credentials/secure

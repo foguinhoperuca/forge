@@ -81,11 +81,6 @@ $BODY$
   END;
 $BODY$;
 
--- FIXME those bellow already in session by var.sql file!?
-SET session.forgesys_sys_grp = :'forgesys_sys_grp';
-SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
-SET session.forgesys_app_tester_pwd = :'forgesys_app_tester_pwd';
--- SET session.forgesys_db = :'forgesys_db';
 CREATE OR REPLACE PROCEDURE forge_create_user(IN lgn VARCHAR, IN passwd VARCHAR, IN permissions VARCHAR) LANGUAGE plpgsql AS
 $BODY$
   DECLARE

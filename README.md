@@ -12,6 +12,32 @@ Is expected to do the follow tasks:
 - `gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg`
 - `./mount_etna.sh terraform <TARGET_ENV>`
 
+# Database Organization #
+
+- ```:forgesys_db``` is main database to hold data to all app. No directly access by end-user.
+- ```:forgesys_db_foreign``` is database to hold data to be accessed by end-user and/or gis app (qgis).
+
+There are levels for task as in this order: Singularity > Hypernova > Supernova > Terraform
+
+| Level       | Description                                                   |
+|-------------|---------------------------------------------------------------|
+| Singularity | for host/server-level tasks                                   |
+| Hypernova   | above database level, inside host server                      |
+| Supernova   | intra database level (for main app database and gis database) |
+| Terraform   | schema level tasks                                            |
+
+## Default User/Roles ##
+
+| User/Group           | Level                     | Description                                                 | Role                                                                                                                            |
+|----------------------|---------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| postgres             | Singularity               | database super admin                                        | God.                                                                                                                            |
+| gis_group            | Singularity               | user integrated with external auth mechanism (LDAP)         | For authentication purpose only. Do not have any power over any data or special privileges.                                     |
+| app_tester (sys_grp) | Singularity (Singularity) | test apps user (programmatic)                               | For test purpose only. Should can have power to create DB. **Do not have access to DB of with data (forgesys, gis, etc)**       |
+| :dba_person (dba)    | Hypernova (Hypernova)     | database administrators (**has role to manage it**)         | Database administrator. Full access to manage databases but not the server (not superadmin). Has a role to aggregate all users. |
+| view_report          | Hypernova                 | read-only user (shared)                                     | For report purpose only. Should not interfere with the system only observe it.                                                  |
+| :forgesys (sys_grp)  | Terraform (Singularity)   | system user/programmatic access (**has role to manage it**) | Software-mediated access. Owner of most objects. API and other software                                                         |
+| :forgesys_app        | Terraform                 | end user with database access                               | Direct access to the database on an indivudual basis, but with more restricted access. Use of QGIS app.                         |
+
 # File Organization #
 
 ## Terraform ##

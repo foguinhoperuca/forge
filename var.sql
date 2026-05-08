@@ -62,7 +62,7 @@
 \endif
 
 -- FIXME missing forgesys_ before!?
-\if :{?view_report_pwd}
+\if :{?forgesys_view_report_pwd}
   \echo 'Already setted forgesys_view_report_pwd -->' :forgesys_view_report_pwd
 \else
   \set forgesys_view_report_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep DB_POSTGRES_VIEW_REPORT_PASS | cut -d = -f2)"`
@@ -73,12 +73,12 @@
   \echo 'Already setted forgesys_app_tester_pwd -->' :forgesys_app_tester_pwd
 \else
   \set forgesys_app_tester_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep DB_POSTGRES_APP_TESTER_PASS | cut -d = -f2)"`
-  SET session.forgesys_view_report_pwd = :'forgesys_app_tester_pwd';
+  SET session.forgesys_app_tester_pwd = :'forgesys_app_tester_pwd';
 \endif
 
-\echo '|---------------------------------------------------------|'
-\echo '| SHOW SCRIPT VARIABLES                                   |'
-\echo '|---------------------------------------------------------|'
+\echo '|-------------------------------------------------------------------|'
+\echo '| SHOW SCRIPT VARIABLES                                             |'
+\echo '|-------------------------------------------------------------------|'
 \echo '| forgesys_script-->' :forgesys_script
 \echo '| forgesys_path-->' :forgesys_path
 \echo '| forgesys_dbas -->' :forgesys_dbas
@@ -88,7 +88,7 @@
 \echo '| forgesys_db_foreign-->' :forgesys_db_foreign
 \echo '| forgesys_schema-->' :forgesys_schema
 \echo '| forgesys_user -->' :forgesys_user
-\echo '| forgesys_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>    '
-\echo '| view_report_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED> '
-\echo '| app_tester_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>  '
-\echo '|---------------------------------------------------------|'
+\echo '| forgesys_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>              '
+\echo '| forgesys_view_report_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>  '
+\echo '| forgesys_app_tester_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>   '
+\echo '|-------------------------------------------------------------------|'

@@ -62,7 +62,7 @@ BEGIN
   SELECT string_to_array(current_setting('session.dbas'), ',') INTO dbas;
   SELECT current_setting('session.forgesys_role') INTO forgesys_role;
   FOREACH dba IN ARRAY dbas LOOP
-    RAISE INFO 'Current dba: % ::: Grant: %', dba, forgesys_role;
+    RAISE DEBUG 'Current dba: % ::: Grant: %', dba, forgesys_role;
     EXECUTE format('GRANT %1$s TO "%2$s"', forgesys_role, dba);
   END LOOP;
 END $$;
