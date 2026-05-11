@@ -89,157 +89,157 @@ BEGIN
       object_name,
       oid
     LOOP
-      RAISE INFO 'Curr linerecord: %', linerecord;
+      RAISE DEBUG 'Curr linerecord: %', linerecord;
       CASE
         -- pg_type
         WHEN linerecord.object_type = 'ENUM TYPE' THEN
           SELECT format('ALTER TYPE %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT USAGE ON TYPE %1$s.%2$s.%3$s TO postgres', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT USAGE ON TYPE %1$s.%2$s.%3$s TO dba', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT USAGE ON TYPE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT USAGE ON TYPE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT USAGE ON TYPE %1$s.%2$s.%3$s TO view_report', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
         -- pg_class
         WHEN linerecord.object_type = 'SEQUENCE' THEN
           SELECT format('ALTER SEQUENCE %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON SEQUENCE %1$s.%2$s.%3$s TO postgres WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON SEQUENCE %1$s.%2$s.%3$s TO dba WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON SEQUENCE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON SEQUENCE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT SELECT ON SEQUENCE %1$s.%2$s.%3$s TO view_report', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
         WHEN linerecord.object_type = 'TABLE' THEN
           SELECT format('ALTER TABLE %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON TABLE %1$s.%2$s.%3$s TO postgres WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON TABLE %1$s.%2$s.%3$s TO dba WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON TABLE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON TABLE %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT SELECT, REFERENCES ON TABLE %1$s.%2$s.%3$s TO view_report', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
         WHEN linerecord.object_type = 'VIEW' THEN
           SELECT format('ALTER VIEW %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO postgres WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO dba WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT SELECT, REFERENCES ON %1$s.%2$s.%3$s TO view_report', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
         WHEN linerecord.object_type = 'MATERIALIZED VIEW' THEN
           SELECT format('ALTER MATERIALIZED VIEW %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO postgres WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO dba WITH GRANT OPTION', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT ALL ON %1$s.%2$s.%3$s TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT SELECT, REFERENCES ON %1$s.%2$s.%3$s TO view_report', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
         WHEN linerecord.object_type = 'INDEX' THEN
-          RAISE INFO 'TODO INDEX ::: %', linerecord;
+          RAISE DEBUG 'TODO INDEX ::: %', linerecord;
 
         -- pg_proc
         WHEN linerecord.object_type = 'FUNCTION' THEN
-          RAISE INFO 'TODO FUNCTION ::: %', linerecord;
+          RAISE DEBUG 'TODO FUNCTION ::: %', linerecord;
         WHEN linerecord.object_type = 'PROCEDURE' THEN
-          RAISE INFO 'PROCEDURE ::: %', linerecord;
+          RAISE DEBUG 'PROCEDURE ::: %', linerecord;
           SELECT format('ALTER PROCEDURE %1$s.%2$s.%3$s OWNER TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT EXECUTE ON PROCEDURE %1$s.%2$s.%3$s() TO postgres ', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT EXECUTE ON PROCEDURE %1$s.%2$s.%3$s() TO dba ', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT EXECUTE ON PROCEDURE %1$s.%2$s.%3$s() TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_user')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
 
           SELECT format('GRANT EXECUTE ON PROCEDURE %1$s.%2$s.%3$s() TO %4$s', current_setting('session.forgesys_db'), current_setting('session.forgesys_schema'), linerecord.object_name, current_setting('session.forgesys_role')) INTO cmd;
-          RAISE NOTICE 'cmd: %', cmd;
+          RAISE DEBUG 'cmd: %', cmd;
           EXECUTE cmd;
         ELSE
           RAISE NOTICE 'OTHER ::: %', linerecord;
