@@ -89,7 +89,7 @@ db-seeds:
 	@echo "|+--------------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/seeds.sql
 
-db-fixtures: db-seeds
+db-fixtures: db-clean db-seeds
 	@echo "|+--------------------+|"
 	@echo "| FIXTURES             |"
 	@echo "|+--------------------+|"
