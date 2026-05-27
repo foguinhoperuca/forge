@@ -2,7 +2,7 @@
 * Implement checkout of worktree (in deploy) with submodules included
 * Script to add forge to an project
 ** Doc git clone with submodules already checked out (also in worktree and edge)
-** Create templates for files: mount_etna.sh, database/initialize.sql, etc
+** Create templates for files: mount_etna.sh, database/initialize.sql, requirements.txt and requirements-dev.txt, etc
 ** DONE Create all symlinks doc to be used in project that will use forge - create a fuction ("genesis" for repository)
 ** DONE Doc checkout .mise-en-place.conf
 ** DONE Rename forge.sh to mount_etna.sh

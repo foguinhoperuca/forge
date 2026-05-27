@@ -1,0 +1,5 @@
+group_name;username;first_name;last_name;email;is_staff;is_superuser;password
+ADMIN;;;;;TRUE;TRUE;<NULL>
+IT_STAFF;;;;;TRUE;FALSE;<NULL>
+OPERATORS;;;;;TRUE;FALSE;<NULL>
+SYSTEM;;;;;FALSE;FALSE;<NULL>
