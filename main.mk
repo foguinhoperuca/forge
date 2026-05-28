@@ -94,6 +94,12 @@ search-src-full: search-src
 	@echo ""
 	@date
 
+SEARCH_SECRET ?= "YOUR_SECRET_VAR"
+search-encrypted:
+	@find . -type f -name "*.gpg" | while read -r file; do \
+		gpg -d -q "$$file" 2>/dev/null | grep --label="$$file" -H "$(SEARCH_SECRET)" || true; \
+	done
+
 build-ctags:
 	# @ctags -e -R --exclude=.git --exclude=__pycache__ --exclude=tests --exclude=venv --exclude=static --exclude=media --exclude=.mypy_cache --exclude=*~ .
 	@clear
