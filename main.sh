@@ -105,7 +105,11 @@ erupt() {
         "deploy")
 		    deploy
 		    ;;
-        "etc_terraform") terraform_app_path_etc;;
+        "etc_terraform")
+            set_vars $1 "" ""
+            terraform_app_path_etc
+            set_vars_by_env
+            ;;
         "apache_terraform") terraform_app_path_var_www_app;;
         "terraform")
             terraform $2

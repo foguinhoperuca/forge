@@ -85,6 +85,7 @@ genesis() {
 }
 
 terraform_app_path_etc() {
+    local old_opts=$(set +o)
     set -eu
 
     echo ""
@@ -98,42 +99,46 @@ terraform_app_path_etc() {
         echo "[DRY-RUN] Would remove and recreate: $APP_PATH_ETC"
         echo "[DRY-RUN] Would copy files from: $APP_PATH_ORIGIN_EDGE/.credentials"
 
+        eval "$old_opts"
         return 0
     fi
 
     if ! validate_safe_path "$APP_PATH_ETC"; then
         echo "[FATAL] Unsafe APP_PATH_ETC: '$APP_PATH_ETC'"
-        exit 1
+        eval "$old_opts"
+        return 1
     fi
 
     if [[ -z "${APP_PATH_ETC:-}" || "$APP_PATH_ETC" == "/" || "$APP_PATH_ETC" == "/etc" ]]; then
         echo "[FATAL] ERROR: Invalid APP_PATH_ETC='$APP_PATH_ETC'" >&2
-        exit 1
+        eval "$old_opts"
+        return 1
     fi
 
     case "$APP_PATH_ETC" in
         /etc/*) : ;;
         *)
             echo "APP_PATH_ETC must BE **UNDER** /etc";
-            exit 1
+            eval "$old_opts"
+            return 1
             ;;
     esac
 
-    export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
-
     generate_conf_file "${TARGET_ENV}" "gpg"
 
+    export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
     sudo rm -rf -- "${APP_PATH_ETC:?}/".*
     sudo mkdir -p "$APP_PATH_ETC"
     # TODO copy each file - this way gnu core utils 8.32 will complain
     sudo cp "${APP_PATH_ORIGIN_EDGE}/.credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/".*"${TARGET_ENV}" "$APP_PATH_ETC/"
     sudo rm -f -- "${APP_PATH_ETC:?}/".mise-en-place*
-    sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" "$APP_PATH_ETC/"
+    sudo chown -R "${TARGET_SERVER_USER}:${TARGET_SERVER_USER}" "$APP_PATH_ETC/"
     sudo chmod 600 -R "$APP_PATH_ETC"/.*
-    sudo chown "$TARGET_SERVER_USER:www-data" "$APP_PATH_ETC"/.env.api.* "$APP_PATH_ETC"/.env.backoffice.*
+    sudo chown "${TARGET_SERVER_USER}:www-data" "$APP_PATH_ETC"/.env.api.* "$APP_PATH_ETC"/.env.backoffice.*
     sudo chmod 640 -R "$APP_PATH_ETC"/.env.api.* "$APP_PATH_ETC"/.env.backoffice.*
 
     echo "${NOW}" | sudo tee "$APP_PATH_ETC"/deployment_datetime.txt > /dev/null
+    eval "$old_opts"
 }
 
 # TODO implement security checks as in terraform_app_path_etc
@@ -329,14 +334,12 @@ terraform() {
 
     echo "Terraforming for env $1"
     echo "======================="
+
     set_vars $1 "" ""
-
     terraform_app_path_etc
-
     set_vars_by_env
 
     terraform_app_path_opt
-
     set_symbolic_link
 
     # # TODO move it for deploy() fn and TEST IT
