@@ -89,7 +89,15 @@ db-seeds:
 	@echo "|+--------------------+|"
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/seeds.sql
 
-db-fixtures: db-clean db-seeds
+db-fixtures:
+	@echo "|+--------------------+|"
+	@echo "| CLEAN DB SOFT        |"
+	@echo "|+--------------------+|"
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/delete.sql
+	@echo "|+--------------------+|"
+	@echo "| SEEDS                |"
+	@echo "|+--------------------+|"
+	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/seeds.sql
 	@echo "|+--------------------+|"
 	@echo "| FIXTURES             |"
 	@echo "|+--------------------+|"
@@ -117,15 +125,6 @@ db-refresh-migration:
 	@rm backoffice/$(MIGRATION_ENTITY)/migrations/0001_initial.py
 	@python3 backoffice/manage.py makemigrations
 	@python3 backoffice/manage.py migrate $(MIGRATION_ENTITY)
-
-db-clean:
-	@clear
-	@date
-	@echo "|+--------------------+|"
-	@echo "| CLEAN DB SOFT        |"
-	@echo "|+--------------------+|"
-	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f database/delete.sql
-	@date
 
 db-drop:
 	@echo "|+--------------------+|"
