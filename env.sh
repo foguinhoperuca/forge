@@ -454,7 +454,7 @@ generate_conf_file() {
     then
         echo "Copying generated files to deploy target..."
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.mise-en-place.conf" ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" ".credentials/"
-        cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
+        cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.user_seeds.csv"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
     fi
 }
 
