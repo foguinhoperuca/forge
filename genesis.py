@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     logging.info('## 1.3 - OPERATORS & CUSTOM USERS (ANY OTHER GROUPS)')
     # FIXME store it in .credentials/secure/user_seeds.csv - ALSO add it to samples  # noqa: E501
-    with open(f'{os.getenv("APP_PATH_ETC")}/user_seeds.csv') as users:
+    with open(f'{os.getenv("APP_PATH_ETC")}/.user_seeds.csv.{os.getenv("TARGET_ENV")}') as users:
         for index, user in enumerate(csv.DictReader(users, delimiter=";")):
             allowed: bool = any([group_target in args.create for group_target in ['all', user['group_name'].lower()]])
             logging.info(f'### 1.3.{index:05} ({user["group_name"]}) {user["username"]} is allowed to create? {allowed}')  # noqa: E501
