@@ -59,3 +59,15 @@ generate_secret() {
     local raw=$(( (len * 3 + 3) / 4 ))
     gpg --gen-random 1 "$raw" | base64 | tr -d '/+' | tr -d '\n' | cut -c1-"$len"
 }
+
+# echo "+$(printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG))))+"; echo "| HELLO |"; echo "+$(printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG))))+"
+print_banner() {
+    BANNER_MSG=$1
+    CHARS_BANNER_MSG=${#BANNER_MSG}
+    echo ""
+    printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG)))
+    echo ""
+    echo $BANNER_MSG
+    printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG)))
+    echo""
+}

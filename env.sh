@@ -113,6 +113,60 @@ complement_set_vars_by_env() {
     echo "| [FORGE] COMPLEMENT for set vars by env logic    |"
     echo "|+-----------------------------------------------+|"
 }
+gpg --import * && for f in *; do kid=$(gpg --with-colons --import-options show-only --import "$f" 2>/dev/null | awk -F: '$1=="pub" {print $5}'); [ ! -z "$kid" ] && echo -e "trust\n5\ny\n" | gpg --command-fd 0 --edit-key "$kid"; done
+
+gpg --import * && echo -e "trust\n5\ny\n" | gpg --command-fd 0 --edit-key $(gpg --with-colons --import-options show-only --import filename.asc | awk -F: '$1=="pub" {print $5}')
+
+dev_conf_content() {
+	# Just for develop the feature to read conf file and load in environment variable the content of file.
+
+	TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
+	PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
+	# CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
+
+	GENERAL_CONF_FILES=".env.api .env.backoffice .env.bot .target-server .pgpass"
+	for CONF_FILE_CORE in $GENERAL_CONF_FILES;
+	do
+		CONF_FILE="${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}"
+		CONTENT=$(cat $CONF_FILE)
+		echo "CONF_FILE_CORE --> ${CONF_FILE_CORE} ${TARGET_ENV}"
+		# echo "CONTENT :: ${CONTENT}"
+
+		IFS=$'\n'
+		for LINE in $CONTENT;
+		do
+			echo "LINE.....: ${LINE}"
+			if [[ "$LINE" == \#* ]]; then
+				continue
+			fi
+
+			# FIXME reuse it to convert var to var_name
+			# for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
+			# do
+			# 	var_name="$var"
+			# 	echo "$var_name=${!var_name}"
+			# done
+
+			if [[ "${CONF_FILE_CORE}" != ".pgpass" ]];
+			then
+				ENTRY=$(echo $LINE | cut -d = -f1)
+				SECRET=$(echo $LINE | cut -d = -f2)
+
+				echo "ENTRY....: ${ENTRY}"
+				echo "SECRET...: ${SECRET}"
+				echo ".........: $(echo ${CONF_FILE_CORE} | grep -v ".")_${ENTRY}=${SECRET}"
+			else
+				IFS=':' read -r -a ENTRIES <<< "$LINE"
+				echo "ENTRIES..: ${ENTRIES[@]}"
+				for ENTRY in "${ENTRIES[@]}"; do
+					echo "ENTRY....: ${ENTRY}"
+				done
+			fi
+			echo "======================================================================"
+		done
+		echo "----------------------------------------------------------------------"
+	done
+}
 
 set_vars_by_env() {
     echo ""

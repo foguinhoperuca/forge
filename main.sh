@@ -98,6 +98,11 @@ erupt() {
 		"encrypt_multiple")
 			encrypt_multiple;;
         # "githook") githook $2 $3 $4;;
+        "dev_conf_content")
+            clear
+            date
+            dev_conf_content
+            ;;
         "python_deploy")
             deploy_venv
             deploy_collectstatic
