@@ -115,7 +115,16 @@ erupt() {
             terraform_app_path_etc
             set_vars_by_env
             ;;
-        "apache_terraform") terraform_app_path_var_www_app;;
+		"opt_terraform")
+			set_vars $1 "" ""
+			set_vars_by_env
+			terraform_app_path_opt
+			set_symbolic_link
+			;;
+        "apache_terraform")
+			set_symbolic_link
+			terraform_app_path_var_www_app
+			;;
         "terraform")
             terraform $2
             ;;

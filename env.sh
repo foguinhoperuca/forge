@@ -113,24 +113,31 @@ complement_set_vars_by_env() {
     echo "| [FORGE] COMPLEMENT for set vars by env logic    |"
     echo "|+-----------------------------------------------+|"
 }
-gpg --import * && for f in *; do kid=$(gpg --with-colons --import-options show-only --import "$f" 2>/dev/null | awk -F: '$1=="pub" {print $5}'); [ ! -z "$kid" ] && echo -e "trust\n5\ny\n" | gpg --command-fd 0 --edit-key "$kid"; done
-
-gpg --import * && echo -e "trust\n5\ny\n" | gpg --command-fd 0 --edit-key $(gpg --with-colons --import-options show-only --import filename.asc | awk -F: '$1=="pub" {print $5}')
 
 dev_conf_content() {
 	# Just for develop the feature to read conf file and load in environment variable the content of file.
+
+
 
 	TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
 	PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
 	# CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
-	GENERAL_CONF_FILES=".env.api .env.backoffice .env.bot .target-server .pgpass"
-	for CONF_FILE_CORE in $GENERAL_CONF_FILES;
+	# GENERAL_CONF_FILES=".env.api .env.backoffice .env.bot .target-server .pgpass"
+	for CONF_FILE_CORE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
 	do
 		CONF_FILE="${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}"
+		if [[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" || "${CONF_FILE_CORE}" == ".user_seeds.csv" ]];
+		then
+			echo "SKIPPING ${CONF_FILE}"
+			echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+			continue
+		fi
 		CONTENT=$(cat $CONF_FILE)
-		echo "CONF_FILE_CORE --> ${CONF_FILE_CORE} ${TARGET_ENV}"
+		echo "CONF_FILE_CORE --> ${CONF_FILE_CORE} ${TARGET_ENV} ::: ${CONF_FILE}"
 		# echo "CONTENT :: ${CONTENT}"
+
+		# export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
 
 		IFS=$'\n'
 		for LINE in $CONTENT;
@@ -150,11 +157,15 @@ dev_conf_content() {
 			if [[ "${CONF_FILE_CORE}" != ".pgpass" ]];
 			then
 				ENTRY=$(echo $LINE | cut -d = -f1)
+				# FIXME SECRECT can have some = !! Should I run it with sed to remove ENTRY= from line
 				SECRET=$(echo $LINE | cut -d = -f2)
+				CORE_CALC=$(echo "FORGE_${CONF_FILE_CORE}" | sed -e "s|\.||g")
 
-				echo "ENTRY....: ${ENTRY}"
-				echo "SECRET...: ${SECRET}"
-				echo ".........: $(echo ${CONF_FILE_CORE} | grep -v ".")_${ENTRY}=${SECRET}"
+				echo "ENTRY......: ${ENTRY}"
+				echo "SECRET.....: ${SECRET}"
+				echo "CORE_CALC..: ${CORE_CALC}"
+				echo "VAR........: $(echo ${CONF_FILE_CORE} | grep -v ".")_${ENTRY}=${SECRET}"
+				echo "VAR2.......: ${CORE_CALC}_${ENTRY}=${SECRET}"
 			else
 				IFS=':' read -r -a ENTRIES <<< "$LINE"
 				echo "ENTRIES..: ${ENTRIES[@]}"
