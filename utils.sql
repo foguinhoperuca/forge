@@ -26,7 +26,7 @@ $BODY$
       -- WHERE nspname = :'forgesys_schema' AND t.typtype = 'b'; -- 'b' for base types, other types may need different filters
       -- \gexec
       cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE USAGE ON TYPES FROM %2$s', forgesys_schema, pvlg_role_user);
-      RAISE INFO '[ADMIN PROCEDURE] %', cmd;
+      RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       
       -- SEQUENCES
@@ -99,5 +99,22 @@ $BODY$
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = lgn) THEN
       EXECUTE FORMAT('CREATE ROLE %1$I WITH %2$s %3$L;', lgn, permissions, pwd);
     END IF;
+  END
+$BODY$;
+
+CREATE OR REPLACE PROCEDURE forge_create_dbas() LANGUAGE plpgsql AS
+$BODY$
+  DECLARE
+    dbas TEXT[];
+    dba TEXT;
+  BEGIN
+    -- TODO implement get all dbas in .pgpass credential file
+    SELECT string_to_array(current_setting('session.forgesys_dbas'), ',') INTO dbas;
+    FOREACH dba IN ARRAY dbas LOOP
+      RAISE DEBUG 'Current dba: % :::', dba;
+      CALL forge_revoke_privileges(dba);
+      CALL forge_create_user(dba, NULL, 'LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD');
+      EXECUTE format('GRANT dba, gis_group TO "%1$s"', dba);
+    END LOOP;
   END
 $BODY$;

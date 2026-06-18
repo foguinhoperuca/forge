@@ -367,7 +367,7 @@ deploy_app_path_opt() {
     rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
     mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
     # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
-    git clone --recurse-submodules $APP_PATH_BARE $APP_PATH_WORKTREE/$GIT_BRANCH
+    git clone --recurse-submodules -b $GIT_BRANCH  $APP_PATH_BARE $APP_PATH_WORKTREE/$GIT_BRANCH
     echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
     # FIXME maybe can be an error with master != prod for symlink
     rm -f $APP_PATH_DOCUMENT_ROOT

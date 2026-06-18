@@ -2,6 +2,14 @@
  * Set reusable variables to all db scripts.
  */
 
+-- TODO create a separated variable to show script variables (debug)
+\if :{?forgesys_debug}
+  \echo 'Already setted forgesys_debug -->' :forgesys_debug
+\else
+  \set forgesys_debug `echo "${DEBUG:-0}"`
+  SET session.forgesys_debug = :'forgesys_debug';
+\endif
+
 \if :{?forgesys_sys_grp}
   \echo 'Already setted forgesys_sys_grp -->' :forgesys_sys_grp
 \else
@@ -76,19 +84,23 @@
   SET session.forgesys_app_tester_pwd = :'forgesys_app_tester_pwd';
 \endif
 
-\echo '|-------------------------------------------------------------------|'
-\echo '| SHOW SCRIPT VARIABLES                                             |'
-\echo '|-------------------------------------------------------------------|'
-\echo '| forgesys_script-->' :forgesys_script
-\echo '| forgesys_path-->' :forgesys_path
-\echo '| forgesys_dbas -->' :forgesys_dbas
-\echo '| forgesys_sys_grp -->' :forgesys_sys_grp
-\echo '| forgesys_role-->' :forgesys_role
-\echo '| forgesys_db-->' :forgesys_db
-\echo '| forgesys_db_foreign-->' :forgesys_db_foreign
-\echo '| forgesys_schema-->' :forgesys_schema
-\echo '| forgesys_user -->' :forgesys_user
-\echo '| forgesys_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>              '
-\echo '| forgesys_view_report_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>  '
-\echo '| forgesys_app_tester_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>   '
-\echo '|-------------------------------------------------------------------|'
+\if :forgesys_debug
+  \echo '|-------------------------------------------------------------------|'
+  \echo '| SHOW SCRIPT VARIABLES                                             |'
+  \echo '|-------------------------------------------------------------------|'
+  \echo '| forgesys_debug-->' :forgesys_debug
+  \echo '| forgesys_script-->' :forgesys_script
+  \echo '| forgesys_path-->' :forgesys_path
+  \echo '| forgesys_dbas -->' :forgesys_dbas
+  \echo '| forgesys_sys_grp -->' :forgesys_sys_grp
+  \echo '| forgesys_role-->' :forgesys_role
+  \echo '| forgesys_db-->' :forgesys_db
+  \echo '| forgesys_db_foreign-->' :forgesys_db_foreign
+  \echo '| forgesys_schema-->' :forgesys_schema
+  \echo '| forgesys_user -->' :forgesys_user
+  -- TODO implement a variable to toggle the show variables bellow
+  \echo '| forgesys_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>              '
+  \echo '| forgesys_view_report_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>  '
+  \echo '| forgesys_app_tester_pwd --> <DO_NOT_SHOW_HERE_ONLY_IF_REAL_NEED>   '
+  \echo '|-------------------------------------------------------------------|'
+\endif

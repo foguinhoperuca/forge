@@ -5,17 +5,20 @@
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
--- \i :forgesys_path/forge/var.sql
+\i :forgesys_path/forge/utils.sql
+SET client_min_messages TO ERROR;
 
 DO $$
-BEGIN
-  RAISE NOTICE 'TODO implement task above terraform';
-END $$;
+  BEGIN
+    CALL forge_create_dbas();
+  END
+$$;
 
--- -- TODO implement all CREATE extension need.
--- CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
--- CREATE EXTENSION IF NOT EXISTS postgis;
--- CREATE EXTENSION IF NOT EXISTS postgres_fdw;
+-- TODO implement all CREATE extension need.
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgres_fdw;
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- -- TODO implement permissions and create table from public
 -- GRANT USAGE ON SCHEMA public TO :alura_role;

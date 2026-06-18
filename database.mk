@@ -19,6 +19,17 @@ db-script:
 	fi
 	@psql -v forgesys_path="$(shell pwd)" -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -f $(DB_SCRIPT)
 
+# TODO implement DUMP
+db-restore:
+	@echo "|+--------------------+|"
+	@echo "| RESTORING            |"
+	@echo "|+--------------------+|"
+	@if [ -z "$(DB_SCRIPT)" ]; then \
+		echo "Error: DB_SCRIPT is not set or is empty"; \
+		exit 1; \
+	fi
+	@pg_restore -h $(DB_ADMIN_HOST) -p $(DB_ADMIN_PORT) -d $(DB_ADMIN_DATABASE) -U $(DB_ADMIN_USER) $(DB_SCRIPT)
+
 # TODO tasks here should be in more high level. A task with only one command have a bad smell (could be replaced by db-script/db-admin-script)
 
 db-start: db-terraform db-ddl db-permission django-update-permissions django-users db-fixtures

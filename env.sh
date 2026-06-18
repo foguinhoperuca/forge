@@ -410,13 +410,26 @@ generate_conf_file() {
         echo "--- Source Secrets ${SOURCE_SECRETS}"
         echo ""
     fi
+    DEBUG=${DEBUG:-0}
+    DRY_RUN=${DRY_RUN:-0}
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
 
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
     do
+        DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+        if [[ "$DEBUG" == "1" ]];
+        then
+            echo "EXIST? ... ${FILE_SAMPLE} ::: ${DEST}"
+        fi
+
+        if [[ ! -e ".credentials/secure/${DEST}.gpg" ]];
+        then
+            echo "FILE ${DEST}.gpg DO NOT EXIST!! Continue..."
+            continue
+        fi
+
         if [[ "${SOURCE_SECRETS}" == "gpg" ]];
         then
-            DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
             gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/secure/${DEST}.gpg
             echo "${NOW}" | tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
             continue
@@ -426,7 +439,6 @@ generate_conf_file() {
         DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
-        DEBUG=${DEBUG:-0}
         if [[ "$DEBUG" == "1" ]];
         then
             echo ""
@@ -439,7 +451,6 @@ generate_conf_file() {
             echo "------------------------------------------- <RESULT>  --------------------------------------------"
         fi
 
-        DRY_RUN=${DRY_RUN:-0}
         if [[ "$DRY_RUN" != "1" ]];
         then
             : > $DESTINY

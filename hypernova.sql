@@ -21,25 +21,11 @@ BEGIN
     ['dba', NULL, 'NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'],
     ['view_report', current_setting('session.forgesys_view_report_pwd'), 'LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD']
   ];
-
-  -- TODO implement get all dbas in .pgpass credential file
-  SELECT string_to_array(current_setting('session.forgesys_dbas'), ',') INTO dbas;
-  FOREACH dba IN ARRAY dbas LOOP
-    RAISE DEBUG 'Current dba: % :::', dba;
-    forgesys_hypernova_roles := forgesys_hypernova_roles || ARRAY[dba, NULL, 'LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD'];
-  END LOOP;
-
   FOREACH fhr SLICE 1 IN ARRAY forgesys_hypernova_roles LOOP
     RAISE INFO '[HYPERNOVA] creating: % ', fhr[1];
     RAISE DEBUG '% passwd % permissions: %', fhr[1], fhr[2], fhr[3];
     -- TODO remove privileges for all users before re-create it using forge_revoke_privileges()!!
     CALL forge_create_user(fhr[1], fhr[2], fhr[3]);
-
-    IF fhr[1] = ANY(dbas) THEN
-      RAISE DEBUG 'grat dba: % into role dbas', fhr[1];
-      EXECUTE format('GRANT dba TO "%1$s"', fhr[1]);
-      EXECUTE format('GRANT gis_group TO "%1$s"', fhr[1]);
-    END IF;
   END LOOP;
 END
 $$;
