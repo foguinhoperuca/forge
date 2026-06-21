@@ -523,6 +523,7 @@ generate_conf_file() {
         fi
     done
 
+    # FIXME maybe use TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/
     echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
