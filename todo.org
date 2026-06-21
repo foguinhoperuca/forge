@@ -1,6 +1,7 @@
 * Integrate with passbolt
 * Implement checkout of worktree (in deploy) with submodules included
 * Script to add forge to an project
+** Create a `curl -fsSL https://example.tld/git-repositoty-your-project/install.sh | TARGET_ENV=local sh` or some strategy to install the repository with one command
 ** Doc git clone with submodules already checked out (also in worktree and edge)
 ** Create templates for files: mount_etna.sh, database/initialize.sql, requirements.txt and requirements-dev.txt, etc
 ** DONE Create all symlinks doc to be used in project that will use forge - create a fuction ("genesis" for repository)

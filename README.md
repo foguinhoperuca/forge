@@ -7,8 +7,7 @@ Set of tools and scripts to create, maintain and run a project. Very (my own) Op
 
 Is expected to do the follow tasks:
 - `mkdir -p $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/`
-- `git clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/backend`
-- `cd $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/backend`
+- `git clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $HOME/universal/projects/<FORGE_ORGANIZATION_ACRONYM>/<FORGE_SYSTEM_ACRONYM>/backend && cd $_`
 - `gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg`
 - `./mount_etna.sh terraform <TARGET_ENV>`
 
@@ -53,10 +52,11 @@ All config files will live in _/etc/<FORGE-SYSTEM-ACRONYM>/<CONFIG-FILE-UNCRYPTE
 
 The general description of _<CONFIG-FILE-UNCRYPTED>_ files is:
 ```
-|-- .env.<PYTHON_PROJECT>.<TARG ::: configuration specific for <PYTHON_PROJECT>: [api | backoffice | bot];
-|-- .mise-en-place.conf         ::: the master configuration for project itself. Do not repeat/do not have environment version;
-|-- .pgpass.<TARGET-ENV>        ::: specific to access database (postgresql). Each file for each envirionment;
-|-- .target-server.<TARGET-ENV> ::: general conf for each envirionments;
+|-- .env.<PYTHON_PROJECT>.<TARGET-ENV> ::: configuration specific for <PYTHON_PROJECT>: [api | backoffice | bot];
+|-- .mise-en-place.conf                ::: the master configuration for project itself. Do not repeat/do not have environment version;
+|-- .pgpass.<TARGET-ENV>               ::: specific to access database (postgresql). Each file for each envirionment;
+|-- .target-server.<TARGET-ENV>        ::: general conf for each envirionments;
+|-- .user_seeds.csv.<TARGET-ENV>       ::: contain the initial users in system;
 ```
 
 You can see all details of each file inside of _.credentials/samples/<CONFIG-FILE-TEMPLATE>_.

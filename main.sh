@@ -28,7 +28,7 @@ _forge_completation() {
     cmd="${COMP_WORDS[1]}"
     opts="option1 option2 --help --version"
 
-    local commands="show unenv env genenv cp-secrets encrypt_multiple python_deploy deploy etc_terraform apache_terraform terraform genesis is_mounted db_script db_backup"
+    local commands="show unenv env genenv cp-secrets encrypt_multiple python_deploy deploy etc_terraform apache_terraform dev_terraform terraform genesis is_mounted db_script db_backup"
 
     COMPREPLY=($(compgen -W "${commands}"))
 }
@@ -65,38 +65,38 @@ erupt() {
             esac
             ;;
         "genenv")
-		    # TODO use var WORKFLOW_ENVS_AVAILABLE in code bellow
-		    # echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
-		    for ENV_TRG in ${ENVS_AVAILABLE[@]};
-		    do
-			    # if [[ "$2" == ${WORKFLOW_ENVS_AVAILABLE[@]} ]];
-			    if [[ "$2" == @(local|dev|stage|prod) ]];
-			    then
-				    echo ""
-				    echo "************************************"
-				    echo "|| Genereting env for valid: $2"
-				    echo "************************************"
-				    echo ""
-				    generate_conf_file $2 $3
-				    break
-			    fi
+            # TODO use var WORKFLOW_ENVS_AVAILABLE in code bellow
+            # echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
+            for ENV_TRG in ${ENVS_AVAILABLE[@]};
+            do
+                # if [[ "$2" == ${WORKFLOW_ENVS_AVAILABLE[@]} ]];
+                if [[ "$2" == @(local|dev|stage|prod) ]];
+                then
+                    echo ""
+                    echo "************************************"
+                    echo "|| Genereting env for valid: $2"
+                    echo "************************************"
+                    echo ""
+                    generate_conf_file $2 $3
+                    break
+                fi
 
-			    if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
-			    then
-				    echo ""
-				    echo "************************************"
-				    echo "|| Genereting env files for $ENV_TRG"
-				    echo "************************************"
-				    echo ""
-				    generate_conf_file $ENV_TRG $3
-			    fi
-		    done
+                if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
+                then
+                    echo ""
+                    echo "************************************"
+                    echo "|| Genereting env files for $ENV_TRG"
+                    echo "************************************"
+                    echo ""
+                    generate_conf_file $ENV_TRG $3
+                fi
+            done
             ;;
-	    "cp-secrets")
-		    cp_secrets $2 $3
-		    ;;
-		"encrypt_multiple")
-			encrypt_multiple;;
+        "cp-secrets")
+            cp_secrets $2 $3
+            ;;
+        "encrypt_multiple")
+            encrypt_multiple;;
         # "githook") githook $2 $3 $4;;
         "dev_conf_content")
             clear
@@ -108,23 +108,38 @@ erupt() {
             deploy_collectstatic
             ;;
         "deploy")
-		    deploy
-		    ;;
+            deploy
+            ;;
         "etc_terraform")
-            set_vars $1 "" ""
+            set_vars $2 "" ""
             terraform_app_path_etc
             set_vars_by_env
             ;;
-		"opt_terraform")
-			set_vars $1 "" ""
-			set_vars_by_env
-			terraform_app_path_opt
-			set_symbolic_link
-			;;
+        "opt_terraform")
+            set_vars $2 "" ""
+            set_vars_by_env
+            terraform_app_path_opt
+            set_symbolic_link
+            ;;
         "apache_terraform")
-			set_symbolic_link
-			terraform_app_path_var_www_app
-			;;
+            set_symbolic_link
+            terraform_app_path_var_www_app
+            ;;
+        "dev_terraform")
+            CHOOSED_TARGET_ENV=$2
+            CUSTOM_USER="$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)"
+			# echo "CHOOSED_TARGET_ENV --> ${CHOOSED_TARGET_ENV}"
+            set_vars $CHOOSED_TARGET_ENV "" ""
+            terraform_app_path_etc
+			# FIXME DEFAULT_TARGET_SERVER_USER can be helpfull instead change .target-server.${TARGET_ENV}
+            sed -i.bkp "s|TARGET_SERVER_USER=.*|TARGET_SERVER_USER=${CUSTOM_USER}|" "${APP_PATH_ETC}/.target-server.${CHOOSED_TARGET_ENV}"
+            set_vars_by_env
+            terraform_app_path_opt
+            rm "${APP_PATH_DOCUMENT_ROOT}"
+            ln -sf "${APP_PATH_WORKTREE}/edge" "${APP_PATH_DOCUMENT_ROOT}"
+            set_symbolic_link
+            ls -lah --color=auto "${APP_PATH_WORKTREE}"
+            ;;
         "terraform")
             terraform $2
             ;;
@@ -132,8 +147,8 @@ erupt() {
             genesis
             ;;
         "is_mounted")
-		    verify_mounted_path_online $2 $3
-		    ;;
+            verify_mounted_path_online $2 $3
+            ;;
         "db_script")
             case $3 in
                 "admin" | "adm")

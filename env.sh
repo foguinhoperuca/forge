@@ -159,7 +159,7 @@ dev_conf_content() {
 				ENTRY=$(echo $LINE | cut -d = -f1)
 				# FIXME SECRECT can have some = !! Should I run it with sed to remove ENTRY= from line
 				SECRET=$(echo $LINE | cut -d = -f2)
-				CORE_CALC=$(echo "FORGE_${CONF_FILE_CORE}" | sed -e "s|\.||g")
+				CORE_CALC=$(echo "FORGE_${CONF_FILE_CORE}" | tr '[:lower:]' '[:upper:]' | sed -e "s|\.||g"  | sed -e "s|-|_|g")
 
 				echo "ENTRY......: ${ENTRY}"
 				echo "SECRET.....: ${SECRET}"
@@ -280,13 +280,14 @@ set_symbolic_link() {
     ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
     ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
-    ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_DOCUMENT_ROOT/.mise-en-place.conf
 
     ln -s $APP_PATH_ORIGIN_EDGE/mount_etna.sh $APP_PATH_ORIGIN_EDGE/git-hooks/mount_etna.sh
     ln -s $APP_PATH_ORIGIN_EDGE/forge $APP_PATH_ORIGIN_EDGE/git-hooks/forge
 
     ln -s $APP_PATH_ETC/.target-server.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/.target-server
     ln -s $APP_PATH_ETC/.pgpass.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/.pgpass
+    # FIXME redundant when DOCUMENT_ROOT is same as EDGE - break inside etc_terraform
+    ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_DOCUMENT_ROOT/.mise-en-place.conf
 
     for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
     do

@@ -126,7 +126,7 @@ terraform_app_path_etc() {
 
     generate_conf_file "${TARGET_ENV}" "gpg"
 
-    export TARGET_SERVER_USER=$(PROCPS_USERLEN=20 w -h | awk 'NR==1 {print $1}' | uniq) # FIXME should get the first only (something like) --> | cut -d " " -f 1
+    export TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1) # FIXME should get the first only (something like) --> | cut -d " " -f 1
     sudo rm -rf -- "${APP_PATH_ETC:?}/".*
     sudo mkdir -p "$APP_PATH_ETC"
     # TODO copy each file - this way gnu core utils 8.32 will complain
