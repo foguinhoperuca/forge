@@ -64,10 +64,10 @@ generate_secret() {
 print_banner() {
     BANNER_MSG=$1
     CHARS_BANNER_MSG=${#BANNER_MSG}
+    BORDER=$(printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG))))
     echo ""
-    printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG)))
-    echo ""
-    echo $BANNER_MSG
-    printf -- '=%.0s' $(seq 1 $(($CHARS_BANNER_MSG)))
+    echo "|+$BORDER+|"
+    echo "| $BANNER_MSG |"
+    echo "|+$BORDER+|"
     echo""
 }
