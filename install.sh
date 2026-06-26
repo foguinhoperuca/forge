@@ -7,7 +7,6 @@ export FORGE_ORGANIZATION_ACRONYM=${2:-""}
 export GIT_BRANCH=${3:-"master"}
 export FORGE_ORGANIZATION_VAULT=${4:-"secrets"}
 
-
 echo "--------------------------- forge-install.sh ==> $PROJECT_DIR ---------------------------"
 echo "${FORGE_SYSTEM_ACRONYM} ${FORGE_ORGANIZATION_ACRONYM} ${GIT_BRANCH} ${FORGE_ORGANIZATION_VAULT}"
 echo "--------------------------- forge-install.sh ==> $PROJECT_DIR ---------------------------"
@@ -45,7 +44,7 @@ run() {
     # TODO add all gpg keys in keyring -> ideas: export trust-file db and sign all keys
     cp "${VAULT_SENSIBLE_PATH}/.mise-en-place.conf" "${PROJECT_DIR}/backend/.credentials/.mise-en-place.conf"
 
-    # TODO maybe each project has an outdated version of forge (same can occur with vault!!). Should it run from project (**YES** because dev_terraform use RELATIVE PATH (maybe can git pull before run instead using a variable to control it) - is it a real problem?!; **NO** because it always will be the latest but it can break the local project forcing a dependency. :: SHOULD DECIDE LATER AFTER THINK ABOUT IT)
+    # TODO maybe each project has an outdated version of forge (same can occur with vault!!). Should it run from project (**YES** because dev_terraform use RELATIVE PATH (maybe can git pull before run instead using a variable to control it) - is it a real problem?!; **NO** because it always will be the latest but it can break the local project forcing a dependency) :: SHOULD DECIDE LATER AFTER THINK ABOUT IT - USE FORGE_SOURCE: [LOCAL_REPOS | CENTRAL | AND COME FROM EDGE_MASTER or NOT]
     cd $PROJECT_DIR/backend && source ${PROJECT_DIR}/backend/forge/main.sh
     print_banner "Erupt dev_terraform local on $(pwd) ..."
     erupt dev_terraform local

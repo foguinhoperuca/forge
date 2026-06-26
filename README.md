@@ -11,6 +11,20 @@ Is expected to do the follow tasks:
 - `gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg`
 - `./mount_etna.sh terraform <TARGET_ENV>`
 
+Also you can run the follow script to install your project:
+
+```
+# MANDATORY because values must be defined
+export FORGE_SYSTEM_ACRONYM="<PROJECT_NAME>"
+export FORGE_ORGANIZATION_ACRONYM="<PROJECT_ORGANIZATION>"
+
+# NOT Mandatory because it has default values
+export GIT_BRANCH="<DEFAULT_VALUE_MASTER>"
+export FORGE_ORGANIZATION_VAULT="<DEFAULT_VALUE_SECRETS>"
+
+curl -fsSL https://raw.githubusercontent.com/foguinhoperuca/forge/refs/heads/master/install.sh | bash -s -- $FORGE_SYSTEM_ACRONYM $FORGE_ORGANIZATION_ACRONYM $GIT_BRANCH $FORGE_ORGANIZATION_VAULT
+```
+
 # Database Organization #
 
 - ```:forgesys_db``` is main database to hold data to all app. No directly access by end-user.
