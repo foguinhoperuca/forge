@@ -50,6 +50,14 @@ declare -a DJANGO_PROJECTS_AVAILABLE=(
     "api"
 )
 
+declare -A CONF_FILE_ACRONYM
+CONF_FILE_ACRONYM[mise_en_place]="MEP"
+CONF_FILE_ACRONYM[env_api]="ENVAPI"
+CONF_FILE_ACRONYM[env_backend]="ENVBAC"
+CONF_FILE_ACRONYM[env_bot]="ENVBOT"
+CONF_FILE_ACRONYM[pgpass]="PGPASS"
+CONF_FILE_ACRONYM[target_env]="TRGENV"
+
 # This should be replaced by a fully declare statement
 declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
     "REPLACE_IT__some_folder_for_save_media__REPLACE_IT"
