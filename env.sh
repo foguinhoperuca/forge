@@ -60,13 +60,9 @@ set_vars() {
 
     # PROJECT specific variables
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
-    DEBUG=${DEBUG:-0}
     if [[ "$DEBUG" == "1" ]];
     then
-        echo ""
-        echo "+================================================================================================="
-        echo "| [DEBUG] set vars                                                                                "
-        echo "+================================================================================================="
+		print_banner "[DEBUG] set vars"
         echo "------------------------------------------- <CONTENT>  -------------------------------------------"
         echo "BASH_SOURCE[0] ${BASH_SOURCE[0]}"
         echo "DEPLOYMENT_FILE $DEPLOYMENT_FILE"
@@ -114,32 +110,21 @@ set_vars() {
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
 
-	# TODO implemente something like <CUSTOM_TARGET_ENV>-[local | dev | stage | prod] to use diverse envs
-    # FIXME TARGET_ENV Replica It should not be confused with the replica environment.
-    # ENVIRONMENT specific variables
-    case $1 in
-        "local" | "dev" | "stage" | "prod")
-            export TARGET_ENV=$1
-            if [ "$3" == "" ];
-            then
-				[[ "$1" == "prod" ]] && export GIT_BRANCH="master" || export GIT_BRANCH="$1"
-                # if [ "$1" == "prod" ];
-                # then
-                #     export GIT_BRANCH="master"
-                # else
-                #     export GIT_BRANCH=$1
-                # fi
-            else
-                export GIT_BRANCH=$3
-            fi
-            ;;
-        *)
-            export TARGET_ENV=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_ENV | cut -d = -f2) # if not setted
-            export GIT_BRANCH=$TARGET_ENV
-            echo "ENV USAGE: [local | dev | stage | prod]. $1 *NOT* found!! Using already setted!"
-            ;;
-    esac
+	if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$1[[:space:]] ]];
+	then
+		export TARGET_ENV=$1
+		# export GIT_BRANCH="${3:-${1/#prod/master}}"
+		export GIT_BRANCH="${3:-$1}"
+		case "$GIT_BRANCH" in
+			prod) export GIT_BRANCH="master" ;;
+		esac
+	else
+		export TARGET_ENV=$DEFAULT_TARGET_ENV # if not setted
+		export GIT_BRANCH=$TARGET_ENV
+		echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $1 *NOT* found!! Using already setted!"
+	fi
     echo ""
+    # FIXME TARGET_ENV Replica It should not be confused with the replica environment. Replica != "Frontend" DB (DB directly accessed by end user)
     echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
 
     complement_set_vars

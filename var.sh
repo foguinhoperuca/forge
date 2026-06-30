@@ -3,6 +3,10 @@
 # Reusable vars in scripts.
 # Should be replaced by VAR+=VAR or re-declared in mount_etna.sh
 
+# TODO apply it to all functions
+export DEBUG=${DEBUG:-0}
+export DRY_RUN=${DRY_RUN:-0}
+
 NOW=$(date +"%Y-%m-%dT%H-%M-%S")
 
 # TODO migrate vars to use system ACRONYM in start?!
@@ -31,13 +35,16 @@ declare -a ENVS_AVAILABLE=(
     "edge"
 )
 
-# TODO use it!
+# TODO use it! Also document the use of $CUSTOM_WORKFLOW_ENVS=""
+CUSTOM_WORKFLOW_ENVS=${CUSTOM_WORKFLOW_ENVS:-""}
 declare -a WORKFLOW_ENVS_AVAILABLE=(
 	"local"
     "dev"
     "stage"
     "prod"
 )
+WORKFLOW_ENVS_AVAILABLE+=("$CUSTOM_WORKFLOW_ENVS")
+
 
 declare -a PYTHON_PROJECTS_AVAILABLE=(
     "api"
