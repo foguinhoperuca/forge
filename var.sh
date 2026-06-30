@@ -4,7 +4,7 @@
 # Should be replaced by VAR+=VAR or re-declared in mount_etna.sh
 
 # TODO apply it to all functions using FORGE_ prefix
-DEBUG=${DEBUG:-0}
+FORGE_DEBUG=${FORGE_DEBUG:-0}
 FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
 
 NOW=$(date +"%Y-%m-%dT%H-%M-%S")

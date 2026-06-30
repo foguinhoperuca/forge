@@ -12,7 +12,7 @@ ignite() {
 	print_banner "--- IGNITE: LOAD BASIC VARS FROM .mise-en-place BEFORE START ---"
 
 	export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
-    DEBUG=${DEBUG:-0}
+    FORGE_DEBUG=${FORGE_DEBUG:-0}
     if [[ "$DEBUG" == "1" ]];
     then
         echo ""
@@ -53,14 +53,14 @@ complement_set_vars() {
 
 # TODO implement a function to read .mise-en-place.conf and load vars from there without be specified before
 set_vars() {
-    # [MANDATORY] $1    :: define main TARGET_ENV
-    # [OPTIONAL]  $2    :: define GIT_REPOS different from default
-    # [OPTIONAL]  $3    :: define GIT_BRANCH different from default
-    # [OPTIONAL]  DEBUG :: for debug code purpose
+    # [MANDATORY] $1          :: define main TARGET_ENV
+    # [OPTIONAL]  $2          :: define GIT_REPOS different from default
+    # [OPTIONAL]  $3          :: define GIT_BRANCH different from default
+    # [OPTIONAL]  FORGE_DEBUG :: for debug code purpose
 
     # PROJECT specific variables
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
-    if [[ "$DEBUG" == "1" ]];
+    if [[ "$FORGE_DEBUG" == "1" ]];
     then
 		print_banner "[DEBUG] set vars"
         echo "------------------------------------------- <CONTENT>  -------------------------------------------"
@@ -374,7 +374,7 @@ show_env() {
 encrypt_multiple() {
     # encrypt secret files using all pubkeys availiable per project.
     # [OPTIONAL]  $FORGE_DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $DEBUG :: show debug messages
+    # [OPTIONAL]  $FORGE_DEBUG   :: show debug messages
     GPG_RECIPIENTS=""
     for pubkey in $(ls .credentials/secure/*.asc);
     do
@@ -395,10 +395,10 @@ encrypt_multiple() {
     do
         OUTPUT_FILE=$(echo $filename | sed -e "s|${APP_PATH_ETC}/||g")
 
-        DEBUG=${DEBUG:-0}
-        if [[ "$DEBUG" == "1" ]];
+        FORGE_DEBUG=${FORGE_DEBUG:-0}
+        if [[ "$FORGE_DEBUG" == "1" ]];
         then
-            echo $APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
+            echo "$APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename"
             echo "---------------"
         fi
 
@@ -413,7 +413,7 @@ generate_conf_file() {
     # [MANDATORY] $2 SOURCE_SECRETS       :: define $SOURCE_SECRETS [gpg | passbolt | keepass | new]
     # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
     # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $DEBUG                  :: show debug messages
+    # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
 
     ENV_DESIRED=$1
     if [ "$1" == "" ];
@@ -431,14 +431,14 @@ generate_conf_file() {
         echo "--- Source Secrets ${SOURCE_SECRETS}"
         echo ""
     fi
-    DEBUG=${DEBUG:-0}
+    FORGE_DEBUG=${FORGE_DEBUG:-0}
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
 
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
     do
         DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-        if [[ "$DEBUG" == "1" ]];
+        if [[ "$FORGE_DEBUG" == "1" ]];
         then
             echo "EXIST? ... ${FILE_SAMPLE} ::: ${DEST}"
         fi
@@ -460,7 +460,7 @@ generate_conf_file() {
         DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
-        if [[ "$DEBUG" == "1" ]];
+        if [[ "$FORGE_DEBUG" == "1" ]];
         then
             echo ""
             echo "+===================================================================================================================================="
@@ -521,15 +521,14 @@ generate_conf_file() {
                 case $FILE_SAMPLE in
                     ".pgpass")
                         echo ${BUILD_UP_LINE%:} >> $DESTINY
-                        DEBUG=${DEBUG:-0}
-                        if [[ "$DEBUG" == "1" ]];
+                        if [[ "$FORGE_DEBUG" == "1" ]];
                         then
                             echo ${BUILD_UP_LINE%:}
                         fi
                         ;;
                     *)
                         echo $BUILD_UP_LINE >> $DESTINY
-                        if [[ "$DEBUG" == "1" ]];
+                        if [[ "$FORGE_DEBUG" == "1" ]];
                         then
                             echo $BUILD_UP_LINE
                         fi
@@ -537,7 +536,7 @@ generate_conf_file() {
                 esac
             fi
         done
-        if [[ "$DEBUG" == "1" ]];
+        if [[ "$FORGE_DEBUG" == "1" ]];
         then
             echo "------------------------------------------- </RESULT> -------------------------------------------"
         fi
@@ -561,7 +560,7 @@ cp_secrets() {
     # [MANDATORY] $1             :: define environment desired to be generate.
     # [MANDATORY] $2             :: define the type of files that will be copied [etc | edge | mise-en-place | all].
     # [OPTIONAL]  $FORGE_DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $DEBUG         :: show debug messages
+    # [OPTIONAL]  $FORGE_DEBUG   :: show debug messages
 
     # set -eu
 
