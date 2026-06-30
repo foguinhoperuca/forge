@@ -11,11 +11,10 @@ while read oldrev newrev ref
 do
     if [ "$ref" = "refs/heads/$TARGET_ENV" ];
     then
-        DRY_RUN=${DRY_RUN:-0}
-        if [[ "$DRY_RUN" == "1" ]];
+        if [[ "$FORGE_DRY_RUN" == "1" ]];
         then
-            echo "[DRY_RUN] DRY_RUN...: $DRY_RUN :: original SCRIPT_DIR: ${SCRIPT_DIR}"
-            echo "[DRY_RUN] TARGET_ENV: ${TARGET_ENV} :: Using DEPLOYMENT_FILE: ${DEPLOYMENT_FILE}"
+            echo "[DRY_RUN] FORGE_DRY_RUN..: $FORGE_DRY_RUN :: original SCRIPT_DIR....: ${SCRIPT_DIR}"
+            echo "[DRY_RUN] TARGET_ENV.....: ${TARGET_ENV}  :: Using DEPLOYMENT_FILE..: ${DEPLOYMENT_FILE}"
             echo "-------------------------------------------"
 
             exit 0

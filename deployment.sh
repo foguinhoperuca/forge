@@ -2,7 +2,7 @@
 
 genesis() {
     # Prepare the *REPOSITORY* to be used with forge. Also show which requirements is already set.
-    # [OPTIONAL] $DRY_RUN :: define if generated files will be deployed to each target
+    # [OPTIONAL] $FORGE_DRY_RUN :: define if generated files will be deployed to each target
 
     declare -a FILES_GENESIS=(
         # Credentials
@@ -63,7 +63,7 @@ genesis() {
         "deployment_conf/logrotate.conf"
     )
 
-    DRY_RUN=${DRY_RUN:-0}
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     for filename in ${FILES_GENESIS[@]};
     do
         echo "${filename} testing..."
@@ -74,7 +74,7 @@ genesis() {
             echo "---------------------------------------"
 
             echo "TODO implement DRY RUN return and then implement create folder and the the file"
-            # if [[ "$DRY_RUN" == "1" ]];
+            # if [[ "$FORGE_DRY_RUN" == "1" ]];
             # then
             #     return 0
             # fi
@@ -94,8 +94,8 @@ terraform_app_path_etc() {
     echo "|---------------------------|"
     echo "$APP_PATH_ETC"
 
-    DRY_RUN=${DRY_RUN:-0}
-    if [[ "$DRY_RUN" == "1" ]]; then
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
+    if [[ "$FORGE_DRY_RUN" == "1" ]]; then
         echo "[DRY-RUN] Would remove and recreate: $APP_PATH_ETC"
         echo "[DRY-RUN] Would copy files from: $APP_PATH_ORIGIN_EDGE/.credentials"
 

@@ -373,7 +373,7 @@ show_env() {
 # TODO encrypt files per env
 encrypt_multiple() {
     # encrypt secret files using all pubkeys availiable per project.
-    # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $FORGE_DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG :: show debug messages
     GPG_RECIPIENTS=""
     for pubkey in $(ls .credentials/secure/*.asc);
@@ -381,8 +381,8 @@ encrypt_multiple() {
         GPG_RECIPIENTS+="-r $(gpg --show-keys --with-colons $pubkey | awk -F':' '$1=="pub"{print $5}') "
     done
 
-    DRY_RUN=${DRY_RUN:-0}
-    if [[ "$DRY_RUN" == "1" ]];
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
+    if [[ "$FORGE_DRY_RUN" == "1" ]];
     then
         echo ""
         echo "Would use GPG_RECIPIENTS --> ${GPG_RECIPIENTS}"
@@ -412,7 +412,7 @@ generate_conf_file() {
     # [MANDATORY] $1 ENV_DESIRED          :: define environment desired to be generate [local | dev | stage | replica | prod]. ALL is implemented in the call of this function.
     # [MANDATORY] $2 SOURCE_SECRETS       :: define $SOURCE_SECRETS [gpg | passbolt | keepass | new]
     # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
-    # [OPTIONAL]  $DRY_RUN                :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $DEBUG                  :: show debug messages
 
     ENV_DESIRED=$1
@@ -432,7 +432,7 @@ generate_conf_file() {
         echo ""
     fi
     DEBUG=${DEBUG:-0}
-    DRY_RUN=${DRY_RUN:-0}
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
 
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
@@ -464,7 +464,7 @@ generate_conf_file() {
         then
             echo ""
             echo "+===================================================================================================================================="
-            echo "| [DEBUG] DRY_RUN -> $DRY_RUN :: FILE_SAMPLE -> $FILE_SAMPLE :: TARGET_ENTRY -> $TARGET_ENTRY :: ENV_DESIRED -> $ENV_DESIRED :: DESTINY -> $DESTINY :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES"
+            echo "| [DEBUG] DRY_RUN -> $FORGE_DRY_RUN :: FILE_SAMPLE -> $FILE_SAMPLE :: TARGET_ENTRY -> $TARGET_ENTRY :: ENV_DESIRED -> $ENV_DESIRED :: DESTINY -> $DESTINY :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES"
             echo "+===================================================================================================================================="
             echo "------------------------------------------- <CONTENT>  -------------------------------------------"
             echo "$CONTENT"
@@ -472,7 +472,7 @@ generate_conf_file() {
             echo "------------------------------------------- <RESULT>  --------------------------------------------"
         fi
 
-        if [[ "$DRY_RUN" != "1" ]];
+        if [[ "$FORGE_DRY_RUN" != "1" ]];
         then
             : > $DESTINY
         fi
@@ -516,7 +516,7 @@ generate_conf_file() {
                 esac
             done
 
-            if [[ "$DRY_RUN" != "1" ]];
+            if [[ "$FORGE_DRY_RUN" != "1" ]];
             then
                 case $FILE_SAMPLE in
                     ".pgpass")
@@ -558,10 +558,10 @@ generate_conf_file() {
 
 cp_secrets() {
     # copy secrets to desired environment.
-    # [MANDATORY] $1 :: define environment desired to be generate.
-    # [MANDATORY] $2 :: define the type of files that will be copied [etc | edge | mise-en-place | all].
-    # [OPTIONAL]  $DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $DEBUG :: show debug messages
+    # [MANDATORY] $1             :: define environment desired to be generate.
+    # [MANDATORY] $2             :: define the type of files that will be copied [etc | edge | mise-en-place | all].
+    # [OPTIONAL]  $FORGE_DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL]  $DEBUG         :: show debug messages
 
     # set -eu
 
@@ -621,10 +621,10 @@ cp_secrets() {
         DEPLOY_GENERATED_FILES="all"
     fi
 
-    DRY_RUN=${DRY_RUN:-0}
-    if [[ "$DRY_RUN" == "1" ]];
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
+    if [[ "$FORGE_DRY_RUN" == "1" ]];
     then
-        echo "DRY_RUN $DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: TARGET_SERVER_ADDR $TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
+        echo "DRY_RUN $FORGE_DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: TARGET_SERVER_ADDR $TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
         echo "-------------------------------------------"
         echo "[DRY-RUN] CP_FILES_ETC --> $APP_PATH_ETC :: $ETC_DEPLOYMENT"
         echo $CP_FILES_ETC

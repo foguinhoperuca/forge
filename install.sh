@@ -39,7 +39,7 @@ run() {
     export GIT_USER=$(cat ${VAULT_SENSIBLE_PATH}/.mise-en-place.conf | grep GIT_USER | cut -d = -f2)
     export GIT_PASSWORD=$(cat ${VAULT_SENSIBLE_PATH}/.mise-en-place.conf | grep GIT_PASSWORD | cut -d = -f2)
     export GIT_REMOTE="${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git"
-    git clone -b ${GIT_BRANCH} --recurse-submodules $GIT_REMOTE "${PROJECT_DIR}/backend"
+    git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone -b ${GIT_BRANCH} --recurse-submodules $GIT_REMOTE "${PROJECT_DIR}/backend"
 
     # TODO add all gpg keys in keyring -> ideas: export trust-file db and sign all keys
     cp "${VAULT_SENSIBLE_PATH}/.mise-en-place.conf" "${PROJECT_DIR}/backend/.credentials/.mise-en-place.conf"
