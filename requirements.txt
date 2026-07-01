@@ -2,8 +2,8 @@ pgtoolkit
 psycopg2
 python-dotenv
 termcolor
+django_auth_ldap
 django
-
     
 mypy
 mypy-extensions
