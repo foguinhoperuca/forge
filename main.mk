@@ -74,30 +74,30 @@ post-receive:
 	@date
 
 # --exclude-dir=forge
-SEARCH_SRC_STR ?= "FORGE_SYSTEM_NAME"
+SEARCH_FORGE ?= "FORGE_SYSTEM_NAME"
 search-src:
 	@clear
 	@date
 	@echo "------- WORD COUNT -------"
-	@echo "SEARCH_SRC_STR = $(SEARCH_SRC_STR)"
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@echo "SEARCH_FORGE = $(SEARCH_FORGE)"
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
 	@echo "------- WORD COUNT -------"
 	@echo ""
 
 search-src-summary: search-src
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}'
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}'
 	@echo ""
 	@date
 
 search-src-full: search-src
-	@grep -rn "$(SEARCH_SRC_STR)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
 	@echo ""
 	@date
 
-SEARCH_SECRET ?= "YOUR_SECRET_VAR"
+SEARCH_FORGE ?= "YOUR_SECRET_VAR"
 search-encrypted:
 	@find . -type f -name "*.gpg" | while read -r file; do \
-		gpg -d -q "$$file" 2>/dev/null | grep --label="$$file" -H "$(SEARCH_SECRET)" || true; \
+		gpg -d -q "$$file" 2>/dev/null | grep --label="$$file" -H "$(SEARCH_FORGE)" || true; \
 	done
 
 build-ctags:
