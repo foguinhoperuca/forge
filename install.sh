@@ -55,7 +55,20 @@ run() {
         return 1
     fi
     local VAULT_SENSIBLE_PATH="${VAULT_PATH}/.forge_workspace/original/${FORGE_SYSTEM_ACRONYM}"
-	# TODO add all gpg keys in keyring -> ideas: export trust-file db and sign all keys
+
+	# clear; awk -F: '{print $1}' my_trust_backup.txt | while read -r fpr; do gpg -q --list-keys "$fpr" | grep 'uid'; done
+	install_banner "[FORGE_INSTALL] SET PUBKEYS IN KEYRING && TRUSTDB..."
+	find "${VAULT_PATH}/code/pubkeys" -type f -name "*.asc" | while read -r KEYFILE; do
+		gpg --import "$KEYFILE" >/dev/null 2>&1
+		KEY_ID=$(gpg --with-colons --show-keys "$KEYFILE" 2>/dev/null | awk -F: '$1=="fpr" {print $10; exit}')
+		echo "[FORGE_INSTALL] Processing: $KEYFILE :: $KEY_ID"
+
+		if [ -n "$KEY_ID" ]; then
+			echo "${KEY_ID}:5:" | gpg --import-ownertrust
+		else
+			echo "[FORGE_INSTALL] Warning: Could not extract a valid Key ID from $KEYFILE"
+		fi
+	done
     mkdir -p "${VAULT_SENSIBLE_PATH}" && gpg -q --yes -o "${VAULT_SENSIBLE_PATH}/.mise-en-place.conf" -d $MISE_EN_PLACE_ENCRYPTED_PATH
 
 	install_banner "[FORGE_INSTALL] CLONING THE PROJECT..."
