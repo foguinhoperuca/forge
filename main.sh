@@ -57,18 +57,17 @@ erupt() {
                 set_vars $2 "$3" "$4"
                 set_vars_by_env
                 set_symbolic_link
-                [[ "$DEBUG" == "1" ]] && show_env "PWD" || :
+                [[ "$FORGE_DEBUG" == "1" ]] && show_env "PWD" || :
             else
                 echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $2 *NOT* found!!"
             fi
             ;;
         "genenv")
-            # TODO use var WORKFLOW_ENVS_AVAILABLE in code bellow
-            # echo "${WORKFLOW_ENVS_AVAILABLE[@]}"
-            for ENV_TRG in ${ENVS_AVAILABLE[@]};
+            [[ "$FORGE_DEBUG" == "1" ]] && echo "${WORKFLOW_ENVS_AVAILABLE[@]}" || :
+            for ENV_TRG in ${WORKFLOW_ENVS_AVAILABLE[@]};
             do
-                # if [[ "$2" == ${WORKFLOW_ENVS_AVAILABLE[@]} ]];
-                if [[ "$2" == @(local|dev|stage|prod) ]];
+                # if [[ "$2" == @(local|dev|stage|prod) ]];
+                if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
                 then
                     echo ""
                     echo "************************************"
