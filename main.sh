@@ -69,22 +69,14 @@ erupt() {
                 # if [[ "$2" == @(local|dev|stage|prod) ]];
                 if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
                 then
-                    echo ""
-                    echo "************************************"
-                    echo "|| Genereting env for valid: $2"
-                    echo "************************************"
-                    echo ""
+                    print_banner "Genereting env for valid: $2"
                     generate_conf_file $2 $3
                     break
                 fi
 
                 if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
                 then
-                    echo ""
-                    echo "************************************"
-                    echo "|| Genereting env files for $ENV_TRG"
-                    echo "************************************"
-                    echo ""
+                    print_banner "|| Genereting env files for $ENV_TRG"
                     generate_conf_file $ENV_TRG $3
                 fi
             done

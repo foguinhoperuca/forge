@@ -8,7 +8,7 @@ db_script() {
     DBSCRIPT=$5
     FORGESYSPATH=$(pwd)
 
-    echo "[FORGE] db vars: forgesyspath=$FORGESYSPATH -h $DBHOST -p $DBPORT -d $DBDATABASE -U $DBUSER -f $DBSCRIPT"
+    print_banner "[FORGE] db vars: forgesyspath=$FORGESYSPATH -h $DBHOST -p $DBPORT -d $DBDATABASE -U $DBUSER -f $DBSCRIPT"
     psql -v forgesyspath=$FORGESYSPATH -h $DBHOST -p $DBPORT -d $DBDATABASE -U $DBUSER -f $DBSCRIPT
 }
 

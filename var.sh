@@ -45,7 +45,6 @@ declare -a WORKFLOW_ENVS_AVAILABLE=(
 )
 WORKFLOW_ENVS_AVAILABLE+=("$CUSTOM_WORKFLOW_ENVS")
 
-
 declare -a PYTHON_PROJECTS_AVAILABLE=(
     "api"
     "backoffice"
@@ -58,12 +57,13 @@ declare -a DJANGO_PROJECTS_AVAILABLE=(
 )
 
 declare -A CONF_FILE_ACRONYM
-CONF_FILE_ACRONYM[mise_en_place]="MEP"
+CONF_FILE_ACRONYM[mise_en_place]="MIENPL"
 CONF_FILE_ACRONYM[env_api]="ENVAPI"
 CONF_FILE_ACRONYM[env_backend]="ENVBAC"
 CONF_FILE_ACRONYM[env_bot]="ENVBOT"
 CONF_FILE_ACRONYM[pgpass]="PGPASS"
 CONF_FILE_ACRONYM[target_env]="TRGENV"
+CONF_FILE_ACRONYM[user_seeds]="USEEDS"
 
 # This should be replaced by a fully declare statement
 declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
