@@ -13,7 +13,7 @@ ignite() {
     DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
     FORGE_DEBUG=${FORGE_DEBUG:-0}
 
-    if [[ "$DEBUG" == "1" ]];
+    if [[ "$FORGE_DEBUG" == "1" ]];
     then
         print_banner "[DEBUG] ignite"
         echo "------------------------------------------- <CONTENT>  -------------------------------------------"
@@ -47,7 +47,6 @@ complement_set_vars() {
     print_banner "[FORGE] COMPLEMENT for set vars logic"
 }
 
-# TODO implement a function to read .mise-en-place.conf and load vars from there without be specified before
 set_vars() {
     # [MANDATORY] $1          :: define main TARGET_ENV
     # [OPTIONAL]  $2          :: define GIT_REPOS different from default
@@ -195,6 +194,8 @@ set_vars_by_env() {
 
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
 
+    # FIXME FORGE_DEBUG is set to empty by unenv
+    local FORGE_DEBUG=${DEBUG:-0}
     # TODO replace manual export above for this generic export
     for CONF_FILE_CORE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
     do
@@ -206,23 +207,21 @@ set_vars_by_env() {
         #     continue
         # fi
 
-        LINE_COUNT=0
+        local LINE_COUNT=0
         IFS=$'\n'
         print_banner "CONF_FILE_CORE --> ${CONF_FILE_CORE} ::: ${TARGET_ENV} ::: $DEPLOYMENT_FILE"
         for LINE in $([[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" ]] && cat $DEPLOYMENT_FILE || cat "${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}");
         do
-            # FIXME FORGE_DEBUG is set not empty by unenv
-            echo "LINE -> $LINE ::: FORGE_DEBUG --> $FORGE_DEBUG"
             [[ "$FORGE_DEBUG" == "1" ]] && print_banner "LINE..: ${LINE}"
             [[ -z "${LINE//[[:space:]]/}" ]] && continue
             [[ "$LINE" == \#* ]] && continue
 
-            CLEAN_KEY="${CONF_FILE_CORE//./}"
+            local CLEAN_KEY="${CONF_FILE_CORE//./}"
             CLEAN_KEY="${CLEAN_KEY//-/_}"
             declare -n REF="CONF_FILE_ACRONYM[$CLEAN_KEY]"
             if [[ "${CONF_FILE_CORE}" != ".pgpass" && "${CONF_FILE_CORE}" != ".user_seeds.csv" ]];
             then
-                LEFT_SIDE="${LINE%%=*}"
+                local LEFT_SIDE="${LINE%%=*}"
                 LEFT_SIDE="${LEFT_SIDE//./}"
                 LEFT_SIDE="${LEFT_SIDE//-/_}"
                 RAW_ENTRY="FORGE_${REF}_${LEFT_SIDE}"
@@ -233,7 +232,6 @@ set_vars_by_env() {
             else
                 if [[ "${CONF_FILE_CORE}" == ".pgpass" ]];
                 then
-                    PGPASS_LINE_IDENTIFICATION=(PRIMARY PRIMARY_ADMIN FOREIGN FOREIGN_ADMIN POSTGRES_ADMIN POSTGRES_READ_ONLY POSTGRES_TEST)
                     FIELDS=(HOST PORT DBNAME USER PASSWORD)
                     LINE_ID="${PGPASS_LINE_IDENTIFICATION[$LINE_COUNT]}"
                     IFS=':' read -r -a ENTRIES <<< "$LINE"

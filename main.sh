@@ -58,6 +58,7 @@ erupt() {
                 set_vars_by_env
                 set_symbolic_link
                 [[ "$FORGE_DEBUG" == "1" ]] && show_env "PWD" || :
+                echo "FIXME FORGE_DEBUG $FORGE_DEBUG"
             else
                 echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $2 *NOT* found!!"
             fi
