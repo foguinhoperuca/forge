@@ -8,47 +8,43 @@ unset_vars() {
 }
 
 ignite() {
-	# TODO move load of .mise-en-place confs here
-	print_banner "--- IGNITE: LOAD BASIC VARS FROM .mise-en-place BEFORE START ---"
-
-	export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
+    # TODO move load of .mise-en-place confs here
+    print_banner "--- IGNITE: LOAD BASIC VARS FROM .mise-en-place BEFORE START ---"
+    DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
     FORGE_DEBUG=${FORGE_DEBUG:-0}
+
     if [[ "$DEBUG" == "1" ]];
     then
-        echo ""
-        echo "+================================================================================================="
-        echo "| [DEBUG] ignite                                                                                  "
-        echo "+================================================================================================="
+        print_banner "[DEBUG] ignite"
         echo "------------------------------------------- <CONTENT>  -------------------------------------------"
         echo "BASH_SOURCE[0] ${BASH_SOURCE[0]}"
         echo "DEPLOYMENT_FILE $DEPLOYMENT_FILE"
         echo "------------------------------------------- </CONTENT> -------------------------------------------"
     fi
 
-	# if [[ ! " ${AVAILIABLE_PROJECTS[*]} " =~ [[:space:]]${FORGE_SYSTEM_ACRONYM}[[:space:]] ]]; then
+    # if [[ ! " ${AVAILIABLE_PROJECTS[*]} " =~ [[:space:]]${FORGE_SYSTEM_ACRONYM}[[:space:]] ]]; then
     #     echo "MANDATORY ARGUMENT MISSING OR NOT RECOGNIZED!!"
-	# fi
+    # fi
 
-	IFS=$'\n'
-	for LINE in $(cat $DEPLOYMENT_FILE);
-	do
-		# echo "$(cat $DEPLOYMENT_FILE | sed -e s|$(dirname $DEPLOYMENT_FILE)||g)"
-		echo "LINE.......: ${LINE}"
-		[[ "$LINE" == \#* ]] && continue
+    IFS=$'\n'
+    for LINE in $(cat $DEPLOYMENT_FILE);
+    do
+        # echo "$(cat $DEPLOYMENT_FILE | sed -e s|$(dirname $DEPLOYMENT_FILE)||g)"
+        echo "LINE.......: ${LINE}"
+        [[ "$LINE" == \#* ]] && continue
 
-		# FIXME CONF_FILE_ACRONYM[mise_en_place] is g etting TRGENV value instead MEP
-		ENTRY=$(echo "FORGE_${CONF_FILE_ACRONYM[mise_en_place]}_${LINE%%=*}" | tr '[:lower:]' '[:upper:]' | sed -e "s|\.||g" | sed -e "s|-|_|g")
-		SECRET="${LINE#*=}"
+        # FIXME CONF_FILE_ACRONYM[mise_en_place] is getting TRGENV value instead MEP
+        ENTRY=$(echo "FORGE_${CONF_FILE_ACRONYM[mise_en_place]}_${LINE%%=*}" | tr '[:lower:]' '[:upper:]' | sed -e "s|\.||g" | sed -e "s|-|_|g")
+        SECRET="${LINE#*=}"
 
-		echo "ENTRY......: ${ENTRY}"
-		echo "SECRET.....: ${SECRET}"
-		echo "-----"
-	done
-	
+        echo "ENTRY......: ${ENTRY}"
+        echo "SECRET.....: ${SECRET}"
+        echo "-----"
+    done
 }
 
 complement_set_vars() {
-	print_banner "[FORGE] COMPLEMENT for set vars logic"
+    print_banner "[FORGE] COMPLEMENT for set vars logic"
 }
 
 # TODO implement a function to read .mise-en-place.conf and load vars from there without be specified before
@@ -62,7 +58,7 @@ set_vars() {
     export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
     if [[ "$FORGE_DEBUG" == "1" ]];
     then
-		print_banner "[DEBUG] set vars"
+        print_banner "[DEBUG] set vars"
         echo "------------------------------------------- <CONTENT>  -------------------------------------------"
         echo "BASH_SOURCE[0] ${BASH_SOURCE[0]}"
         echo "DEPLOYMENT_FILE $DEPLOYMENT_FILE"
@@ -90,8 +86,8 @@ set_vars() {
     export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
     export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
     export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
-	export GIT_REMOTE="${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git"
-	[[ -z "$2" ]] && export GIT_REPOS="backend" || export GIT_REPOS="$2"
+    export GIT_REMOTE="${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git"
+    [[ -z "$2" ]] && export GIT_REPOS="backend" || export GIT_REPOS="$2"
 
     # FIXME APP_PATH_ORIGIN_EDGE shouldn't be $HOME but /home/$TARGET_SERVER_USER/
     export APP_PATH_ORIGIN_EDGE="${HOME}/universal/projects/${FORGE_ORGANIZATION_ACRONYM}/${FORGE_SYSTEM_ACRONYM}/$GIT_REPOS"
@@ -106,23 +102,23 @@ set_vars() {
     # FIXME .credentials/output_secrets/.gitignore should be added in host repository? .credentials/cp_tests should be created in terraform (it shoulkd have .gitignore in host repository too?)?
     export APP_PATH_OUT_TEST="cp_tests"
     export APP_PATH_CREDENTIALS_GENERATED_OUTPUT="output_secrets"
-	export APP_PATH_CREDENTIALS_GENERATED_INPUT=".credentials/secure"
+    export APP_PATH_CREDENTIALS_GENERATED_INPUT=".credentials/secure"
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
 
-	if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$1[[:space:]] ]];
-	then
-		export TARGET_ENV=$1
-		# export GIT_BRANCH="${3:-${1/#prod/master}}"
-		export GIT_BRANCH="${3:-$1}"
-		case "$GIT_BRANCH" in
-			prod) export GIT_BRANCH="master" ;;
-		esac
-	else
-		export TARGET_ENV=$DEFAULT_TARGET_ENV # if not setted
-		export GIT_BRANCH=$TARGET_ENV
-		echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $1 *NOT* found!! Using already setted!"
-	fi
+    if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$1[[:space:]] ]];
+    then
+        export TARGET_ENV=$1
+        # export GIT_BRANCH="${3:-${1/#prod/master}}"
+        export GIT_BRANCH="${3:-$1}"
+        case "$GIT_BRANCH" in
+            prod) export GIT_BRANCH="master" ;;
+        esac
+    else
+        export TARGET_ENV=$DEFAULT_TARGET_ENV # if not setted
+        export GIT_BRANCH=$TARGET_ENV
+        echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $1 *NOT* found!! Using already setted!"
+    fi
     echo ""
     # FIXME TARGET_ENV Replica It should not be confused with the replica environment. Replica != "Frontend" DB (DB directly accessed by end user)
     echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
@@ -131,9 +127,7 @@ set_vars() {
 }
 
 complement_set_vars_by_env() {
-    echo "|+-----------------------------------------------+|"
-    echo "| [FORGE] COMPLEMENT for set vars by env logic    |"
-    echo "|+-----------------------------------------------+|"
+    print_banner "| [FORGE] COMPLEMENT for set vars by env logic |"
 }
 
 set_vars_by_env() {
@@ -201,69 +195,68 @@ set_vars_by_env() {
 
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
 
+    # TODO replace manual export above for this generic export
+    for CONF_FILE_CORE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
+    do
+        # # FIXME this if is just for test one file per time
+        # if [[ "${CONF_FILE_CORE}" == ".pgpass" || "${CONF_FILE_CORE}" == ".user_seeds.csv" || "${CONF_FILE_CORE}" == ".env.api" || "${CONF_FILE_CORE}" == ".env.backoffice" || "${CONF_FILE_CORE}" == ".env.bot" || "${CONF_FILE_CORE}" == ".target-server" ]];
+        # then
+        #     print_banner "SKIPPING ${CONF_FILE_CORE}"
+        #     echo "+++++++++++++++++++++++++++++++++++++++++++++++++++ </${CONF_FILE_CORE}> +++++++++++++++++++++++++++++++++++++++++++++++++++"
+        #     continue
+        # fi
+
+        LINE_COUNT=0
+        IFS=$'\n'
+        print_banner "CONF_FILE_CORE --> ${CONF_FILE_CORE} ::: ${TARGET_ENV} ::: $DEPLOYMENT_FILE"
+        for LINE in $([[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" ]] && cat $DEPLOYMENT_FILE || cat "${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}");
+        do
+            # FIXME FORGE_DEBUG is set not empty by unenv
+            echo "LINE -> $LINE ::: FORGE_DEBUG --> $FORGE_DEBUG"
+            [[ "$FORGE_DEBUG" == "1" ]] && print_banner "LINE..: ${LINE}"
+            [[ -z "${LINE//[[:space:]]/}" ]] && continue
+            [[ "$LINE" == \#* ]] && continue
+
+            CLEAN_KEY="${CONF_FILE_CORE//./}"
+            CLEAN_KEY="${CLEAN_KEY//-/_}"
+            declare -n REF="CONF_FILE_ACRONYM[$CLEAN_KEY]"
+            if [[ "${CONF_FILE_CORE}" != ".pgpass" && "${CONF_FILE_CORE}" != ".user_seeds.csv" ]];
+            then
+                LEFT_SIDE="${LINE%%=*}"
+                LEFT_SIDE="${LEFT_SIDE//./}"
+                LEFT_SIDE="${LEFT_SIDE//-/_}"
+                RAW_ENTRY="FORGE_${REF}_${LEFT_SIDE}"
+                FULL_ENTRY="${RAW_ENTRY^^}"
+                SECRET="${LINE#*=}"
+                export "$FULL_ENTRY"="$SECRET"
+                [[ "$FORGE_DEBUG" == "1" ]] && echo "EXPORT..: ${FULL_ENTRY} ::: ${SECRET}"
+            else
+                if [[ "${CONF_FILE_CORE}" == ".pgpass" ]];
+                then
+                    PGPASS_LINE_IDENTIFICATION=(PRIMARY PRIMARY_ADMIN FOREIGN FOREIGN_ADMIN POSTGRES_ADMIN POSTGRES_READ_ONLY POSTGRES_TEST)
+                    FIELDS=(HOST PORT DBNAME USER PASSWORD)
+                    LINE_ID="${PGPASS_LINE_IDENTIFICATION[$LINE_COUNT]}"
+                    IFS=':' read -r -a ENTRIES <<< "$LINE"
+                else
+                    FIELDS=(group_name username first_name last_name email is_staff is_superuser password)
+                    LINE_ID="$LINE_COUNT"
+                    IFS=';' read -r -a ENTRIES <<< "$LINE"
+                fi
+                [[ "$FORGE_DEBUG" == "1" ]] && echo "ENTRIES..: ${ENTRIES[@]}"
+                for i in "${!ENTRIES[@]}"; do
+                    RAW_ENTRY="FORGE_${REF}_${LINE_ID}_${FIELDS[$i]}"
+                    FULL_ENTRY="${RAW_ENTRY^^}"
+                    export "$FULL_ENTRY"="${ENTRIES[$i]}"
+                    [[ "$FORGE_DEBUG" == "1" ]] && echo "${FULL_ENTRY}..: ${ENTRIES[$i]}"
+                done
+                ((LINE_COUNT++))
+            fi
+            [[ "$FORGE_DEBUG" == "1" ]] && echo "======================================================================"
+        done
+        echo "+++++++++++++++++++++++++++++++++++++++++++++++++++ </${CONF_FILE_CORE}> +++++++++++++++++++++++++++++++++++++++++++++++++++"
+    done
+
     complement_set_vars_by_env
-}
-
-dev_conf_content() {
-	# Just for develop the feature to read conf file and load in environment variable the content of file.
-
-	TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
-	PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
-	# CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
-
-	for CONF_FILE_CORE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
-	do
-		CONF_FILE="${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}"
-		if [[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" || "${CONF_FILE_CORE}" == ".user_seeds.csv" ]];
-		then
-			echo "SKIPPING ${CONF_FILE}"
-			echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
-			continue
-		fi
-		CONTENT=$(cat $CONF_FILE)
-		echo "CONF_FILE_CORE --> ${CONF_FILE_CORE} ${TARGET_ENV} ::: ${CONF_FILE}"
-		# echo "CONTENT :: ${CONTENT}"
-
-		# export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
-
-		IFS=$'\n'
-		for LINE in $CONTENT;
-		do
-			echo "LINE.....: ${LINE}"
-			if [[ "$LINE" == \#* ]]; then
-				continue
-			fi
-
-			# FIXME reuse it to convert var to var_name
-			# for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
-			# do
-			# 	var_name="$var"
-			# 	echo "$var_name=${!var_name}"
-			# done
-
-			if [[ "${CONF_FILE_CORE}" != ".pgpass" ]];
-			then
-				ENTRY=$(echo $LINE | cut -d = -f1)
-				# FIXME SECRECT can have some = !! Should I run it with sed to remove ENTRY= from line
-				SECRET=$(echo $LINE | cut -d = -f2)
-				CORE_CALC=$(echo "FORGE_${CONF_FILE_CORE}" | tr '[:lower:]' '[:upper:]' | sed -e "s|\.||g"  | sed -e "s|-|_|g")
-
-				echo "ENTRY......: ${ENTRY}"
-				echo "SECRET.....: ${SECRET}"
-				echo "CORE_CALC..: ${CORE_CALC}"
-				echo "VAR........: $(echo ${CONF_FILE_CORE} | grep -v ".")_${ENTRY}=${SECRET}"
-				echo "VAR2.......: ${CORE_CALC}_${ENTRY}=${SECRET}"
-			else
-				IFS=':' read -r -a ENTRIES <<< "$LINE"
-				echo "ENTRIES..: ${ENTRIES[@]}"
-				for ENTRY in "${ENTRIES[@]}"; do
-					echo "ENTRY....: ${ENTRY}"
-				done
-			fi
-			echo "======================================================================"
-		done
-		echo "----------------------------------------------------------------------"
-	done
 }
 
 unset_symbolic_link() {
@@ -339,7 +332,7 @@ show_env() {
         echo "$var_name=${!var_name}"
     done
 
-	# TODO set a array with sensitive vars to be posible loop through it
+    # TODO set a array with sensitive vars to be posible loop through it
     if [[ "$1" == "PWD" ]];
     then
         echo ""
