@@ -25,40 +25,40 @@ $BODY$
       -- FROM pg_type t JOIN pg_namespace n ON t.typnamespace = n.oid
       -- WHERE nspname = :'forgesys_schema' AND t.typtype = 'b'; -- 'b' for base types, other types may need different filters
       -- \gexec
-      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE USAGE ON TYPES FROM %2$s', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE USAGE ON TYPES FROM "%2$s"', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
       
       -- SEQUENCES
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM "%2$s";', 'public', pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %1$s FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON SEQUENCES FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON SEQUENCES FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- TABLES
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM "%2$s";', 'public', pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %1$s FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON TABLES FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON TABLES FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- FUNCTIONS
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM "%2$s";', 'public', pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA %1$s FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON FUNCTIONS FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('ALTER DEFAULT PRIVILEGES IN SCHEMA %1$s REVOKE ALL ON FUNCTIONS FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
@@ -66,15 +66,15 @@ $BODY$
       cmd := FORMAT('ALTER SCHEMA  %1$s OWNER TO postgres;', forgesys_schema);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM %2$s;', 'public', pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM "%2$s";', 'public', pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM %2$s;', forgesys_schema, pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON SCHEMA %1$s FROM "%2$s";', forgesys_schema, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
 
       -- DATABASE
-      cmd := FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM %2$s;', forgesys_db, pvlg_role_user);
+      cmd := FORMAT('REVOKE ALL PRIVILEGES ON DATABASE %1$s FROM "%2$s";', forgesys_db, pvlg_role_user);
       RAISE DEBUG '[ADMIN PROCEDURE] %', cmd;
       EXECUTE cmd;
     END IF;
