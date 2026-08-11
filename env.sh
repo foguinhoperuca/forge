@@ -382,9 +382,9 @@ encrypt_multiple() {
         return 0
     fi
 
-    for filename in $(ls "$APP_PATH_ETC"/.*);
+    for filename in $(ls ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/.* | grep -v .gitignore);
     do
-        OUTPUT_FILE=$(echo $filename | sed -e "s|${APP_PATH_ETC}/||g")
+        OUTPUT_FILE=$(echo $filename | sed -e "s|\.credentials\/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/||g")
 
         FORGE_DEBUG=${FORGE_DEBUG:-0}
         if [[ "$FORGE_DEBUG" == "1" ]];
