@@ -392,9 +392,9 @@ deploy_venv() {
             echo "Project ${python_project} do not have requirements.txt. Skipping..."
             continue
         fi
-        rm -rf $APP_PATH_DOCUMENT_ROOT/$python_project/venv
-        python3 -m venv $APP_PATH_DOCUMENT_ROOT/$python_project/venv
-        source $APP_PATH_DOCUMENT_ROOT/$python_project/venv/bin/activate
+        rm -rf $APP_PATH_DOCUMENT_ROOT/$python_project/.venv
+        python3 -m venv $APP_PATH_DOCUMENT_ROOT/$python_project/.venv
+        source $APP_PATH_DOCUMENT_ROOT/$python_project/.venv/bin/activate
         pip install -r $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt
         deactivate
     done
@@ -412,7 +412,7 @@ deploy_collectstatic() {
             echo "Project ${django_project} do not have manage.py. Skipping..."
             continue
         fi
-        source $APP_PATH_DOCUMENT_ROOT/$django_project/venv/bin/activate
+        source $APP_PATH_DOCUMENT_ROOT/$django_project/.venv/bin/activate
         python3 $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py collectstatic -c --no-input
         deactivate
     done
@@ -465,7 +465,7 @@ deploy() {
     #     echo "------------------------------------------------"
     #     echo "----- Run migrations for env ${TARGET_ENV} -----"
     #     echo "------------------------------------------------"
-    #     source $APP_PATH_DOCUMENT_ROOT/backoffice/venv/bin/activate
+    #     source $APP_PATH_DOCUMENT_ROOT/backoffice/.venv/bin/activate
     #     make db-start
     #     deactivate
     # fi

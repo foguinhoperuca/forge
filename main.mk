@@ -80,12 +80,12 @@ search-src:
 	@date
 	@echo "------- WORD COUNT -------"
 	@echo "SEARCH_FORGE = $(SEARCH_FORGE)"
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
 	@echo "------- WORD COUNT -------"
 	@echo ""
 
 search-src-summary: search-src
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}'
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}'
 	@echo ""
 	@date
 
@@ -178,5 +178,5 @@ doc-plantuml:
 # sshx:
 # 	clear
 # 	date
-# 	ssh -X $(SERVER) "cd /opt/gecon_bot; source /opt/gecon_bot/venv/bin/activate; python3 /opt/gecon_bot/gecon_bot/app.py --no-headless --log normal --debug NORMAL --bot_browser FIREFOX cpfl_low --routine obtain"
+# 	ssh -X $(SERVER) "cd /opt/gecon_bot; source /opt/gecon_bot/.venv/bin/activate; python3 /opt/gecon_bot/gecon_bot/app.py --no-headless --log normal --debug NORMAL --bot_browser FIREFOX cpfl_low --routine obtain"
 # 	date
