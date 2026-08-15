@@ -361,63 +361,75 @@ terraform() {
 }
 
 deploy_app_path_opt() {
-    echo ""
-    echo "|------------------------|"
-    echo "| Deploying APP_PATH_OPT |"
-    echo "|------------------------|"
-    echo "$APP_PATH_OPT"
+    # Deploy default $TARGET_ENV and set it as main depository to run the project
+
+    print_banner "[FORGE] Deploying APP_PATH_OPT: $APP_PATH_OPT"
 
     # FIXME should protect rm -rf !!
-    rm -rf $APP_PATH_WORKTREE/$GIT_BRANCH
-    mkdir $APP_PATH_WORKTREE/$GIT_BRANCH
+    rm -rf "${APP_PATH_WORKTREE:?}/${GIT_BRANCH:?}"
+    mkdir "$APP_PATH_WORKTREE/$GIT_BRANCH"
     # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
-    git clone --recurse-submodules -b $GIT_BRANCH  $APP_PATH_BARE $APP_PATH_WORKTREE/$GIT_BRANCH
+    git clone --recurse-submodules -b "$GIT_BRANCH"  "$APP_PATH_BARE" "$APP_PATH_WORKTREE/$GIT_BRANCH"
     echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
     # FIXME maybe can be an error with master != prod for symlink
-    rm -f $APP_PATH_DOCUMENT_ROOT
-    ln -s $APP_PATH_WORKTREE/$GIT_BRANCH $APP_PATH_DOCUMENT_ROOT
+    rm -f "$APP_PATH_DOCUMENT_ROOT"
+    ln -s "$APP_PATH_WORKTREE/$GIT_BRANCH" "$APP_PATH_DOCUMENT_ROOT"
     set_symbolic_link
 
     # TODO test creation forge in bare.git
-    cd $APP_PATH_WORKTREE/edge
+    cd "$APP_PATH_WORKTREE/edge"
     git submodule update --init --recursive
     cd -
 }
 
 deploy_venv() {
-    for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
+    # Deploy venv environment for each python project for prepare it to run with libs
+    # [MANDATORY] $FORCE_REINSTALL_VENV :: define if force the re-createation of venv or just install libs
+    # [OPTIONAL]  $FORGE_DEBUG          :: show debug info
+
+    FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
+
+    for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
     do
-        echo ""
-        echo "----------------------------------------------"
-        echo "----- Install libs for ${python_project} -----"
-        echo "----------------------------------------------"
+        print_banner "[FORGE] Install libs for ${python_project}"
+        if [[ "$FORGE_DEBUG" == "1" ]];
+        then
+            echo "EXIST? ... ${python_project} ::: ${FORCE_REINSTALL_VENV} ::: ${APP_PATH_DOCUMENT_ROOT}"
+        fi
+
         if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt ]];
         then
             echo "Project ${python_project} do not have requirements.txt. Skipping..."
             continue
         fi
-        rm -rf $APP_PATH_DOCUMENT_ROOT/$python_project/.venv
-        python3 -m venv $APP_PATH_DOCUMENT_ROOT/$python_project/.venv
-        source $APP_PATH_DOCUMENT_ROOT/$python_project/.venv/bin/activate
-        pip install -r $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt
+        if [[ "$FORCE_REINSTALL_VENV" == "1" ]]; then
+            rm -rf "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv"
+            python3 -m venv "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv"
+        fi
+        source "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv/bin/activate"
+        pip install -r "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/requirements.txt"
         deactivate
     done
 }
 
 deploy_collectstatic() {
-    for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]};
+    # Re-compile assets for frontend apps (with api too!!)
+    # [OPTIONAL]  $FORGE_DEBUG :: show debug info
+    for django_project in "${DJANGO_PROJECTS_AVAILABLE[@]}";
     do
-        echo ""
-        echo "------------------------------------------------------"
-        echo "----- Collect static files for ${django_project} -----"
-        echo "------------------------------------------------------"
+        print_banner "[FORGE] Collect static files for ${django_project}"
+        if [[ "$FORGE_DEBUG" == "1" ]];
+        then
+            echo "EXIST? ... ${django_project} ::: ${APP_PATH_DOCUMENT_ROOT}"
+        fi
+
         if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py ]];
         then
             echo "Project ${django_project} do not have manage.py. Skipping..."
             continue
         fi
-        source $APP_PATH_DOCUMENT_ROOT/$django_project/.venv/bin/activate
-        python3 $APP_PATH_DOCUMENT_ROOT/$django_project/manage.py collectstatic -c --no-input
+        source "$APP_PATH_DOCUMENT_ROOT/$django_project/.venv/bin/activate"
+        python3 "$APP_PATH_DOCUMENT_ROOT/$django_project/manage.py" collectstatic -c --no-input
         deactivate
     done
 }
