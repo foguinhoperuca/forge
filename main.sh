@@ -34,11 +34,6 @@ _forge_completation() {
 }
 complete -F _forge_completation erupt
 
-# TODO remove it - rename all calls to mount_etna function
-main() {
-    erupt $@
-}
-
 erupt() {
     case $1 in
         "show")

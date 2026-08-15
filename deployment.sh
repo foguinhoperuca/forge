@@ -82,6 +82,10 @@ genesis() {
             # touch "${filename}"
         fi
     done
+
+	# TODO set default git deployment remote for edge as git remote add deployment file://$APP_PATH_BARE
+	cd $APP_PATH_EDGE
+	git remote add deployment file://$APP_PATH_BARE
 }
 
 terraform_app_path_etc() {

@@ -1,0 +1,7 @@
+-r requirements.txt
+-r ../api/requirements.txt
+-r ../api/requirements-dev.txt
+-r ../bot/requirements.txt
+-r ../bot/requirements-dev.txt
+-r ../backoffice/requirements.txt
+-r ../backoffice/requirements-dev.txt

@@ -1,0 +1,9 @@
+mypy
+mypy-extensions
+typing_extensions
+coverage
+flake8
+pyflakes
+pylint
+icecream
+black

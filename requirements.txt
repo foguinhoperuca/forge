@@ -4,13 +4,3 @@ python-dotenv
 termcolor
 django_auth_ldap
 django
-    
-mypy
-mypy-extensions
-typing_extensions
-coverage
-flake8
-pyflakes
-pylint
-icecream
-black
