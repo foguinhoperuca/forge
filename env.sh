@@ -1,6 +1,7 @@
 #!/bin/bash
 
 unset_vars() {
+    # TODO also remove vars from var.sh
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
     do
         unset $var
@@ -74,6 +75,10 @@ set_vars() {
 
     export DEFAULT_TARGET_ENV=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_ENV | cut -d = -f2)
     export DEFAULT_TARGET_SERVER_USER=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_SERVER_USER | cut -d = -f2)
+    if ! id "$DEFAULT_TARGET_SERVER_USER" >/dev/null 2>&1;
+    then
+        export DEFAULT_TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
+    fi
     export FORGE_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
     export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
@@ -533,8 +538,12 @@ generate_conf_file() {
         fi
     done
 
-    # FIXME maybe use TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
+    if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;
+    then
+        TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
+    fi
+
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/
     echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
 

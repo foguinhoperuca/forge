@@ -114,7 +114,7 @@ erupt() {
             CHOOSED_TARGET_ENV=$2
             CUSTOM_USER="$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)"
             echo "--- CHOOSED_TARGET_ENV --> ${CHOOSED_TARGET_ENV} :: CUSTOM_USER --> ${CUSTOM_USER} ---"
-            sed -i.bkp "s|DEFAULT_TARGET_SERVER_USER=.*|DEFAULT_TARGET_SERVER_USER=${CUSTOM_USER}|" "${APP_PATH_ORIGIN_EDGE}/.credentials/.mise-en-place.conf"
+            sed -i.bkp "s|DEFAULT_TARGET_SERVER_USER=.*|DEFAULT_TARGET_SERVER_USER=${CUSTOM_USER}|" ".credentials/.mise-en-place.conf"
             set_vars $CHOOSED_TARGET_ENV "" ""
             terraform_app_path_etc
             # FIXME DEFAULT_TARGET_SERVER_USER can be helpfull instead change .target-server.${TARGET_ENV}
