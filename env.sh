@@ -141,6 +141,13 @@ set_vars_by_env() {
     export TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
     export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
     export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
+    TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
+    if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;
+    then
+        local ORIGINAL_TARGET_SERVER_USER=$TARGET_SERVER_USER
+        export TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
+        print_banner "Original -> ${ORIGINAL_TARGET_SERVER_USER} <- do not exist in this machine. Using current user: $TARGET_SERVER_USER"
+    fi
     export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
     export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
     export TARGET_SERVER_DB_SYS_GRP=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DB_SYS_GRP | cut -d = -f2)
@@ -541,6 +548,7 @@ generate_conf_file() {
     TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
     if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;
     then
+        echo "Original ${TARGET_SERVER_USER} do not exist in this machine. Using current user."
         TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     fi
 
@@ -553,6 +561,8 @@ generate_conf_file() {
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.mise-en-place.conf" ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" ".credentials/"
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.user_seeds.csv"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
     fi
+
+    echo "Generated confifguration file..."
 }
 
 cp_secrets() {

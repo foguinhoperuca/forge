@@ -336,10 +336,10 @@ terraform() {
     # ** se certificar que as pastas /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/pedido_ajuda e /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/photo_guia_atendimento/ existem!
     # * /etc/hosts
 
-    echo "Terraforming for env $1"
-    echo "======================="
+    TERRAFORM_TARGET_ENV="${1:-local}"
+    print_banner "Terraforming for env $TERRAFORM_TARGET_ENV (original value: $1)"
 
-    set_vars $1 "" ""
+    set_vars $TERRAFORM_TARGET_ENV "" ""
     terraform_app_path_etc
     set_vars_by_env
 
