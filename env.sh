@@ -112,7 +112,7 @@ set_vars() {
 
     IFS='|'
     JOINED_ENVS="|${WORKFLOW_ENVS_AVAILABLE[*]}|"
-    unset IFS # Reset to default whitespace delimiter
+    unset IFS
     case "$1" in
         "")
             export TARGET_ENV="$DEFAULT_TARGET_ENV"
