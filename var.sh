@@ -36,6 +36,16 @@ declare -a ENVS_AVAILABLE=(
 )
 
 # TODO use it! Also document the use of $CUSTOM_WORKFLOW_ENVS=""
+# TODO use a declaration way that no rely on source code formatation
+# # 1. Base environments
+# declare -a WORKFLOW_ENVS_AVAILABLE=("local" "dev" "stage" "prod")
+# # 2. Safely add custom environments ONLY if they are not empty
+# if [[ -n "${CUSTOM_WORKFLOW_ENVS:-}" ]]; then
+#     # Loops and splits if CUSTOM_WORKFLOW_ENVS contains multiple values (e.g. "qa demo")
+#     for env in $CUSTOM_WORKFLOW_ENVS; do
+#         WORKFLOW_ENVS_AVAILABLE+=("$env")
+#     done
+# fi
 CUSTOM_WORKFLOW_ENVS=${CUSTOM_WORKFLOW_ENVS:-""}
 declare -a WORKFLOW_ENVS_AVAILABLE=(
 	"local"

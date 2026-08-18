@@ -9,6 +9,13 @@ set_vars "" "" "" "" > /dev/null
 
 while read oldrev newrev ref
 do
+    if [[ "$FORGE_DEBUG" == "1" ]];
+    then
+        echo "[DEBUG] FORGE_DRY_RUN..: $FORGE_DRY_RUN :: original SCRIPT_DIR....: ${SCRIPT_DIR}"
+        echo "[DEBUG] TARGET_ENV.....: ${TARGET_ENV}  :: GIT_BRANCH.............: $GIT_BRANCH   :: DEFAULT_TARGET_ENV..: $DEFAULT_TARGET_ENV :: Using DEPLOYMENT_FILE..: ${DEPLOYMENT_FILE}"
+        echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
+    fi
+
     if [ "$ref" = "refs/heads/$TARGET_ENV" ];
     then
         if [[ "$FORGE_DRY_RUN" == "1" ]];
@@ -22,6 +29,6 @@ do
         echo "[EXEC-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
         deploy
     else
-        echo "[NO-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Doing nothing: only the '${GIT_BRANCH}' branch may be deployed on this server."
+        echo "[NO-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Doing nothing: only the '${GIT_BRANCH}' (expecting $TARGET_ENV) branch may be deployed on this server."
     fi
 done

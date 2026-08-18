@@ -110,22 +110,35 @@ set_vars() {
     # TODO implement it!
     export APP_PATH_BASE_DB_BACKUP="/var/backups/postgres/"
 
-    if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$1[[:space:]] ]];
-    then
-        export TARGET_ENV=$1
-        # export GIT_BRANCH="${3:-${1/#prod/master}}"
-        export GIT_BRANCH="${3:-$1}"
-        case "$GIT_BRANCH" in
-            prod) export GIT_BRANCH="master" ;;
-        esac
-    else
-        export TARGET_ENV=$DEFAULT_TARGET_ENV # if not setted
-        export GIT_BRANCH=$TARGET_ENV
-        echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $1 *NOT* found!! Using already setted!"
-    fi
+    IFS='|'
+    JOINED_ENVS="|${WORKFLOW_ENVS_AVAILABLE[*]}|"
+    unset IFS # Reset to default whitespace delimiter
+    case "$1" in
+        "")
+            export TARGET_ENV="$DEFAULT_TARGET_ENV"
+            export GIT_BRANCH="$TARGET_ENV"
+            echo "ENV USAGE: Arg \$1 is *EMPTY*! Fallback to defaults -> TARGET_ENV=$TARGET_ENV"
+            ;;
+        *)
+            if [[ "$JOINED_ENVS" == *"|$1|"* ]];
+            then
+                export TARGET_ENV="$1"
+                export GIT_BRANCH="${3:-$1}"
+                if [[ "$GIT_BRANCH" == "prod" ]]; then
+                    export GIT_BRANCH="master"
+                fi
+                echo "ENV USAGE: Valid match found! TARGET_ENV=$TARGET_ENV, GIT_BRANCH=$GIT_BRANCH"
+            else
+                export TARGET_ENV="$DEFAULT_TARGET_ENV"
+                export GIT_BRANCH="$TARGET_ENV"
+                echo "ENV USAGE: Env '$1' is *NOT* valid [${WORKFLOW_ENVS_AVAILABLE[*]}]. Forcing defaults."
+            fi
+            ;;
+    esac
+
     echo ""
     # FIXME TARGET_ENV Replica It should not be confused with the replica environment. Replica != "Frontend" DB (DB directly accessed by end user)
-    echo "[SET ENV] You choosed $1 parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
+    echo "[SET ENV] You choosed -> $1 <- parameters TARGET_ENV: $1 :: GIT_REPOS: $2 :: GIT_BRANCH: $3 :: WORKFLOW_ENV_AVAILABLE: ${WORKFLOW_ENVS_AVAILABLE[*]} ::: result is TARGET_ENV=$TARGET_ENV ::: GIT_BRANCH=$GIT_BRANCH"
 
     complement_set_vars
 }
