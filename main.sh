@@ -44,6 +44,7 @@ erupt() {
             unset_symbolic_link
             unset_vars
             show_env $2
+            [[ -n "$VIRTUAL_ENV" ]] && deactivate
             ;;
         "env")
             if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
@@ -57,6 +58,7 @@ erupt() {
             else
                 echo "ENV USAGE: [${WORKFLOW_ENVS_AVAILABLE[*]}]. $2 *NOT* found!!"
             fi
+            [[ -z "$VIRTUAL_ENV" ]] && source forge/.venv/bin/activate
             ;;
         "genenv")
             [[ "$FORGE_DEBUG" == "1" ]] && echo "${WORKFLOW_ENVS_AVAILABLE[@]}" || :

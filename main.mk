@@ -59,12 +59,12 @@ decrypt-miseenplace:
 	@gpg --yes -o .credentials/.mise-en-place.conf -d .credentials/secure/.mise-en-place.conf.gpg
 	@date
 
-DOCUMENT_ROOT_TARGET ?= $(TARGET_ENV)
-document_root:
+DR_PATH ?= $(TARGET_ENV)
+document-root:
 	@clear
 	@date
 	@rm "$(APP_PATH_DOCUMENT_ROOT)"
-	ln -sf "$(APP_PATH_WORKTREE)/$(DOCUMENT_ROOT_TARGET)" "$(APP_PATH_DOCUMENT_ROOT)"
+	ln -sf "$(APP_PATH_WORKTREE)/$(DR_PATH)" "$(APP_PATH_DOCUMENT_ROOT)"
 	@ls -lah --color=auto "$(APP_PATH_WORKTREE)"
 
 post-receive:
