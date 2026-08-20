@@ -436,6 +436,17 @@ deploy_collectstatic() {
     done
 }
 
+complement_deploy_db() {
+    # Is expected that the host project implemented the main db related to make target. This function can be rewrote in mount_etna.sh script to use a custom action
+
+    print_banner "[FORGE] running DEFAULT task for tear down and rebuild DB"
+    source "${APP_PATH_DOCUMENT_ROOT:?}/forge/.venv/bin/activate" 2>/dev/null || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
+    cd "${APP_PATH_DOCUMENT_ROOT:?}/"
+    make db-start
+    deactivate
+    cd -
+}
+
 deploy_db() {
     print_banner "[FORGE] Tear down and rebuild DB"
 
@@ -453,9 +464,7 @@ deploy_db() {
         print_banner "⚠️ [FORGE] ATTENTION: The environment :: $TARGET_ENV :: is critical! Not running commands for DB."
     else
         print_banner "✅ [FORGE] Environment $TARGET_ENV safe for tests. Running DB tear down and rebuild..."
-        source "${APP_PATH_DOCUMENT_ROOT:?}/forge/.venv/bin/activate" 2>/dev/null || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
-        make db-start
-        deactivate
+        complement_deploy_db
     fi
 }
 

@@ -70,6 +70,9 @@ document-root:
 post-receive:
 	@clear
 	@date
+	cd "$(APP_PATH_EDGE)/deployment/"
+	git commit --allow-empty -m "test: git hook post receive trigger"
+	# git push deployment $(TARGET_ENV)
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 

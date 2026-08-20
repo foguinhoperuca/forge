@@ -4,7 +4,7 @@
 # By now there is the limitation: $GIT_BRANCH should be a valid env (with conf files .*.<ENV>)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source $SCRIPT_DIR/forge/main.sh > /dev/null
+source $SCRIPT_DIR/mount_etna.sh > /dev/null
 set_vars "" "" "" "" > /dev/null
 
 while read oldrev newrev ref
