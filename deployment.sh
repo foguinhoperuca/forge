@@ -389,6 +389,8 @@ deploy_venv() {
 
     FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
 
+    deactivate 2>/dev/null
+    PYTHON_PROJECTS_AVAILABLE+=('forge')
     for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
     do
         print_banner "[FORGE] Install libs for ${python_project}"
@@ -434,6 +436,29 @@ deploy_collectstatic() {
     done
 }
 
+deploy_db() {
+    print_banner "[FORGE] Tear down and rebuild DB"
+
+    # CRITICAL_SYSTEMS=('prod' 'staging' 'finance')
+    print_banner "[FORGE] Analysys for running DB deploy on CRITICAL system: ${CRITICAL_SYSTEMS[@]}"
+    is_critical=true
+    matches=0
+    for sys in "${CRITICAL_SYSTEMS[@]}"; do
+        [[ "$sys" == "$CURRENT_ENV" ]] && ((matches++))
+    done
+    if (( matches == 0 )); then
+        is_critical=false
+    fi
+    if [ "$is_critical" = true ]; then
+        print_banner "⚠️ [FORGE] ATTENTION: The environment :: $TARGET_ENV :: is critical! Not running commands for DB."
+    else
+        print_banner "✅ [FORGE] Environment $TARGET_ENV safe for tests. Running DB tear down and rebuild..."
+        source "${APP_PATH_DOCUMENT_ROOT:?}/forge/.venv/bin/activate" 2>/dev/null || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
+        make db-start
+        deactivate
+    fi
+}
+
 complement_deploy() {
     echo ""
     echo "|---------------------------|"
@@ -455,8 +480,10 @@ deploy() {
     
     deploy_app_path_opt
 
+    # app
     deploy_venv
     deploy_collectstatic
+    deploy_db
 
     # TODO tasks to implement (security)
     # - Secret scan
@@ -467,25 +494,8 @@ deploy() {
     # - DAST (dynamic test)
 
     # TODO
-    # - build env files
     # - run unittest/pytests
-    # - migration
     # - restart apache
-
-    # cd $APP_PATH_WORKTREE/$GIT_BRANCH # FIXME need it!?
-    # if [ "$TARGET_ENV" == "prod" ];
-    # then
-    #     echo "Stop! You are in $TARGET_ENV . Beware with prod before run again"
-    # else
-    #     echo ""
-    #     echo "------------------------------------------------"
-    #     echo "----- Run migrations for env ${TARGET_ENV} -----"
-    #     echo "------------------------------------------------"
-    #     source $APP_PATH_DOCUMENT_ROOT/backoffice/.venv/bin/activate
-    #     make db-start
-    #     deactivate
-    # fi
-    # cd -
 
     # echo ""
     # echo "|------------------------|"

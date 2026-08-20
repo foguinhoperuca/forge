@@ -1,6 +1,3 @@
-pgtoolkit
-psycopg2
-python-dotenv
-termcolor
-django_auth_ldap
-django
+# DECISION Use this file as "frontend" of libs for basic use in other functions. Separated the libs exclusive for forge in another file for modularity.
+-r ../backoffice/requirements.txt
+-r requirements-forge.txt

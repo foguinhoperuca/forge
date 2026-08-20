@@ -89,6 +89,12 @@ erupt() {
             deploy_venv
             deploy_collectstatic
             ;;
+        "app_deploy")
+            deploy_venv
+            deploy_collectstatic
+            deploy_db
+            # TODO restart/deploy apache (web server)
+            ;;
         "deploy")
             deploy
             ;;

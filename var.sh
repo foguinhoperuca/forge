@@ -55,6 +55,8 @@ declare -a WORKFLOW_ENVS_AVAILABLE=(
 )
 WORKFLOW_ENVS_AVAILABLE+=("$CUSTOM_WORKFLOW_ENVS")
 
+CRITICAL_SYSTEMS=('prod')
+
 declare -a PYTHON_PROJECTS_AVAILABLE=(
     "api"
     "backoffice"
