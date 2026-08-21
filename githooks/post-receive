@@ -16,7 +16,7 @@ do
         echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
     fi
 
-    if [ "$ref" = "refs/heads/$TARGET_ENV" ];
+    if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ];
     then
         if [[ "$FORGE_DRY_RUN" == "1" ]];
         then

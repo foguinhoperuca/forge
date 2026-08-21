@@ -67,12 +67,14 @@ document-root:
 	ln -sf "$(APP_PATH_WORKTREE)/$(DR_PATH)" "$(APP_PATH_DOCUMENT_ROOT)"
 	@ls -lah --color=auto "$(APP_PATH_WORKTREE)"
 
+# FIXME task for doc deploy trigger
 post-receive:
 	@clear
 	@date
 	cd "$(APP_PATH_EDGE)/deployment/"
 	git commit --allow-empty -m "test: git hook post receive trigger"
 	# git push deployment $(TARGET_ENV)
+	# git config alias.deploy-force push origin HEAD:refs/triggers/deploy --force
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 
