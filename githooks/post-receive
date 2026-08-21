@@ -16,6 +16,10 @@ do
         echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
     fi
 
+    if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
+        continue
+    fi
+
     if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ];
     then
         if [[ "$FORGE_DRY_RUN" == "1" ]];

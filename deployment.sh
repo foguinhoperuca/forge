@@ -440,9 +440,8 @@ complement_deploy_db() {
     # Is expected that the host project implemented the main db related to make target. This function can be rewrote in mount_etna.sh script to use a custom action
 
     print_banner "[FORGE] running DEFAULT task for tear down and rebuild DB"
-    source "${APP_PATH_DOCUMENT_ROOT:?}/forge/.venv/bin/activate" 2>/dev/null || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
-    cd "${APP_PATH_DOCUMENT_ROOT:?}/"
-    make db-start
+    cd "${APP_PATH_DOCUMENT_ROOT:?}"
+    source "${APP_PATH_DOCUMENT_ROOT:?}/mount_etna.sh" env $TARGET_ENV 2>/dev/null && make db-start || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
     deactivate
     cd -
 }

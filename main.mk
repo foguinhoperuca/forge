@@ -74,7 +74,8 @@ post-receive:
 	cd "$(APP_PATH_EDGE)/deployment/"
 	git commit --allow-empty -m "test: git hook post receive trigger"
 	# git push deployment $(TARGET_ENV)
-	# git config alias.deploy-force push origin HEAD:refs/triggers/deploy --force
+	# git config alias.deploy-force push deployment HEAD:refs/triggers/deploy --force
+	# git config push deployment :refs/triggers/deploy --force && git config push deployment HEAD:refs/triggers/deploy --force # DELETE and RE-CREATE namespace
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 

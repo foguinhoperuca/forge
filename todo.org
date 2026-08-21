@@ -1,3 +1,4 @@
+* TODO FIXME Review symlinks in root of host project and in env.sh fn (.mise-en-place and .targe-server: it should live in .credentials? Also, maybe it can broke the bot in deploy of TARGET_ENV because there is no $APP_PATH_WORKTREE/$TARGET_ENV/.credential/.mise-en-place.conf)
 * Integrate with passbolt
 * Implement checkout of worktree (in deploy) with submodules included
 * Script to add forge to an project
