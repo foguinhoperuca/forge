@@ -2,6 +2,19 @@
 # 	init clean-db-dev
 
 # Env stuffs
+# TODO reuse the git clean approach
+patch-target:
+	clear
+	date
+	ssh jefferson@eth0.matsumoto-rangiku.msr-c012 "cd /home/jefferson/universal/projects/alura/python/microservice/; git restore .; git clean -fd"
+	git diff HEAD . > nami.patch
+	scp nami.patch jefferson@eth0.matsumoto-rangiku.msr-c012:/home/jefferson/universal/projects/alura/python/microservice/
+	ssh jefferson@eth0.matsumoto-rangiku.msr-c012 "cd /home/jefferson/universal/projects/alura/python/microservice/; git pull origin master; git apply nami.patch; git status ."
+	date
+
+patch-clean:
+	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git clean -fd; git pull origin $(GIT_BRANCH)"
+
 patch:
 	@clear
 	@date
