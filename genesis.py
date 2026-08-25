@@ -153,9 +153,11 @@ if __name__ == "__main__":
 
     if any([opt in args.create for opt in ['all', ForgeUserGroup.IT_STAFF.name.lower()]]):  # noqa: E501
         logging.info('## 1.2 - IT')
+        # FIXME do a better job grabbing in var.sh what is not prod
+        it_user_is_superuser: bool = True if str(os.getenv('TARGET_ENV')) in ['local', 'dev', 'stage'] else False
         for index, username in enumerate(str(os.getenv('TARGET_SERVER_DBAS')).split(',')):
             logging.info(f'### 1.2.{index:02} - DBA {username}')
-            create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}.{os.getenv("FORGE_ORGANIZATION_BASEDNS")}', is_superuser=False, is_staff=True)  # noqa: E501
+            create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}.{os.getenv("FORGE_ORGANIZATION_BASEDNS")}', is_superuser=it_user_is_superuser, is_staff=True)  # noqa: E501
 
     logging.info('## 1.3 - OPERATORS & CUSTOM USERS (ANY OTHER GROUPS)')
     # FIXME store it in .credentials/secure/user_seeds.csv - ALSO add it to samples  # noqa: E501
