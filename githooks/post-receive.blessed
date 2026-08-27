@@ -1,0 +1,48 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# TODO need bring here to use in configuration: forge; .mise-en-place; mount_etna.sh (maybe); edge (maybe)
+# source $SCRIPT_DIR/mount_etna.sh > /dev/null && set_vars "" "" "" "" > /dev/null || echo "[BLESSED] failed with loading mise-en-place"
+
+prepare_blessed_repository() {
+    # TODO reference commands to deploy git-hook on gitaly. Move it to deployment.sh
+    GITALY_STORAGE=$(sudo grep -E "\[storage\]|name =" /var/opt/gitlab/gitaly/config.toml)
+    PROJECT_SLUG="${FORGE_ORGANIZATION_GIT}/${FORGE_SYSTEM_ACRONYM}" # TODO create FORGE_ORGANIZATION_GIT in .mise-en-place.conf
+    RELATIVE_PATH=$(sudo gitlab-rails runner "puts Project.find_by_full_path('$PROJECT_SLUG')&.disk_path")
+    RELATIVE_PATH_ID=$(sudo gitlab-rails runner "puts Project.find('$PROJECT_ID').disk_path") # alternative if know the project id in gitlab
+    if [ -z "$RELATIVE_PATH" ]; then
+        echo "Error: Project '$PROJECT_SLUG' not found in GitLab."
+        exit 1
+    fi
+    GITALY_REPO_PATH="${RELATIVE_PATH}.git" # is expected that --repository arg has a .git in the end
+    echo "Found Gitaly Path: $GITALY_REPO_PATH"
+
+    mkdir -p /tmp/hook_staging/custom_hooks # FIXME set correct dir that will grab the script post-receive.blessed; .mise-en-place.conf; etc
+    cd /tmp/hook_staging && tar -cf custom_hooks.tar custom_hooks
+    cat /tmp/hook_staging/custom_hooks.tar | sudo -u git -- /opt/gitlab/embedded/bin/gitaly hooks set --repository "$GITALY_REPO_PATH" --storage "default" --config "/var/opt/gitlab/gitaly/config.toml"
+}
+
+while read oldrev newrev ref
+do
+    if [[ "$FORGE_DEBUG" == "1" ]];
+    then
+        echo "[DEBUG] FORGE_DRY_RUN..: $FORGE_DRY_RUN :: original SCRIPT_DIR....: ${SCRIPT_DIR}"
+        echo "[DEBUG] TARGET_ENV.....: ${TARGET_ENV}  :: GIT_BRANCH.............: $GIT_BRANCH   :: DEFAULT_TARGET_ENV..: $DEFAULT_TARGET_ENV :: Using DEPLOYMENT_FILE..: ${DEPLOYMENT_FILE}"
+        echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
+    fi
+
+    # if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
+    #     continue
+    # fi
+
+    # TODO deploy to correct branchs that isn't prod (dev, stage)
+    if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ]; then # FIXME need this if here? Can I just call the git push?
+        echo "[BLESSED] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
+        # TODO first, update this blessed githook update $APP_PATH_EDGE/.credentials/.mise-en-place.conf (maybe here the .mise-en-place.conf can live in /etc/$FORGE_PROJECT/.mise-en-place.conf as a symlink to $APP_PATH_EDGE/.credentials/.mise-en-place.conf)
+        # TODO set defautl location to forge (maybe forge can live under /opt/forge/$FORGE_PROJECT/worktree/upstream - and all normal folder's/file's of a forge's project: edge, $GIT_BRANCH, etc).
+
+        # TODO set correct vars. Reference for vars: git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
+        git push --quiet "ssh://${GIT_USER}@${GIT_BASE_URL}:${APP_PATH_BARE}" "$refname"
+
+    fi
+done

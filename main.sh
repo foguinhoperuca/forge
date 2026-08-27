@@ -34,6 +34,7 @@ _forge_completation() {
 }
 complete -F _forge_completation erupt
 
+# TODO use getopts to transform the recurring cases into one command with parameters like -o and so on
 erupt() {
     case $1 in
         "show")
@@ -162,7 +163,7 @@ erupt() {
             esac
             ;;
         *)
-            # TODO better usage message
+            # TODO better usage message - USE A HEREDOC
             echo "-----------"
             echo "[FORGE] $(dirname $0)"
             echo "[FORGE] $FORGE_PATH"
