@@ -376,6 +376,10 @@ deploy_app_path_opt() {
     ln -s "$APP_PATH_WORKTREE/$GIT_BRANCH" "$APP_PATH_DOCUMENT_ROOT"
     set_symbolic_link
 
+    # TODO give back to backoffice and api to www-data user - temp workarround: git config --global --add safe.directory "$APP_PATH_DOCUMENT_ROOT"
+    # TODO chown -R "${APP_PATH_DOCUMENT_ROOT}/backoffice" www-data:www-data
+    # TODO chown -R "${APP_PATH_DOCUMENT_ROOT}/api" www-data:www-data
+
     # TODO test creation forge in bare.git
     cd "$APP_PATH_WORKTREE/edge"
     git submodule update --init --recursive
