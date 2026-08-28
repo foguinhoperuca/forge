@@ -21,7 +21,6 @@ _forge_completation() {
 
     COMPREPLY=()
 
-    # cur=${COMP_WORDS[COMP_CWORD]}
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 

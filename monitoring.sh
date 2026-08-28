@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO replace all by single command like: $(df -h "$APP_PATH_MNT" &>/dev/null && echo "Mounted OK" || echo "ERROR" && mount "$APP_PATH_MNT")
 # TODO replace storage_sistemas by $FORGE_ORGANIZATION_ACRONYM
 verify_mounted_path_online() {
     path=$1

@@ -284,8 +284,7 @@ set_vars_by_env() {
 
 unset_symbolic_link() {
     rm -f .*~ *~ *#
-    for slf in ${SYMBOLIC_LINK_FILES[@]};
-    do
+    for slf in "${SYMBOLIC_LINK_FILES[@]}"; do
         echo "**UNSET** link file: $APP_PATH_DOCUMENT_ROOT/$slf"
         rm -f "$APP_PATH_DOCUMENT_ROOT/$slf"
     done
@@ -297,9 +296,7 @@ unset_symbolic_link() {
 }
 
 complement_set_symbolic_link() {
-    echo "|+-----------------------------------------------+|"
-    echo "| [FORGE] COMPLEMENT for set symbolic link logic  |"
-    echo "|+-----------------------------------------------+|"
+    print_banner "[FORGE] COMPLEMENT for set symbolic link logic"
 }
 
 # TODO implement a version to set symlink by [ENV | document_root | edge | upstream]
