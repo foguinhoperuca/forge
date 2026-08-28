@@ -11,6 +11,7 @@ NOW=$(date +"%Y-%m-%dT%H-%M-%S")
 
 # TODO migrate vars to use system ACRONYM in start?!
 CUSTOM_VARS_FRAGMENT="FORGE_SYSTEM|FORGE_|TARGET_|GIT_|APP_PATH|PGPASSFILE|DB_|DJANGO|AUTHORIZATION|DEPLOYMENT|ENV_FILE"
+SENSITIVE_VARS=("DB_PASS" "DB_ADMIN_PASS" "DJANGO_SUPERUSER_PASSWORD" "API_AUTHORIZATION_TOKEN") # TODO show others like FOREIGN DB, ETC
 
 # FIXME hard codedd adc here. Shoul use APP_PATH - but if no env var is loaded?!
 # /opt/adc/backend/bare.git/hooks/.* /opt/adc/backend/bare.git/hooks/*"

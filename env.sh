@@ -338,46 +338,47 @@ set_symbolic_link() {
 # TODO use other technics tho test $1 and $2 is NULL
 show_env() {
     # Show variables in memory to use in all devops tasks
-    # $1 :: ["PWD" | NULL] - control if sensitive data must be showed again separated
-    # $2 :: [DO_BREAK | NULL] - control if should do a break
+    # [OPTIONAL][BOOLEAN] $1 SHOW_SENSITIVE :: control if sensitive data must be showed again separated
+    # [OPTIONAL][BOOLEAN] $2 DO_BREAK       :: control if should do a break
 
-    echo "|+------------------------------+|"
-    echo "|     SHOW VARS [$TARGET_ENV]    |"
-    echo "|+------------------------------+|"
+    SHOW_SENSITIVE=${1:-false}
+    DO_BRAKE=${2:-false}
+
+    print_banner "[FORGE] TARGET_ENV -> $TARGET_ENV :: PASSWORD -> $SHOW_PASSWORD (RAW -> $1) :: DO BREAK -> $DO_BREAK (RAW -> $2)"
     date
 
-    for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
-    do
+    print_banner "[FORGE] SHOW ALL EXCEPT SENSITIVE"
+    for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1); do
         var_name="$var"
+
+        OLD_IFS=$IFS
+        IFS='|'
+        JOINED_ENVS="|${SENSITIVE_VARS[*]}|"
+        IFS=$OLD_IFS
+        if [[ "$JOINED_ENVS" == *"|${var_name}|"* ]]; then
+            if [[ "$SHOW_SENSITIVE" == "true" ]]; then
+                echo "[SENSITIVE][FORCED] $var_name=${!var_name}"
+            fi
+            continue
+        fi
         echo "$var_name=${!var_name}"
     done
-
-    # TODO set a array with sensitive vars to be posible loop through it
-    if [[ "$1" == "PWD" ]];
-    then
-        echo ""
-        echo "|+-------------------------------------------+|"
-        echo "|    [$TARGET_ENV] SHOWING SENSITIVE DATA     |"
-        echo "|+-------------------------------------------+|"
-        echo "DB_PASS=$DB_PASS"
-        echo "DB_ADMIN_PASS=$DB_ADMIN_PASS"
-        # TODO show primary and FOREIGN DB
-        echo "DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD"
-        echo "API_AUTHORIZATION_TOKEN=$API_AUTHORIZATION_TOKEN"
+    if [[ "$SHOW_SENSITIVE" == "true" ]]; then
+        print_banner "[FORGE] [$TARGET_ENV] SHOWING SENSITIVE DATA"
+        for sensitive in "${SENSITIVE_VARS[@]}"; do
+            var_name="$sensitive"
+            echo "[SENSITIVE] $var_name=${!var_name}"
+        done
     fi
 
-    echo ""
-    echo "|+--------------------------------------+|"
-    echo "|     [$TARGET_ENV] SHOW VARS SYMLINKS   |"
-    echo "|+--------------------------------------+|"
+    print_banner "[FORGE] [$TARGET_ENV] SHOW VARS SYMLINKS"
     # TODO think about how to show it without env vars... maybe forcing get basic info from $(dirname $0)/.credentials/.mise-en-place.conf
     # TODO add api/.google-service-account to be used as symlink
-    ls -lah --color=auto $CONF_FILES
+    ls -lah --color=auto "$CONF_FILES"
 
-    if [ "$2" == "DO_BREAK" ];
-    then
+    if [[ "$DO_BREAK" == "true" ]]; then
         echo ""
-        echo "--- [PRESS ENTER TO CONTINUE] doing a break"
+        echo "--- [PRESS ENTER TO CONTINUE] ---"
         echo ""
         read break
     fi

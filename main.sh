@@ -15,6 +15,29 @@ source $FORGE_PATH/database.sh
 source $FORGE_PATH/deployment.sh
 source $FORGE_PATH/monitoring.sh
 
+show_help() {
+    print_banner "[FORGE] Help Usage:"
+    echo "TODO implement it!"
+
+    # TODO better usage message - USE A HEREDOC
+    echo "-----------"
+    echo "[FORGE] DIRNAME.....: $(dirname $0)"
+    echo "[FORGE] FORGE_PATH..: $FORGE_PATH"
+    echo "-----------"
+
+    echo "[FORGE] USAGE: [show | unenv | env | githook | terraform]. $1 *NOT* found!!"
+    echo "- show with parameters -p -> show sensitive (password) data; -b -> do a break in the end"
+    echo "- unenv"
+    echo "- env [local | dev | stage | prod] <OPTIONAL_GIT_REPOS> <OPTIONAL_GIT_BRANCH>. GIT_REPOS default is backend; GIT_BRANCH default is same as TARGET_ENV: (now is $TARGET_ENV)."
+    echo "- genenv [local | dev | stage | prod | all]"
+    # echo "- githook - only used by post-receive script"
+    echo "- deploy"
+    echo "- terraform - prepare devops"
+    echo "- is_mounted - validate if mount point is online"
+    echo "- db_script <DB_SCRIPT> [admin|adm|""] - execute <DB_SCRIPT> as admin or not"
+    echo "- db_backup_full - create a backup full from database"
+}
+
 # TODO use _forge inside mount_etna.sh to add custom completion
 _forge_completation() {
     local cur prev opts
@@ -33,18 +56,44 @@ _forge_completation() {
 }
 complete -F _forge_completation erupt
 
-# TODO use getopts to transform the recurring cases into one command with parameters like -o and so on
+# TODO use getopts to transform the recurring cases into one command with parameters like -p and so on
 erupt() {
     case $1 in
         "show")
-            clear
-            show_env $2 $3
+            local MAIN_SHOW_SENSITIVE=false
+            local MAIN_DO_BREAK=false
+            shift
+            OPTIND=1
+            while getopts ":pbh" opt "$@"; do
+                case ${opt} in
+                    h )
+                        show_help
+                        exit 0
+                        ;;
+                    p )
+                        MAIN_SHOW_SENSITIVE=true
+                        ;;
+                    b )
+                        MAIN_DO_BREAK=true
+                        ;;
+                    \? )
+                        echo "Invalid option: -$OPTARG" >&2
+                        exit 1
+                        ;;
+                    : )
+                        echo "Error: Option -$OPTARG requires an argument value" >&2
+                        ;;
+                esac
+            done
+            show_env $MAIN_SHOW_SENSITIVE $MAIN_DO_BREAK
+            shift $((OPTIND -1))
             ;;
         "unenv")
             unset_symbolic_link
             unset_vars
-            show_env $2
             [[ -n "$VIRTUAL_ENV" ]] && deactivate
+            # FIXME here, DO_BREAK do not working
+            show_env "true" "true"
             ;;
         "env")
             if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
@@ -162,23 +211,7 @@ erupt() {
             esac
             ;;
         *)
-            # TODO better usage message - USE A HEREDOC
-            echo "-----------"
-            echo "[FORGE] $(dirname $0)"
-            echo "[FORGE] $FORGE_PATH"
-            echo "-----------"
-
-            echo "[FORGE] USAGE: [show | unenv | env | githook | terraform]. $1 *NOT* found!!"
-            echo "- show [PWD | \"\"]"
-            echo "- unenv"
-            echo "- env [local | dev | stage | prod] <OPTIONAL_GIT_REPOS> <OPTIONAL_GIT_BRANCH>. GIT_REPOS default is backend; GIT_BRANCH default is same as TARGET_ENV: (now is $TARGET_ENV)."
-            echo "- genenv [local | dev | stage | prod | all]"
-            # echo "- githook - only used by post-receive script"
-            echo "- deploy"
-            echo "- terraform - prepare devops"
-            echo "- is_mounted - validate if mount point is online"
-            echo "- db_script <DB_SCRIPT> [admin|adm|""] - execute <DB_SCRIPT> as admin or not"
-            echo "- db_backup_full - create a backup full from database"
+            show_help
             # return 1 # FIXME should return an error here?!
     esac
 
