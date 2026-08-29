@@ -100,6 +100,24 @@ All secrets and sensitive information will be stored in _<ROOT-HOST-PROJECT>/.cr
 
 Eventually, you can use this layout directly in your project instead of use it as git submodule.
 
+#### Organization Inside Password Vault ####
+
+The follow organization must exist to forge can grab it:
+
+📁 ORGANIZATION NAME (Top-Level Folder)                              :: $FORGE_ORGANIZATION_ACRONYM
+ └── 📁 SYSTEM (PROJECT) NAME (Sub-folder)                        :: $FORGE_SYSTEM_ACRONYM
+     └─ 📄 .mise-en-place.conf (The Passbolt Resource)             :: $CONF_FILES
+      └── 📁 ENVIRONMENT [e.g., Staging, Production] (Sub-folder)    :: $TARGET_ENV
+           └── 📄 .env (The Passbolt Resource)                     :: $CONF_FILES
+                └── 🔑 Custom Fields [KEY=value pairs]             :: $KEY=$VALUE
+
+
+`$FORGE_ORGANIZATION_ACRONYM > $FORGE_SYSTEM_ACRONYM > $TARGET_ENV > $CONF_FILES[@] > $VAR > $VALUE`
+(All files that has environment - all files except .mise-en-place.conf)
+
+`$FORGE_ORGANIZATION_ACRONYM > $FORGE_SYSTEM_ACRONYM > $CONF_FILES[@] > $VAR > $VALUE`
+(The(all) file(s) that do not have environments - .mise-en-place.conf by now)
+
 ## Deployment ##
 
 The project will be living under _/opt/<FORGE_SYSTEM_ACRONYM>/<GIT_REPOS_NAME>/_ where, by default, <GIT_REPOS_NAME> is "backend".

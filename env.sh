@@ -342,7 +342,7 @@ show_env() {
     # [OPTIONAL][BOOLEAN] $2 DO_BREAK       :: control if should do a break
 
     SHOW_SENSITIVE=${1:-false}
-    DO_BRAKE=${2:-false}
+    DO_BREAK=${2:-false}
 
     print_banner "[FORGE] TARGET_ENV -> $TARGET_ENV :: PASSWORD -> $SHOW_PASSWORD (RAW -> $1) :: DO BREAK -> $DO_BREAK (RAW -> $2)"
     date
@@ -376,12 +376,7 @@ show_env() {
     # TODO add api/.google-service-account to be used as symlink
     ls -lah --color=auto "$CONF_FILES"
 
-    if [[ "$DO_BREAK" == "true" ]]; then
-        echo ""
-        echo "--- [PRESS ENTER TO CONTINUE] ---"
-        echo ""
-        read break
-    fi
+    [[ "$DO_BREAK" == "true" ]] && do_sleep_break || :
 }
 
 # TODO encrypt files per env

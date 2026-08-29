@@ -71,3 +71,13 @@ print_banner() {
     echo "|+$BORDER+|"
     echo""
 }
+
+do_sleep_break() {
+	# Do a pause in code execution. Same as sleep.
+	# Call it whit something like: [[ "$DO_BREAK" == "true" ]] && do_sleep_break || :
+
+    echo ""
+    echo "--- [PRESS ENTER TO CONTINUE] ---"
+    echo ""
+    read sleep_break
+}
