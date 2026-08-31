@@ -99,17 +99,17 @@ search-src:
 	@date
 	@echo "------- WORD COUNT -------"
 	@echo "SEARCH_FORGE = $(SEARCH_FORGE)"
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | sort | uniq | wc -l
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy*  --exclude=dev.patch --exclude=TAGS | awk '{print $1}' | sort | uniq | wc -l
 	@echo "------- WORD COUNT -------"
 	@echo ""
 
 search-src-summary: search-src
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}'
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude=dev.patch --exclude=TAGS | awk '{print $1}'
 	@echo ""
 	@date
 
 search-src-full: search-src
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude={TAGS,dev.patch} | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy*  --exclude=dev.patch --exclude=TAGS | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
 	@echo ""
 	@date
 
