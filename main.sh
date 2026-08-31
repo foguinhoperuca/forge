@@ -8,12 +8,12 @@ then
     echo "Setted FORGE_PATH to $FORGE_PATH **INSTEAD OF** ."
 fi
 
-source $FORGE_PATH/var.sh
-source $FORGE_PATH/utils.sh
-source $FORGE_PATH/env.sh
-source $FORGE_PATH/database.sh
-source $FORGE_PATH/deployment.sh
-source $FORGE_PATH/monitoring.sh
+source "$FORGE_PATH"/var.sh
+source "$FORGE_PATH"/utils.sh
+source "$FORGE_PATH"/env.sh
+source "$FORGE_PATH"/database.sh
+source "$FORGE_PATH"/deployment.sh
+source "$FORGE_PATH"/monitoring.sh
 
 show_help() {
     print_banner "[FORGE] Help Usage:"
@@ -21,8 +21,9 @@ show_help() {
 
     # TODO better usage message - USE A HEREDOC
     echo "-----------"
-    echo "[FORGE] DIRNAME.....: $(dirname $0)"
-    echo "[FORGE] FORGE_PATH..: $FORGE_PATH"
+    echo "[FORGE] DIRNAME......: $(dirname "$0")"
+    echo "[FORGE] BASH_SOURCE..: $("${BASH_SOURCE[0]}")"
+    echo "[FORGE] FORGE_PATH...: $FORGE_PATH"
     echo "-----------"
 
     echo "[FORGE] USAGE: [show | unenv | env | githook | terraform]. $1 *NOT* found!!"
@@ -67,7 +68,7 @@ erupt() {
             while getopts ":pbh" opt "$@"; do
                 case ${opt} in
                     h )
-                        show_help
+                        show_help "$@"
                         exit 0
                         ;;
                     p )

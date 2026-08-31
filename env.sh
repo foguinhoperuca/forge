@@ -28,7 +28,7 @@ ignite() {
     # fi
 
     IFS=$'\n'
-    for LINE in $(cat $DEPLOYMENT_FILE);
+    for LINE in $(cat "$DEPLOYMENT_FILE");
     do
         # echo "$(cat $DEPLOYMENT_FILE | sed -e s|$(dirname $DEPLOYMENT_FILE)||g)"
         echo "LINE.......: ${LINE}"
@@ -265,7 +265,7 @@ set_vars_by_env() {
                     LINE_ID="$LINE_COUNT"
                     IFS=';' read -r -a ENTRIES <<< "$LINE"
                 fi
-                [[ "$FORGE_DEBUG" == "1" ]] && echo "ENTRIES..: ${ENTRIES[@]}"
+                [[ "$FORGE_DEBUG" == "1" ]] && echo "ENTRIES..: ${ENTRIES[*]}"
                 for i in "${!ENTRIES[@]}"; do
                     RAW_ENTRY="FORGE_${REF}_${LINE_ID}_${FIELDS[$i]}"
                     FULL_ENTRY="${RAW_ENTRY^^}"
@@ -289,10 +289,10 @@ unset_symbolic_link() {
         rm -f "$APP_PATH_DOCUMENT_ROOT/$slf"
     done
 
-    rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/forge
-    rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/mount_etna.sh
-    rm -f $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
-    rm -f $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
+    rm -f "$APP_PATH_ORIGIN_EDGE"/git-hooks/forge
+    rm -f "$APP_PATH_ORIGIN_EDGE"/git-hooks/mount_etna.sh
+    rm -f "$APP_PATH_ORIGIN_EDGE"/git-hooks/.mise-en-place.conf
+    rm -f "$APP_PATH_ORIGIN_EDGE"/.mise-en-place.conf
 }
 
 complement_set_symbolic_link() {
@@ -303,39 +303,36 @@ complement_set_symbolic_link() {
 set_symbolic_link() {
     unset_symbolic_link
 
-    echo ""
-    echo "[FORGE] Setting symbolic link"
-    echo ""
+    print_banner "[FORGE] Setting symbolic link"
 
     # TODO update files: only need ln -s hooks*/forge and ln -s hooks*/post-receive
     # TODO make mount_etna.sh recoginize .credentials/.mise-en-place.conf
-    ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf # special - should not be removed
-    ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/.mise-en-place.conf
-    ln -s $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_ORIGIN_EDGE/git-hooks/.mise-en-place.conf
+    ln -sf "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.conf "$APP_PATH_BARE"/hooks/.mise-en-place.conf # special - should not be removed
+    ln -s "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.conf "$APP_PATH_ORIGIN_EDGE"/.mise-en-place.conf
+    ln -s "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.conf "$APP_PATH_ORIGIN_EDGE"/git-hooks/.mise-en-place.conf
 
-    ln -s $APP_PATH_ORIGIN_EDGE/mount_etna.sh $APP_PATH_ORIGIN_EDGE/git-hooks/mount_etna.sh
-    ln -s $APP_PATH_ORIGIN_EDGE/forge $APP_PATH_ORIGIN_EDGE/git-hooks/forge
+    ln -s "$APP_PATH_ORIGIN_EDGE"/mount_etna.sh "$APP_PATH_ORIGIN_EDGE"/git-hooks/mount_etna.sh
+    ln -s "$APP_PATH_ORIGIN_EDGE"/forge "$APP_PATH_ORIGIN_EDGE"/git-hooks/forge
 
-    ln -s $APP_PATH_ETC/.target-server.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/.target-server
-    ln -s $APP_PATH_ETC/.pgpass.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/.pgpass
+    ln -s "$APP_PATH_ETC"/.target-server."$TARGET_ENV" "$APP_PATH_DOCUMENT_ROOT"/.target-server
+    ln -s "$APP_PATH_ETC"/.pgpass."$TARGET_ENV" "$APP_PATH_DOCUMENT_ROOT"/.pgpass
     # FIXME redundant when DOCUMENT_ROOT is same as EDGE - break inside etc_terraform
-    ln -sf $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.conf $APP_PATH_DOCUMENT_ROOT/.mise-en-place.conf
+    ln -sf "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.conf "$APP_PATH_DOCUMENT_ROOT"/.mise-en-place.conf
 
-    for python_project in ${PYTHON_PROJECTS_AVAILABLE[@]};
+    for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
     do
-        ln -s $APP_PATH_ETC/.env.$python_project.$TARGET_ENV $APP_PATH_DOCUMENT_ROOT/$python_project/.env
+        ln -s "$APP_PATH_ETC"/.env."$python_project"."$TARGET_ENV" "$APP_PATH_DOCUMENT_ROOT"/"$python_project"/.env
     done
 
     # FIXME mise-en-place should stay in /etc or .credentials!? If stay in /etc it could be copied from .credentials and be replaced DEFAULT_TARGET_ENV with ENV in terraform
-    chmod 600 $APP_PATH_ORIGIN_EDGE/.credentials/.mise-en-place.*
-    chmod 600 $APP_PATH_ETC/.pgpass.*
-    chmod 600 $APP_PATH_ETC/.target-server.*
-    chmod 640 $APP_PATH_ETC/.env.*
+    chmod 600 "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.*
+    chmod 600 "$APP_PATH_ETC"/.pgpass.*
+    chmod 600 "$APP_PATH_ETC"/.target-server.*
+    chmod 640 "$APP_PATH_ETC"/.env.*
 
     complement_set_symbolic_link
 }
 
-# TODO use other technics tho test $1 and $2 is NULL
 show_env() {
     # Show variables in memory to use in all devops tasks
     # [OPTIONAL][BOOLEAN] $1 SHOW_SENSITIVE :: control if sensitive data must be showed again separated
@@ -350,14 +347,15 @@ show_env() {
     print_banner "[FORGE] SHOW ALL EXCEPT SENSITIVE"
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1); do
         var_name="$var"
-
         OLD_IFS=$IFS
         IFS='|'
-        JOINED_ENVS="|${SENSITIVE_VARS[*]}|"
+        JOINED_SENSITIVE="|${SENSITIVE_VARS[*]}|"
         IFS=$OLD_IFS
-        if [[ "$JOINED_ENVS" == *"|${var_name}|"* ]]; then
+        if [[ "$JOINED_SENSITIVE" == *"|${var_name}|"* ]]; then
             if [[ "$SHOW_SENSITIVE" == "true" ]]; then
                 echo "[SENSITIVE][FORCED] $var_name=${!var_name}"
+            else
+                echo "[SENSITIVE][REDACTED] $var_name=***"
             fi
             continue
         fi
@@ -374,7 +372,9 @@ show_env() {
     print_banner "[FORGE] [$TARGET_ENV] SHOW VARS SYMLINKS"
     # TODO think about how to show it without env vars... maybe forcing get basic info from $(dirname $0)/.credentials/.mise-en-place.conf
     # TODO add api/.google-service-account to be used as symlink
-    ls -lah --color=auto "$CONF_FILES"
+    for conf_file in ${CONF_FILES}; do
+        ls -lah --color=auto "${APP_PATH_DOCUMENT_ROOT}/${conf_file}"
+    done
 
     [[ "$DO_BREAK" == "true" ]] && do_sleep_break || :
 }
@@ -387,7 +387,7 @@ encrypt_multiple() {
     GPG_RECIPIENTS=""
     for pubkey in $(ls .credentials/secure/*.asc);
     do
-        GPG_RECIPIENTS+="-r $(gpg --show-keys --with-colons $pubkey | awk -F':' '$1=="pub"{print $5}') "
+        GPG_RECIPIENTS+="-r $(gpg --show-keys --with-colons "$pubkey" | awk -F':' '$1=="pub"{print $5}') "
     done
 
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
@@ -411,9 +411,9 @@ encrypt_multiple() {
             echo "---------------"
         fi
 
-        gpg --batch --yes -e -o $APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename
+        gpg --batch --yes -e -o "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/"$OUTPUT_FILE".gpg "${GPG_RECIPIENTS}" "$filename"
     done
-    echo "${NOW}" | sudo tee $APP_PATH_CREDENTIALS_GENERATED_INPUT/deployment_datetime.txt > /dev/null
+    echo "${NOW}" | sudo tee "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/deployment_datetime.txt > /dev/null
 }
 
 generate_conf_file() {
@@ -460,8 +460,8 @@ generate_conf_file() {
 
         if [[ "${SOURCE_SECRETS}" == "gpg" ]];
         then
-            gpg --quiet --batch --yes --output .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${DEST} --decrypt .credentials/secure/${DEST}.gpg
-            echo "${NOW}" | tee .credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/deployment_datetime.txt > /dev/null
+            gpg --quiet --batch --yes --output .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/"${DEST}" --decrypt .credentials/secure/"${DEST}".gpg
+            echo "${NOW}" | tee .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/deployment_datetime.txt > /dev/null
             continue
         fi
 
@@ -529,17 +529,17 @@ generate_conf_file() {
             then
                 case $FILE_SAMPLE in
                     ".pgpass")
-                        echo ${BUILD_UP_LINE%:} >> $DESTINY
+                        echo "${BUILD_UP_LINE%:}" >> $DESTINY
                         if [[ "$FORGE_DEBUG" == "1" ]];
                         then
-                            echo ${BUILD_UP_LINE%:}
+                            echo "${BUILD_UP_LINE%:}"
                         fi
                         ;;
                     *)
                         echo $BUILD_UP_LINE >> $DESTINY
                         if [[ "$FORGE_DEBUG" == "1" ]];
                         then
-                            echo $BUILD_UP_LINE
+                            echo "$BUILD_UP_LINE"
                         fi
                         ;;
                 esac
@@ -558,8 +558,8 @@ generate_conf_file() {
         TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     fi
 
-    sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/
-    echo "${NOW}" | tee .credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt
+    sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/
+    echo "${NOW}" | tee .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/deployment_datetime.txt
 
     if [[ "$DEPLOY_GENERATED_FILES" == "1" ]];
     then
@@ -593,17 +593,17 @@ cp_secrets() {
 
         # TODO create folder if not exist!
         if [[ ! -e $ETC_DEPLOYMENT ]]; then
-            mkdir -p $ETC_DEPLOYMENT
+            mkdir -p "$ETC_DEPLOYMENT"
         fi
 
         # TODO create folder if not exist!
         if [[ ! -e $EDGE_DEPLOYMENT ]]; then
-            mkdir -p $EDGE_DEPLOYMENT
+            mkdir -p "$EDGE_DEPLOYMENT"
         fi
 
         # TODO create folder if not exist!
         if [[ ! -e $MISE_EN_PLACE_DEPLOYMENT ]]; then
-            mkdir -p $MISE_EN_PLACE_DEPLOYMENT
+            mkdir -p "$MISE_EN_PLACE_DEPLOYMENT"
         fi
     fi
 
@@ -642,15 +642,15 @@ cp_secrets() {
         echo "DRY_RUN $FORGE_DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: TARGET_SERVER_ADDR $TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
         echo "-------------------------------------------"
         echo "[DRY-RUN] CP_FILES_ETC --> $APP_PATH_ETC :: $ETC_DEPLOYMENT"
-        echo $CP_FILES_ETC
+        echo "$CP_FILES_ETC"
         echo ""
         echo "================"
         echo "[DRY-RUN] CP_FILES_EDGE --> $APP_PATH_WORKTREE :: $EDGE_DEPLOYMENT"
-        echo $CP_FILES_EDGE
+        echo "$CP_FILES_EDGE"
         echo ""
         echo "================"
         echo "[DRY-RUN] CP_FILES_MISE_EN_PLACE $MISE_EN_PLACE_DEPLOYMENT"
-        echo $CP_FILES_MISE_EN_PLACE
+        echo "$CP_FILES_MISE_EN_PLACE"
         echo ""
 
         return 0
@@ -661,12 +661,12 @@ cp_secrets() {
     case "$DEPLOY_GENERATED_FILES" in
         "etc")
             echo "cp ETC to $ETC_DEPLOYMENT"
-            scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
             ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt"
             ;;
         "edge")
             echo "cp EDGE to $EDGE_DEPLOYMENT"
-            scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
             ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt"
             ;;
         "mise-en-place")
@@ -680,11 +680,11 @@ cp_secrets() {
             ;;
         *)
             echo "cp ETC to $ETC_DEPLOYMENT"
-            scp $CP_FILES_ETC "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
             echo "====="
 
             echo "cp EDGE to $EDGE_DEPLOYMENT"
-            scp $CP_FILES_EDGE "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
             echo "====="
 
             echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
