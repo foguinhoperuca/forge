@@ -153,6 +153,7 @@ set_vars_by_env() {
 
     export TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
     export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
+    # FIXME TARGET_SERVER_USER should live beyond FORGE_TRGSRV_TARGET_SERVER_USER 'cause when set the dev env in local and use make patch-git-* it will need force the value in .target-server file instead of calculated TARGET-SERVER -> see if the same applys to TARGET_SERVER_ADDR and others
     export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
     TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
     if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;

@@ -2,32 +2,21 @@
 # 	init clean-db-dev
 
 # Env stuffs
-# TODO reuse the git clean approach
-patch-target:
-	clear
-	date
-	ssh jefferson@eth0.matsumoto-rangiku.msr-c012 "cd /home/jefferson/universal/projects/alura/python/microservice/; git restore .; git clean -fd"
-	git diff HEAD . > nami.patch
-	scp nami.patch jefferson@eth0.matsumoto-rangiku.msr-c012:/home/jefferson/universal/projects/alura/python/microservice/
-	ssh jefferson@eth0.matsumoto-rangiku.msr-c012 "cd /home/jefferson/universal/projects/alura/python/microservice/; git pull origin master; git apply nami.patch; git status ."
-	date
 
-patch-clean:
-	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git clean -fd; git pull origin $(GIT_BRANCH)"
-
+# FIXME the TARGET_SERVER_USER when point to env do not work: I am in local (jeff) and want path in dev (ubuntu) - the user resolution TARGET_SERVER_USER mismatch (resolution is forcing to jeff 'cause there is no ubuntu username in local dev machine)
 patch:
 	@clear
 	@date
 	@rm -rf $(GIT_BRANCH).patch
 	@git diff --ignore-submodules HEAD . >> $(GIT_BRANCH).patch
-	scp $(GIT_BRANCH).patch $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
+	scp $(GIT_BRANCH).patch $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
 
 patch-diffutils: patch
-	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
+	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
 	@date
 
 patch-git: patch
-	ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
+	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git clean -fd; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
 	@date
 
 patch-git-edge: PATCH_GIT_TARGET=$(APP_PATH_ORIGIN_EDGE)
