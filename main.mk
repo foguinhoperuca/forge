@@ -102,7 +102,6 @@ search-src-full: search-src
 	@echo ""
 	@date
 
-SEARCH_FORGE ?= "YOUR_SECRET_VAR"
 search-encrypted:
 	@find . -type f -name "*.gpg" | while read -r file; do \
 		gpg -d -q "$$file" 2>/dev/null | grep --label="$$file" -H "$(SEARCH_FORGE)" || true; \

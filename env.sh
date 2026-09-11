@@ -385,36 +385,31 @@ encrypt_multiple() {
     # encrypt secret files using all pubkeys availiable per project.
     # [OPTIONAL]  $FORGE_DRY_RUN :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $FORGE_DEBUG   :: show debug messages
-    GPG_RECIPIENTS=""
-    for pubkey in $(ls .credentials/secure/*.asc);
-    do
-        GPG_RECIPIENTS+="-r $(gpg --show-keys --with-colons "$pubkey" | awk -F':' '$1=="pub"{print $5}') "
-    done
 
+    FORGE_DEBUG=${FORGE_DEBUG:-0}
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
-    if [[ "$FORGE_DRY_RUN" == "1" ]];
-    then
-        echo ""
-        echo "Would use GPG_RECIPIENTS --> ${GPG_RECIPIENTS}"
-        echo "exiting..."
-        echo ""
-        return 0
-    fi
 
-    for filename in $(ls ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/.* | grep -v .gitignore);
-    do
-        OUTPUT_FILE=$(echo $filename | sed -e "s|\.credentials\/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/||g")
-
-        FORGE_DEBUG=${FORGE_DEBUG:-0}
-        if [[ "$FORGE_DEBUG" == "1" ]];
-        then
-            echo "$APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS} $filename"
-            echo "---------------"
+    GPG_RECIPIENTS=()
+    for pubkey in .credentials/secure/*.asc; do
+        KEY_ID=$(gpg --show-keys --with-colons "$pubkey" | awk -F':' '$1=="pub"{print $5}')
+        if [ -n "$KEY_ID" ]; then
+            GPG_RECIPIENTS+=("-r" "$KEY_ID")
         fi
-
-        gpg --batch --yes -e -o "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/"$OUTPUT_FILE".gpg "${GPG_RECIPIENTS}" "$filename"
     done
-    echo "${NOW}" | sudo tee "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/deployment_datetime.txt > /dev/null
+
+    [[ "$FORGE_DRY_RUN" == "1" ]] && print_banner "Would use GPG_RECIPIENTS -> ${GPG_RECIPIENTS[*]}" && return 0
+
+    for filename in ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/.*; do
+        [[ -d "$filename" || "$filename" == *".gitignore" ]] && continue
+
+        OUTPUT_FILE=$(basename "$filename")
+        [[ "$FORGE_DEBUG" == "1" ]] && echo -e "[DEBUG] $APP_PATH_CREDENTIALS_GENERATED_INPUT/$OUTPUT_FILE.gpg ${GPG_RECIPIENTS[*]} $filename \n----------------------------------"
+
+        gpg --batch --yes --trust-model always -e -o "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/"$OUTPUT_FILE".gpg "${GPG_RECIPIENTS[@]}" "$filename"
+    done
+    echo "LAST INPUT -> ${NOW}" | sudo tee "$APP_PATH_CREDENTIALS_GENERATED_INPUT"/deployment_datetime.txt > /dev/null
+
+    return 0
 }
 
 generate_conf_file() {
