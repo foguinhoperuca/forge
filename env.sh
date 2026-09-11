@@ -235,8 +235,8 @@ set_vars_by_env() {
 
         local LINE_COUNT=0
         IFS=$'\n'
-        print_banner "CONF_FILE_CORE --> ${CONF_FILE_CORE} ::: ${TARGET_ENV} ::: $DEPLOYMENT_FILE"
-        for LINE in $([[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" ]] && cat $DEPLOYMENT_FILE || cat "${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}");
+        print_banner "[${TARGET_ENV}] CONF_FILE_CORE -> ${CONF_FILE_CORE}"
+        for LINE in $([[ "${CONF_FILE_CORE}" == ".mise-en-place.conf" ]] && cat "$DEPLOYMENT_FILE" || cat "${APP_PATH_ETC}/${CONF_FILE_CORE}.${TARGET_ENV}");
         do
             [[ "$FORGE_DEBUG" == "1" ]] && print_banner "LINE..: ${LINE}"
             [[ -z "${LINE//[[:space:]]/}" ]] && continue
