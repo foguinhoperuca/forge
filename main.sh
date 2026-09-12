@@ -97,8 +97,7 @@ erupt() {
             show_env "true" "true"
             ;;
         "env")
-            if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
-            then
+            if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]]; then
                 unset_vars
                 set_vars $2 "$3" "$4"
                 set_vars_by_env
@@ -112,25 +111,24 @@ erupt() {
             ;;
         "genenv")
             [[ "$FORGE_DEBUG" == "1" ]] && echo "${WORKFLOW_ENVS_AVAILABLE[@]}" || :
-            for ENV_TRG in ${WORKFLOW_ENVS_AVAILABLE[@]};
-            do
+            for ENV_TRG in "${WORKFLOW_ENVS_AVAILABLE[@]}"; do
                 # if [[ "$2" == @(local|dev|stage|prod) ]];
                 if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
                 then
                     print_banner "Genereting env for valid: $2"
-                    generate_conf_file $2 $3
+                    generate_conf_file "$2" "$3"
                     break
                 fi
 
                 if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
                 then
                     print_banner "|| Genereting env files for $ENV_TRG"
-                    generate_conf_file $ENV_TRG $3
+                    generate_conf_file "$ENV_TRG" "$3"
                 fi
             done
             ;;
         "cp-secrets")
-            cp_secrets $2 $3
+            cp_secrets "$2" "$3"
             ;;
         "encrypt_multiple")
             encrypt_multiple;;
@@ -149,12 +147,12 @@ erupt() {
             deploy
             ;;
         "etc_terraform")
-            set_vars $2 "" ""
+            set_vars "$2" "" ""
             terraform_app_path_etc
             set_vars_by_env
             ;;
         "opt_terraform")
-            set_vars $2 "" ""
+            set_vars "$2" "" ""
             set_vars_by_env
             terraform_app_path_opt
             set_symbolic_link
@@ -168,7 +166,7 @@ erupt() {
             CUSTOM_USER="$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)"
             echo "--- CHOOSED_TARGET_ENV --> ${CHOOSED_TARGET_ENV} :: CUSTOM_USER --> ${CUSTOM_USER} ---"
             sed -i.bkp "s|DEFAULT_TARGET_SERVER_USER=.*|DEFAULT_TARGET_SERVER_USER=${CUSTOM_USER}|" ".credentials/.mise-en-place.conf"
-            set_vars $CHOOSED_TARGET_ENV "" ""
+            set_vars "$CHOOSED_TARGET_ENV" "" ""
             terraform_app_path_etc
             # FIXME DEFAULT_TARGET_SERVER_USER can be helpfull instead change .target-server.${TARGET_ENV}
             sed -i.bkp "s|TARGET_SERVER_USER=.*|TARGET_SERVER_USER=${CUSTOM_USER}|" "${APP_PATH_ETC}/.target-server.${CHOOSED_TARGET_ENV}"
@@ -180,31 +178,35 @@ erupt() {
             ls -lah --color=auto "${APP_PATH_WORKTREE}"
             ;;
         "terraform")
-            terraform $2
+            terraform "$2"
             ;;
         "genesis")
             genesis
             ;;
         "is_mounted")
-            verify_mounted_path_online $2 $3
+            verify_mounted_path_online "$2" "$3"
             ;;
         "db_script")
             case $3 in
                 "admin" | "adm")
-                    db_script "$DB_ADMIN_HOST" "$DB_ADMIN_PORT" "$DB_ADMIN_DATABASE" "$DB_ADMIN_USER" $2
+                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DATABASE" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
                     ;;
+				"postgres")
+					db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DATABASE" "$FORGE_PGPASS_POSTGRES_ADM_USER" "$2"
+					;;
                 *)
-                    db_script "$DB_HOST" "$DB_PORT" "$DB_DATABASE" "$DB_USER" $2
+                    db_script "$FORGE_PGPASS_PRIMARY_SYS_HOST" "$FORGE_PGPASS_PRIMARY_SYS_PORT" "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER" "$2"
                     ;;
             esac
             ;;
         "db_backup")
+			# TODO implement it!
             case $2 in
                 "full")
-                    db_backup_full $DB_DATABASE
+                    db_backup_full "$FORGE_PGPASS_PRIMARY_SYS_DBNM"
                     ;;
                 "partial")
-                    db_backup_partial $DB_DATABASE $DB_USER
+                    db_backup_partial "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER"
                     ;;
                 *)
                     echo "No backup was recognized: $3"

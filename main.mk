@@ -9,14 +9,14 @@ patch:
 	@date
 	@rm -rf $(GIT_BRANCH).patch
 	@git diff --ignore-submodules HEAD . >> $(GIT_BRANCH).patch
-	scp $(GIT_BRANCH).patch $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
+	scp $(GIT_BRANCH).patch $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):$(PATCH_GIT_DIFF_FILE_LOCATION)
 
 patch-diffutils: patch
-	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
+	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "cd $(APP_PATH_DOCUMENT_ROOT)/; git --work-tree=$(APP_PATH_DOCUMENT_ROOT) --git-dir=$(APP_PATH_BARE) checkout -f $(GIT_BRANCH); patch --forward < $(APP_PATH_WORKTREE)/$(GIT_BRANCH).patch"
 	@date
 
 patch-git: patch
-	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git clean -fd; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
+	ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "cd $(PATCH_GIT_TARGET); git restore .; git clean -fd; git pull origin $(GIT_BRANCH); git apply $(PATCH_GIT_DIFF_FILE_LOCATION)/$(GIT_BRANCH).patch"
 	@date
 
 patch-git-edge: PATCH_GIT_TARGET=$(APP_PATH_ORIGIN_EDGE)
@@ -81,25 +81,30 @@ post-receive:
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 
+# TODO implement a .gitignore or --exclude-from=.grep-exclude-from or use ripgrep
 # --exclude-dir=forge
 SEARCH_FORGE ?= "FORGE_SYSTEM_NAME"
 search-src:
 	@clear
 	@date
-	@echo "------- WORD COUNT -------"
 	@echo "SEARCH_FORGE = $(SEARCH_FORGE)"
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy*  --exclude=dev.patch --exclude=TAGS | awk '{print $1}' | sort | uniq | wc -l
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude=dev.patch --exclude=TAGS | awk '{print $$1}' | sort | uniq | wc -l
 	@echo "------- WORD COUNT -------"
+	@echo ""
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude=dev.patch --exclude=TAGS | awk "-F:" '{print $$1}' | sort -u
+	@echo "------- RESUME -------"
 	@echo ""
 
 search-src-summary: search-src
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude=dev.patch --exclude=TAGS | awk '{print $1}'
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy* --exclude=dev.patch --exclude=TAGS | awk -F: '{print $$1 ":L" $$2}' | sort -u
 	@echo ""
+	@echo "------- FILES AFFECTED -------"
 	@date
 
 search-src-full: search-src
-	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy*  --exclude=dev.patch --exclude=TAGS | awk '{print $1}' | grep -v "~" | grep -v ":from" | sort | uniq
+	@grep -rn "$(SEARCH_FORGE)" * --exclude-dir=tmp --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ --exclude-dir=.mypy*  --exclude=dev.patch --exclude=TAGS | awk '{print $$0}' | grep -v "~" | grep -v ":from" | sort -u
 	@echo ""
+	@echo "------- FILES AFFECTED -------"
 	@date
 
 search-encrypted:
@@ -134,18 +139,18 @@ doc-plantuml:
 # 	@echo "|+-------------+|"
 # 	@date
 # 	@rm -f webserver/apache/$(TARGET_SERVER_TYPE)_server/*~*
-# 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "rm /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/*; mkdir -p /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/"
+# 	@ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "rm /home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/*; mkdir -p /home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/"
 # ifeq ($(TARGET_ENV),prod)
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):/home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):/home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf
 # else
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
-# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):/home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME).$FORGE_ORGANIZATION_BASEDNS.conf $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):/home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
+# 	scp webserver/apache/$(TARGET_SERVER_TYPE)_server/$(APP_NAME)-api.$FORGE_ORGANIZATION_BASEDNS.conf $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):/home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)-api-$(TARGET_ENV).$FORGE_ORGANIZATION_BASEDNS.conf
 # endif
-# 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "sudo cp /home/$(TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)* /etc/apache2/sites-available/; sudo apachectl configtest"
-# 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "sudo a2ensite $(APP_NAME)*"
+# 	@ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "sudo cp /home/$(FORGE_TRGSRV_TARGET_SERVER_USER)/tmp/$(APP_NAME)/$(APP_NAME)* /etc/apache2/sites-available/; sudo apachectl configtest"
+# 	@ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "sudo a2ensite $(APP_NAME)*"
 # 	@echo "[MAKEFILE] Restarting apache server..."
-# 	@ssh $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR) "sudo service apache2 restart"
+# 	@ssh $(FORGE_TRGSRV_TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR) "sudo service apache2 restart"
 
 # umount:
 # 	@echo "|+--------------+|"

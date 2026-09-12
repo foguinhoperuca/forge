@@ -3,7 +3,7 @@ django-super-user:
 	@echo "| DJANGO SUPER USERS |"
 	@echo "|+------------------+|"
 	@python3 backoffice/manage.py createsuperuser --noinput
-	@psql -h $(DB_HOST) -p $(DB_PORT) -d $(DB_DATABASE) -U $(DB_USER) -c "UPDATE $(FORGE_SYSTEM_NAME).auth_user SET first_name = 'Administrator', last_name = 'IT Dept' WHERE id = 1;"
+	@psql -h $(FORGE_PGPASS_PRIMARY_SYS_HOST) -p $(FORGE_PGPASS_PRIMARY_SYS_PORT) -d $(FORGE_PGPASS_PRIMARY_SYS_DBNM) -U $(FORGE_PGPASS_PRIMARY_SYS_USER) -c "UPDATE $(FORGE_SYSTEM_NAME).auth_user SET first_name = 'Administrator', last_name = 'IT Dept' WHERE id = 1;"
 
 django-users:
 	@echo "|+------------+|"

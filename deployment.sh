@@ -290,39 +290,39 @@ terraform_app_path_var_www_proxy() {
     echo "| Creating APP_PATH_VAR_WWW |"
     echo "|---------------------------|"
     echo "$APP_PATH_VAR_WWW - Setting the proxy server."
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2dissite $FORGE_SYSTEM_BASE_DNS*"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -f /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS*"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo a2dissite $FORGE_SYSTEM_BASE_DNS*"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo rm -f /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS*"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "
     #     if grep -q '^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=' /etc/apache2/envvars; then
     #         sudo sed -i.bkp 's/^export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=.*/export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"/' /etc/apache2/envvars
     #     else
     #         echo 'export ${FORGE_SYSTEM_ACRONYM^^}_ENV_APP=\"-$TARGET_ENV\"' | sudo tee -a /etc/apache2/envvars > /dev/null
     #     fi
     # "
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo rm -rf $APP_PATH_OPT"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo mkdir -p $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo chown $TARGET_SERVER_PROXY_USER:$TARGET_SERVER_PROXY_USER -R /opt/$FORGE_SYSTEM_ACRONYM"
-    # scp webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS* $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR:$APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo chown $TARGET_SERVER_PROXY_USER:www-data -R $APP_PATH_DOCUMENT_ROOT"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo rm -rf $APP_PATH_OPT"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo mkdir -p $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo chown $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER:$FORGE_TRGSRV_TARGET_SERVER_PROXY_USER -R /opt/$FORGE_SYSTEM_ACRONYM"
+    # scp webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS* $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR:$APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo chown $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER:www-data -R $APP_PATH_DOCUMENT_ROOT"
     # unset ITER
     # ITER=0
     # for django_project in ${DJANGO_PROJECTS_AVAILABLE[@]}
     # do
     #     if [ "${ITER}" == "0" ];
     #     then
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf"
+    #         ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS.$FORGE_ORGANIZATION_BASEDNS.conf"
     #     else
-    #         ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf"
+    #         ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo ln -sf $APP_PATH_DOCUMENT_ROOT/webserver/apache/proxy_server/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf /etc/apache2/sites-available/$FORGE_SYSTEM_BASE_DNS-$django_project.$FORGE_ORGANIZATION_BASEDNS.conf"
     #     fi
     #     ITER=$(expr $ITER + 1)
     # done
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo a2ensite $FORGE_SYSTEM_BASE_DNS*"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo apachectl configtest"
-    # ssh $TARGET_SERVER_PROXY_USER@$TARGET_SERVER_PROXY_ADDR "sudo service apache2 restart"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo a2ensite $FORGE_SYSTEM_BASE_DNS*"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo apachectl configtest"
+    # ssh $FORGE_TRGSRV_TARGET_SERVER_PROXY_USER@$FORGE_TRGSRV_TARGET_SERVER_PROXY_ADDR "sudo service apache2 restart"
 }
 
 app_path_base_backup_database() {
-    # TODO plan about: ln -s /var/backups/postgresql/$DB_DATABASE /mnt/storage_sistemas/$FRG_SYSTEM_ACRONYM/backups/db/
+    # TODO plan about: ln -s /var/backups/postgresql/$FORGE_PGPASS_PRIMARY_SYS_DBNM /mnt/storage_sistemas/$FRG_SYSTEM_ACRONYM/backups/db/
     echo "TODO implement create and mount an datbase backup folder"
 }
 

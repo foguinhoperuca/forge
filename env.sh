@@ -4,7 +4,7 @@ unset_vars() {
     # TODO also remove vars from var.sh
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
     do
-        unset $var
+        unset "$var"
     done
 }
 
@@ -73,23 +73,23 @@ set_vars() {
         gpg --quiet --batch --yes --output $DEPLOYMENT_FILE --decrypt $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/secure/.mise-en-place.conf.gpg
     fi
 
-    export DEFAULT_TARGET_ENV=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_ENV | cut -d = -f2)
-    export DEFAULT_TARGET_SERVER_USER=$(cat $DEPLOYMENT_FILE | grep DEFAULT_TARGET_SERVER_USER | cut -d = -f2)
+    export DEFAULT_TARGET_ENV=$(cat "$DEPLOYMENT_FILE" | grep DEFAULT_TARGET_ENV | cut -d = -f2)
+    export DEFAULT_TARGET_SERVER_USER=$(cat "$DEPLOYMENT_FILE" | grep DEFAULT_TARGET_SERVER_USER | cut -d = -f2)
     if ! id "$DEFAULT_TARGET_SERVER_USER" >/dev/null 2>&1;
     then
         export DEFAULT_TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     fi
-    export FORGE_SYSTEM_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
-    export FORGE_SYSTEM_BASE_DNS=$(cat $DEPLOYMENT_FILE | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
+    export FORGE_SYSTEM_ACRONYM=$(cat "$DEPLOYMENT_FILE" | grep FORGE_SYSTEM_ACRONYM | cut -d = -f2)
+    export FORGE_SYSTEM_BASE_DNS=$(cat "$DEPLOYMENT_FILE" | grep FORGE_SYSTEM_BASE_DNS | cut -d = -f2)
     # FIXME [REVIEW IT!!] FORGE_SYSTEM_NAME is used only in terraform.sql (search for more uses!!) - can be replaced by FORGE_SYSTEM_ACRONYM?!
-    export FORGE_SYSTEM_NAME="$(echo $FORGE_SYSTEM_BASE_DNS | sed -e s/\-/\_/g)"
-    export FORGE_ORGANIZATION_ACRONYM=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_ACRONYM | cut -d = -f2)
-    export FORGE_ORGANIZATION_BASEDNS=$(cat $DEPLOYMENT_FILE | grep FORGE_ORGANIZATION_BASEDNS | cut -d = -f2)
+    export FORGE_SYSTEM_NAME="$(echo "$FORGE_SYSTEM_BASE_DNS" | sed -e s/\-/\_/g)"
+    export FORGE_ORGANIZATION_ACRONYM=$(cat "$DEPLOYMENT_FILE" | grep FORGE_ORGANIZATION_ACRONYM | cut -d = -f2)
+    export FORGE_ORGANIZATION_BASEDNS=$(cat "$DEPLOYMENT_FILE" | grep FORGE_ORGANIZATION_BASEDNS | cut -d = -f2)
     # TODO review it - URL can be used from git remote origin (fetch)
-    export GIT_PROTOCOL=$(cat $DEPLOYMENT_FILE | grep GIT_PROTOCOL | cut -d = -f2)
-    export GIT_BASE_URL=$(cat $DEPLOYMENT_FILE | grep GIT_BASE_URL | cut -d = -f2)
+    export GIT_PROTOCOL=$(cat "$DEPLOYMENT_FILE" | grep GIT_PROTOCOL | cut -d = -f2)
+    export GIT_BASE_URL=$(cat "$DEPLOYMENT_FILE" | grep GIT_BASE_URL | cut -d = -f2)
     export GIT_USER=$(cat $DEPLOYMENT_FILE | grep GIT_USER | cut -d = -f2)
-    export GIT_PASSWORD=$(cat $DEPLOYMENT_FILE | grep GIT_PASSWORD | cut -d = -f2)
+    export GIT_PASSWORD=$(cat "$DEPLOYMENT_FILE" | grep GIT_PASSWORD | cut -d = -f2)
     export GIT_REMOTE="${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git"
     [[ -z "$2" ]] && export GIT_REPOS="backend" || export GIT_REPOS="$2"
 
@@ -152,72 +152,26 @@ set_vars_by_env() {
     echo "[SET VARS BY ENV] Vars that dependent from environment (ENV is $TARGET_ENV)"
 
     export TARGET_SERVER_FILE=$APP_PATH_ETC/.target-server.$TARGET_ENV
-    export TARGET_SERVER_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_ADDR | cut -d = -f2)
-    # FIXME TARGET_SERVER_USER should live beyond FORGE_TRGSRV_TARGET_SERVER_USER 'cause when set the dev env in local and use make patch-git-* it will need force the value in .target-server file instead of calculated TARGET-SERVER -> see if the same applys to TARGET_SERVER_ADDR and others
-    export TARGET_SERVER_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_USER | cut -d = -f2)
-    TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
+    # FIXME TARGET_SERVER_USER should live beyond FORGE_TRGSRV_TARGET_SERVER_USER 'cause when set the dev env in local and use make patch-git-* it will need force the value in .target-server file instead of calculated TARGET-SERVER
+    export TARGET_SERVER_USER=$(cat "$TARGET_SERVER_FILE" | grep TARGET_SERVER_USER | cut -d = -f2)
+    export TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
     if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;
     then
         local ORIGINAL_TARGET_SERVER_USER=$TARGET_SERVER_USER
         export TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
         print_banner "Original -> ${ORIGINAL_TARGET_SERVER_USER} <- do not exist in this machine. Using current user: $TARGET_SERVER_USER"
     fi
-    export TARGET_SERVER_PROXY_ADDR=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_ADDR | cut -d = -f2)
-    export TARGET_SERVER_PROXY_USER=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_PROXY_USER | cut -d = -f2)
-    export TARGET_SERVER_DB_SYS_GRP=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DB_SYS_GRP | cut -d = -f2)
-    export TARGET_SERVER_DBAS=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_DBAS | cut -d = -f2)
-    export TARGET_SERVER_VOLUME_USERNAME=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_USERNAME | cut -d = -f2)
-    export TARGET_SERVER_VOLUME_PASSWORD=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_PASSWORD | cut -d = -f2)
-    export TARGET_SERVER_VOLUME_DOMAIN=$(cat $TARGET_SERVER_FILE | grep TARGET_SERVER_VOLUME_DOMAIN | cut -d = -f2)
 
     export PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
-    export DB_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '1,1p')
-    export DB_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '1,1p')
-    export DB_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '1,1p')
-    export DB_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '1,1p')
-    export DB_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '1,1p')
-    export DB_ADMIN_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '2,2p')
-    export DB_ADMIN_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '2,2p')
-    export DB_ADMIN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '2,2p')
-    export DB_ADMIN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '2,2p')
-    export DB_ADMIN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '2,2p')
-    export DB_FOREIGN_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '3,3p')
-    export DB_FOREIGN_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '3,3p')
-    export DB_FOREIGN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '3,3p')
-    export DB_FOREIGN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '3,3p')
-    export DB_FOREIGN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '3,3p')
-    export DB_FOREIGN_ADMIN_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '4,4p')
-    export DB_FOREIGN_ADMIN_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '4,4p')
-    export DB_FOREIGN_ADMIN_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '4,4p')
-    export DB_FOREIGN_ADMIN_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '4,4p')
-    export DB_FOREIGN_ADMIN_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '4,4p')
-    export DB_POSTGRES_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '5,5p')
-    export DB_POSTGRES_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '5,5p')
-    export DB_POSTGRES_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '5,5p')
-    export DB_POSTGRES_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '5,5p')
-    export DB_POSTGRES_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '5,5p')
-    export DB_POSTGRES_VIEW_REPORT_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '6,6p')
-    export DB_POSTGRES_VIEW_REPORT_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '6,6p')
-    export DB_POSTGRES_VIEW_REPORT_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '6,6p')
-    export DB_POSTGRES_VIEW_REPORT_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '6,6p')
-    export DB_POSTGRES_VIEW_REPORT_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '6,6p')
-    export DB_POSTGRES_APP_TESTER_HOST=$(cat $PGPASSFILE | cut -d : -f1 | sed -n '7,7p')
-    export DB_POSTGRES_APP_TESTER_PORT=$(cat $PGPASSFILE | cut -d : -f2 | sed -n '7,7p')
-    export DB_POSTGRES_APP_TESTER_DATABASE=$(cat $PGPASSFILE | cut -d : -f3 | sed -n '7,7p')
-    export DB_POSTGRES_APP_TESTER_USER=$(cat $PGPASSFILE | cut -d : -f4 | sed -n '7,7p')
-    export DB_POSTGRES_APP_TESTER_PASS=$(cat $PGPASSFILE | cut -d : -f5 | sed -n '7,7p')
+	# TODO remove it and replace in host project those variables bellow
+    export DB_HOST=$(cat "$PGPASSFILE" | cut -d : -f1 | sed -n '1,1p')
+    export DB_PORT=$(cat "$PGPASSFILE" | cut -d : -f2 | sed -n '1,1p')
+    export DB_DATABASE=$(cat "$PGPASSFILE" | cut -d : -f3 | sed -n '1,1p')
+    export DB_USER=$(cat "$PGPASSFILE" | cut -d : -f4 | sed -n '1,1p')
+    export DB_PASS=$(cat "$PGPASSFILE" | cut -d : -f5 | sed -n '1,1p')
 
-    # TODO add custom confs from api, backoffice and bot
     export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV
-    export DJANGO_SUPERUSER_USERNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_USERNAME | cut -d = -f2)
-    export DJANGO_SUPERUSER_PASSWORD=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_PASSWORD | cut -d = -f2)
-    export DJANGO_SUPERUSER_EMAIL=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_EMAIL | cut -d = -f2)
-    export DJANGO_SUPERUSER_FIRSTNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_FIRSTNAME | cut -d = -f2)
-    export DJANGO_SUPERUSER_LASTNAME=$(cat $BACKOFFICE_ENV_FILE | grep DJANGO_SUPERUSER_LASTNAME | cut -d = -f2)
-
     export API_ENV_FILE=$APP_PATH_ETC/.env.api.$TARGET_ENV
-    export API_AUTHORIZATION_TOKEN=$(cat $API_ENV_FILE | grep API_AUTHORIZATION_TOKEN | cut -d = -f2)
-
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
 
     # FIXME FORGE_DEBUG is set to empty by unenv
@@ -258,7 +212,7 @@ set_vars_by_env() {
             else
                 if [[ "${CONF_FILE_CORE}" == ".pgpass" ]];
                 then
-                    FIELDS=(HOST PORT DBNAME USER PASSWORD)
+                    FIELDS=(HOST PORT DBNM USER PASS)
                     LINE_ID="${PGPASS_LINE_IDENTIFICATION[$LINE_COUNT]}"
                     IFS=':' read -r -a ENTRIES <<< "$LINE"
                 else
@@ -576,7 +530,7 @@ cp_secrets() {
 
     # set -eu
 
-    # scp .credentials/.google-service-account* $(TARGET_SERVER_USER)@$(TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
+    # scp .credentials/.google-service-account* $(TARGET_SERVER_USER)@$(FORGE_TRGSRV_TARGET_SERVER_ADDR):$(shell echo "${APP_PATH_ORIGIN_EDGE}" | sed -e "s/${USER}/${TARGET_SERVER_USER}/g")/.credentials/
     ETC_DEPLOYMENT="$APP_PATH_ETC"
     EDGE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials/secure"
     MISE_EN_PLACE_DEPLOYMENT="${APP_PATH_WORKTREE}/edge/.credentials"
@@ -635,7 +589,7 @@ cp_secrets() {
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     if [[ "$FORGE_DRY_RUN" == "1" ]];
     then
-        echo "DRY_RUN $FORGE_DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: TARGET_SERVER_ADDR $TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
+        echo "DRY_RUN $FORGE_DRY_RUN ::: FORGE_TEST $FORGE_TEST :: TARGET_SERVER_USER $TARGET_SERVER_USER :: FORGE_TRGSRV_TARGET_SERVER_ADDR $FORGE_TRGSRV_TARGET_SERVER_ADDR :: ENV_CP $ENV_CP :: DEPLOY_GENERATED_FILES $DEPLOY_GENERATED_FILES"
         echo "-------------------------------------------"
         echo "[DRY-RUN] CP_FILES_ETC --> $APP_PATH_ETC :: $ETC_DEPLOYMENT"
         echo "$CP_FILES_ETC"
@@ -652,45 +606,45 @@ cp_secrets() {
         return 0
     fi
 
-    # FIXME $TARGET_SERVER_USER and $TARGET_SERVER_ADDR may be empty. How to rethink it? Ans>: **use DEFAULT_TARGET_SERVER_USER** and create a DEFAULT_TARGET_SERVER_ADDR
+    # FIXME $TARGET_SERVER_USER and $FORGE_TRGSRV_TARGET_SERVER_ADDR may be empty. How to rethink it? Ans>: **use DEFAULT_TARGET_SERVER_USER** and create a DEFAULT_FORGE_TRGSRV_TARGET_SERVER_ADDR
     echo "===== Depĺoying to $DEPLOY_GENERATED_FILES"
     case "$DEPLOY_GENERATED_FILES" in
         "etc")
             echo "cp ETC to $ETC_DEPLOYMENT"
-            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
-            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt"
+            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt"
             ;;
         "edge")
             echo "cp EDGE to $EDGE_DEPLOYMENT"
-            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
-            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt"
+            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt"
             ;;
         "mise-en-place")
             echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
-            scp "$CP_FILES_MISE_EN_PLACE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            scp "$CP_FILES_MISE_EN_PLACE" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
             if [[ "${ENV_CP}" != "all" ]];
             then
-                ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+                ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
             fi
-            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
+            ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
             ;;
         *)
             echo "cp ETC to $ETC_DEPLOYMENT"
-            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
+            scp "$CP_FILES_ETC" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$ETC_DEPLOYMENT"
             echo "====="
 
             echo "cp EDGE to $EDGE_DEPLOYMENT"
-            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
+            scp "$CP_FILES_EDGE" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$EDGE_DEPLOYMENT"
             echo "====="
 
             echo "cp MISE-EN-PLACE to $MISE_EN_PLACE_DEPLOYMENT :: ${ENV_CP}"
-            scp "${CP_FILES_MISE_EN_PLACE}" "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
+            scp "${CP_FILES_MISE_EN_PLACE}" "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR":"$MISE_EN_PLACE_DEPLOYMENT"
             if [[ "${ENV_CP}" != "all" ]];
             then
-                ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
+                ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "sudo sed -i.bkp_${NOW} \"s/^DEFAULT_TARGET_ENV=.*/DEFAULT_TARGET_ENV=${ENV_CP}/\" $MISE_EN_PLACE_DEPLOYMENT/.mise-en-place.conf"
             fi
 
-            ssh "$TARGET_SERVER_USER"@"$TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
+            ssh "$TARGET_SERVER_USER"@"$FORGE_TRGSRV_TARGET_SERVER_ADDR" "echo $NOW > $ETC_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $EDGE_DEPLOYMENT/deployment_datetime.txt; echo $NOW > $MISE_EN_PLACE_DEPLOYMENT/deployment_datetime.txt"
             ;;
     esac
 }

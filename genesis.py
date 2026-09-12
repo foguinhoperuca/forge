@@ -28,9 +28,9 @@ for denvp in [os.path.join(os.path.dirname(__file__), '../api/.env'), os.path.jo
     load_dotenv(denvp)
 
 # query: str
-# conn = psycopg2.connect(database=os.getenv('DB_DATABASE'),
-#                         user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'),  # noqa: E501
-#                         host=os.getenv('DB_HOST'), port=os.getenv('DB_PORT')
+# conn = psycopg2.connect(database=os.getenv('FORGE_PGPASS_PRIMARY_SYS_DBNM'),
+#                         user=os.getenv('FORGE_PGPASS_PRIMARY_SYS_USER'), password=os.getenv('FORGE_PGPASS_PRIMARY_SYS_PASS'),  # noqa: E501
+#                         host=os.getenv('FORGE_PGPASS_PRIMARY_SYS_HOST'), port=os.getenv('FORGE_PGPASS_PRIMARY_SYS_PORT')
 #                         )
 # cur = conn.cursor()
 
@@ -145,17 +145,17 @@ if __name__ == "__main__":
     logging.info(f'# 1 - CREATING USERS... choices: {args.create}')
     if any([opt in args.create for opt in ['all', ForgeUserGroup.ADMIN.name.lower()]]):  # noqa: E501
         logging.info('## 1.0 - Admin')
-        create_users(user_group=ForgeUserGroup.ADMIN.value, username=os.getenv('DJANGO_SUPERUSER_USERNAME'), first_name=os.getenv('DJANGO_SUPERUSER_FIRSTNAME'), last_name=os.getenv('DJANGO_SUPERUSER_LASTNAME'), email=os.getenv('DJANGO_SUPERUSER_EMAIL'), is_superuser=True, is_staff=True, password=os.getenv('DJANGO_SUPERUSER_PASSWORD'))  # noqa: E501
+        create_users(user_group=ForgeUserGroup.ADMIN.value, username=os.getenv('FORGE_ENVBAC_DJANGO_SUPERUSER_USERNAME'), first_name=os.getenv('FORGE_ENVBAC_DJANGO_SUPERUSER_FIRSTNAME'), last_name=os.getenv('FORGE_ENVBAC_DJANGO_SUPERUSER_LASTNAME'), email=os.getenv('FORGE_ENVBAC_DJANGO_SUPERUSER_EMAIL'), is_superuser=True, is_staff=True, password=os.getenv('FORGE_ENVBAC_DJANGO_SUPERUSER_PASSWORD'))  # noqa: E501
 
     if any([opt in args.create for opt in ['all', ForgeUserGroup.SYSTEM.name.lower()]]):  # noqa: E501
         logging.info('## 1.1 - System')
-        create_users(user_group=ForgeUserGroup.SYSTEM.value, username='api_auth', first_name='API', last_name='Authentication', email=f'api@{os.getenv("FORGE_SYSTEM_BASE_DNS")}.{os.getenv("FORGE_ORGANIZATION_BASEDNS")}', is_superuser=False, is_staff=False, password=os.getenv('API_AUTHORIZATION_TOKEN'))  # noqa: E501
+        create_users(user_group=ForgeUserGroup.SYSTEM.value, username='api_auth', first_name='API', last_name='Authentication', email=f'api@{os.getenv("FORGE_SYSTEM_BASE_DNS")}.{os.getenv("FORGE_ORGANIZATION_BASEDNS")}', is_superuser=False, is_staff=False, password=os.getenv('FORGE_ENVAPI_API_AUTHORIZATION_TOKEN='))  # noqa: E501
 
     if any([opt in args.create for opt in ['all', ForgeUserGroup.IT_STAFF.name.lower()]]):  # noqa: E501
         logging.info('## 1.2 - IT')
         # FIXME do a better job grabbing in var.sh what is not prod
         it_user_is_superuser: bool = True if str(os.getenv('TARGET_ENV')) in ['local', 'dev', 'stage'] else False
-        for index, username in enumerate(str(os.getenv('TARGET_SERVER_DBAS')).split(',')):
+        for index, username in enumerate(str(os.getenv('FORGE_TRGSRV_TARGET_SERVER_DBAS')).split(',')):
             logging.info(f'### 1.2.{index:02} - DBA {username}')
             create_users(user_group=ForgeUserGroup.IT_STAFF.value, username=username, first_name=username, last_name='IT STAFF', email=f'{username}@{os.getenv("FORGE_SYSTEM_BASE_DNS")}.{os.getenv("FORGE_ORGANIZATION_BASEDNS")}', is_superuser=it_user_is_superuser, is_staff=True)  # noqa: E501
 

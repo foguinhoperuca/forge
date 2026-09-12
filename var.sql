@@ -35,14 +35,14 @@
 \if :{?forgesys_db}
   \echo 'Already setted forgesys_db -->' :forgesys_db
 \else
-  \set forgesys_db `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_DBNAME | cut -d = -f2)"`
+  \set forgesys_db `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_DBNM | cut -d = -f2)"`
   SET session.forgesys_db = :'forgesys_db';
 \endif
 
 \if :{?forgesys_db_foreign}
   \echo 'Already setted forgesys_db_foreign -->' :forgesys_db_foreign
 \else
-  \set forgesys_db_foreign `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_FOREIGN_DBNAME | cut -d = -f2)"`
+  \set forgesys_db_foreign `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_FOREIGN_DBNM | cut -d = -f2)"`
   SET session.forgesys_db_foreign = :'forgesys_db_foreign';
 \endif
 
