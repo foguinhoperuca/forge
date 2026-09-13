@@ -93,7 +93,6 @@ erupt() {
             unset_symbolic_link
             unset_vars
             [[ -n "$VIRTUAL_ENV" ]] && deactivate
-            # FIXME here, DO_BREAK do not working
             show_env "true" "true"
             ;;
         "env")

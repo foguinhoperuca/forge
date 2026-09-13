@@ -2,8 +2,7 @@
 
 unset_vars() {
     # TODO also remove vars from var.sh
-    for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1);
-    do
+    for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1); do
         unset "$var"
     done
 }
@@ -45,7 +44,7 @@ ignite() {
 }
 
 complement_set_vars() {
-    print_banner "[FORGE] COMPLEMENT for set vars logic"
+    print_banner "[FORGE] COMPLEMENT for SET VARS logic"
 }
 
 set_vars() {
@@ -144,7 +143,7 @@ set_vars() {
 }
 
 complement_set_vars_by_env() {
-    print_banner "| [FORGE] COMPLEMENT for set vars by env logic |"
+    print_banner "[FORGE] COMPLEMENT for set VARS BY ENV logic"
 }
 
 set_vars_by_env() {
@@ -163,7 +162,7 @@ set_vars_by_env() {
     fi
 
     export PGPASSFILE=$APP_PATH_ETC/.pgpass.$TARGET_ENV
-	# TODO remove it and replace in host project those variables bellow
+    # TODO remove it and replace in host project those variables bellow
     export DB_HOST=$(cat "$PGPASSFILE" | cut -d : -f1 | sed -n '1,1p')
     export DB_PORT=$(cat "$PGPASSFILE" | cut -d : -f2 | sed -n '1,1p')
     export DB_DATABASE=$(cat "$PGPASSFILE" | cut -d : -f3 | sed -n '1,1p')
@@ -173,6 +172,7 @@ set_vars_by_env() {
     export BACKOFFICE_ENV_FILE=$APP_PATH_ETC/.env.backoffice.$TARGET_ENV
     export API_ENV_FILE=$APP_PATH_ETC/.env.api.$TARGET_ENV
     export BOT_ENV_FILE=$APP_PATH_ETC/.env.bot.$TARGET_ENV
+    export USER_SEEDS_ENV_FILE=$APP_PATH_ETC/.user_seeds.csv.$TARGET_ENV
 
     # FIXME FORGE_DEBUG is set to empty by unenv
     local FORGE_DEBUG=${DEBUG:-0}
@@ -231,16 +231,23 @@ set_vars_by_env() {
             fi
             [[ "$FORGE_DEBUG" == "1" ]] && echo "======================================================================"
         done
-        echo "+++++++++++++++++++++++++++++++++++++++++++++++++++ </${CONF_FILE_CORE}> +++++++++++++++++++++++++++++++++++++++++++++++++++"
+        [[ "$FORGE_DEBUG" == "1" ]] && echo "+++++++++++++++++++++++++++++++++++++++++++++++++++ </${CONF_FILE_CORE}> +++++++++++++++++++++++++++++++++++++++++++++++++++"
     done
 
     complement_set_vars_by_env
 }
 
+complement_unset_symbolic_link() {
+    print_banner "[FORGE] COMPLEMENT for UNset symbolic link logic"
+}
+
 unset_symbolic_link() {
+    print_banner "[FORGE] UNset symbolic links"
+    FORGE_DEBUG=${FORGE_DEBUG:-0}
+
     rm -f .*~ *~ *#
     for slf in "${SYMBOLIC_LINK_FILES[@]}"; do
-        echo "**UNSET** link file: $APP_PATH_DOCUMENT_ROOT/$slf"
+        [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] **UNSET** link file: $APP_PATH_DOCUMENT_ROOT/$slf"
         rm -f "$APP_PATH_DOCUMENT_ROOT/$slf"
     done
 
@@ -248,14 +255,17 @@ unset_symbolic_link() {
     rm -f "$APP_PATH_ORIGIN_EDGE"/git-hooks/mount_etna.sh
     rm -f "$APP_PATH_ORIGIN_EDGE"/git-hooks/.mise-en-place.conf
     rm -f "$APP_PATH_ORIGIN_EDGE"/.mise-en-place.conf
+
+    complement_unset_symbolic_link
 }
 
 complement_set_symbolic_link() {
     print_banner "[FORGE] COMPLEMENT for set symbolic link logic"
 }
 
-# TODO implement a version to set symlink by [ENV | document_root | edge | upstream]
 set_symbolic_link() {
+    # TODO implement a version to set symlink by [ENV | document_root | edge | upstream]
+
     unset_symbolic_link
 
     print_banner "[FORGE] Setting symbolic link"
