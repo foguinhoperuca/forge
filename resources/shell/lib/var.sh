@@ -78,9 +78,12 @@ CONF_FILE_ACRONYM[envbackoffice]="ENVBAC"
 CONF_FILE_ACRONYM[target_server]="TRGSRV"
 CONF_FILE_ACRONYM[user_seedscsv]="USEEDS"
 
+PGPASS_FILE_HEADERS=(HOST PORT DBNM USER PASS)
 PGPASS_LINE_IDENTIFICATION=(PRIMARY_SYS PRIMARY_ADM FOREIGN_SYS FOREIGN_ADM POSTGRES_ADM POSTGRES_READONLY POSTGRES_TEST)
 # This should be replaced by a fully declare statement
 declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
     "REPLACE_IT__some_folder_for_save_media__REPLACE_IT"
     "REPLACE_IT__another_folder_for_save_media__REPLACE_IT"
 )
+
+USER_SEEDS_FILE_HEADERS=(group_name username first_name last_name email is_staff is_superuser password)

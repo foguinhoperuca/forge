@@ -8,12 +8,12 @@ then
     echo "Setted FORGE_PATH to $FORGE_PATH **INSTEAD OF** ."
 fi
 
-source "$FORGE_PATH"/var.sh
-source "$FORGE_PATH"/utils.sh
-source "$FORGE_PATH"/env.sh
-source "$FORGE_PATH"/database.sh
-source "$FORGE_PATH"/deployment.sh
-source "$FORGE_PATH"/monitoring.sh
+source "$FORGE_PATH"/lib/var.sh
+source "$FORGE_PATH"/lib/utils.sh
+source "$FORGE_PATH"/commands/env.sh
+source "$FORGE_PATH"/commands/database.sh
+source "$FORGE_PATH"/commands/deployment.sh
+source "$FORGE_PATH"/commands/monitoring.sh
 
 show_help() {
     print_banner "[FORGE] Help Usage:"

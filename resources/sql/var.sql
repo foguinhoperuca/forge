@@ -35,14 +35,14 @@
 \if :{?forgesys_db}
   \echo 'Already setted forgesys_db -->' :forgesys_db
 \else
-  \set forgesys_db `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_DBNM | cut -d = -f2)"`
+  \set forgesys_db `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_SYS_DBNM | cut -d = -f2)"`
   SET session.forgesys_db = :'forgesys_db';
 \endif
 
 \if :{?forgesys_db_foreign}
   \echo 'Already setted forgesys_db_foreign -->' :forgesys_db_foreign
 \else
-  \set forgesys_db_foreign `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_FOREIGN_DBNM | cut -d = -f2)"`
+  \set forgesys_db_foreign `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_FOREIGN_SYS_DBNM | cut -d = -f2)"`
   SET session.forgesys_db_foreign = :'forgesys_db_foreign';
 \endif
 
@@ -57,7 +57,7 @@
 \if :{?forgesys_user}
   \echo 'Already setted forgesys_user -->' :forgesys_user
 \else
-  \set forgesys_user `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_USER | cut -d = -f2)"`
+  \set forgesys_user `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_SYS_USER | cut -d = -f2)"`
   SET session.forgesys_user = :'forgesys_user';
 \endif
 
@@ -65,7 +65,7 @@
 \if :{?forgesys_pwd}
   \echo 'Already setted forgesys_pwd -->' :forgesys_pwd
 \else
-  \set forgesys_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_PASSWORD | cut -d = -f2)"`
+  \set forgesys_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_SYS_PASSWORD | cut -d = -f2)"`
   SET session.forgesys_pwd = :'forgesys_pwd';
 \endif
 
@@ -73,7 +73,7 @@
 \if :{?forgesys_view_report_pwd}
   \echo 'Already setted forgesys_view_report_pwd -->' :forgesys_view_report_pwd
 \else
-  \set forgesys_view_report_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_READ_ONLY_PASSWORD | cut -d = -f2)"`
+  \set forgesys_view_report_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_READONLY_PASSWORD | cut -d = -f2)"`
   SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
 \endif
 

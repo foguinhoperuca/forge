@@ -8,39 +8,7 @@ unset_vars() {
 }
 
 ignite() {
-    # TODO move load of .mise-en-place confs here
-    print_banner "--- IGNITE: LOAD BASIC VARS FROM .mise-en-place BEFORE START ---"
-    DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
-    FORGE_DEBUG=${FORGE_DEBUG:-0}
-
-    if [[ "$FORGE_DEBUG" == "1" ]];
-    then
-        print_banner "[DEBUG] ignite"
-        echo "------------------------------------------- <CONTENT>  -------------------------------------------"
-        echo "BASH_SOURCE[0] ${BASH_SOURCE[0]}"
-        echo "DEPLOYMENT_FILE $DEPLOYMENT_FILE"
-        echo "------------------------------------------- </CONTENT> -------------------------------------------"
-    fi
-
-    # if [[ ! " ${AVAILIABLE_PROJECTS[*]} " =~ [[:space:]]${FORGE_SYSTEM_ACRONYM}[[:space:]] ]]; then
-    #     echo "MANDATORY ARGUMENT MISSING OR NOT RECOGNIZED!!"
-    # fi
-
-    IFS=$'\n'
-    for LINE in $(cat "$DEPLOYMENT_FILE");
-    do
-        # echo "$(cat $DEPLOYMENT_FILE | sed -e s|$(dirname $DEPLOYMENT_FILE)||g)"
-        echo "LINE.......: ${LINE}"
-        [[ "$LINE" == \#* ]] && continue
-
-        # FIXME CONF_FILE_ACRONYM[mise_en_place] is getting TRGENV value instead MEP
-        ENTRY=$(echo "FORGE_${CONF_FILE_ACRONYM[mise_en_place]}_${LINE%%=*}" | tr '[:lower:]' '[:upper:]' | sed -e "s|\.||g" | sed -e "s|-|_|g")
-        SECRET="${LINE#*=}"
-
-        echo "ENTRY......: ${ENTRY}"
-        echo "SECRET.....: ${SECRET}"
-        echo "-----"
-    done
+    echo "TODO move load of .mise-en-place confs here"
 }
 
 complement_set_vars() {
@@ -54,7 +22,7 @@ set_vars() {
     # [OPTIONAL]  FORGE_DEBUG :: for debug code purpose
 
     # PROJECT specific variables
-    export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/.mise-en-place.conf
+    export DEPLOYMENT_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../../../.credentials/.mise-en-place.conf
     if [[ "$FORGE_DEBUG" == "1" ]];
     then
         print_banner "[DEBUG] set vars"
@@ -69,7 +37,7 @@ set_vars() {
         echo "|**********************************************|"
         echo "| --- Creating missing .mise-en-place.conf --- |"
         echo "|**********************************************|"
-        gpg --quiet --batch --yes --output $DEPLOYMENT_FILE --decrypt $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.credentials/secure/.mise-en-place.conf.gpg
+        gpg --quiet --batch --yes --output $DEPLOYMENT_FILE --decrypt $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../../../.credentials/secure/.mise-en-place.conf.gpg
     fi
 
     export DEFAULT_TARGET_ENV=$(cat "$DEPLOYMENT_FILE" | grep DEFAULT_TARGET_ENV | cut -d = -f2)
@@ -212,11 +180,11 @@ set_vars_by_env() {
             else
                 if [[ "${CONF_FILE_CORE}" == ".pgpass" ]];
                 then
-                    FIELDS=(HOST PORT DBNM USER PASS)
+                    FIELDS=("${PGPASS_FILE_HEADERS[@]}")
                     LINE_ID="${PGPASS_LINE_IDENTIFICATION[$LINE_COUNT]}"
                     IFS=':' read -r -a ENTRIES <<< "$LINE"
                 else
-                    FIELDS=(group_name username first_name last_name email is_staff is_superuser password)
+                    FIELDS=("${USER_SEEDS_FILE_HEADERS[@]}")
                     LINE_ID="$LINE_COUNT"
                     IFS=';' read -r -a ENTRIES <<< "$LINE"
                 fi
