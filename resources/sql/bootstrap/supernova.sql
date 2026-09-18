@@ -5,11 +5,12 @@
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
-\i :forgesys_path/forge/utils.sql
+\i :forgesys_path/forge/resources/sql/lib/utils.sql
 SET client_min_messages TO ERROR;
 
 DO $$
   BEGIN
+    -- FIXME create_dbas do not working anymore 'cause it calling the schema that isn created yet!!
     CALL forge_create_dbas();
   END
 $$;

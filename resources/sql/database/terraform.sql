@@ -5,7 +5,7 @@
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
-\i :forgesys_path/forge/var.sql
+\i :forgesys_path/forge/resources/sql/lib/var.sql
 
 --
 -- Droping/Revoking objects in correct order
@@ -29,6 +29,7 @@ REVOKE ALL PRIVILEGES ON DATABASE :forgesys_db_foreign FROM :forgesys_role;
 
 DROP SCHEMA IF EXISTS :forgesys_schema CASCADE;
 
+-- FIXME PASSWORD forgesys_pwd is working?
 DROP ROLE IF EXISTS :forgesys_user;
 CREATE ROLE :forgesys_user WITH
   LOGIN

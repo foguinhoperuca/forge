@@ -3,10 +3,11 @@
  * See more details in README.
  */
 
+
 -- TODO
 -- 0. Set permission by level for each object: FUNCTION, INDEX, SCHEMA, DATABASE
 
-\i :forgesys_path/forge/var.sql
+\i :forgesys_path/forge/resources/sql/lib/var.sql
 SET session.forgesys_role = :forgesys_role;
 SET session.forgesys_user = :forgesys_user;
 SET session.forgesys_db = :forgesys_db;

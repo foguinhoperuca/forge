@@ -2,7 +2,7 @@
  * Big bang will do configuration for host it tself
  */
 
-\i :forgesys_path/forge/utils.sql
+\i :forgesys_path/forge/resources/sql/lib/utils.sql
 SET client_min_messages TO ERROR; -- TODO change back to NOTICE
 
 DO $$

@@ -4,7 +4,7 @@
  * - schema public is already created and must have this tables: qgis_projects and spatial_ref_sys;
  */
 
-\i :forgesys_path/forge/utils.sql
+\i :forgesys_path/forge/resources/sql/lib/utils.sql
 SET client_min_messages TO ERROR; -- TODO change back to NOTICE
 
 DROP DATABASE IF EXISTS :forgesys_db;
