@@ -78,6 +78,7 @@ post-receive:
 	# git push deployment $(TARGET_ENV)
 	# git config alias.deploy-force push deployment HEAD:refs/triggers/deploy --force
 	# git push deployment :refs/triggers/deploy --force && git push deployment HEAD:refs/triggers/deploy --force # DELETE and RE-CREATE namespace
+	# clear; date; [[ -z "$POINTER" ]] && POINTER="HEAD" || POINTER=""; git push deployment "$POINTER":refs/triggers/deploy --force -o FORGE_DEBUG=1 -o FORCE_REINSTALL_VENV=0 -o TARGET_ENV=nami -o bla=blargh -o lala="lele" -o lili -o DARTH=VADER # change between HEAD and "" for $POINTER that will simplify when deploy HEAD or clean that refs
 	echo "abcdef123 fedcba987 refs/heads/$(TARGET_ENV)" | ./git-hooks/post-receive
 	@date
 

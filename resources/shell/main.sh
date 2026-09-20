@@ -98,7 +98,7 @@ erupt() {
         "env")
             if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]]; then
                 unset_vars
-                set_vars $2 "$3" "$4"
+                set_vars "$2" "$3" "$4"
                 set_vars_by_env
                 set_symbolic_link
                 [[ "$FORGE_DEBUG" == "1" ]] && show_env "PWD" || :
@@ -187,11 +187,11 @@ erupt() {
             ;;
         "db_script")
             case $3 in
-                "admin" | "adm")
-                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DATABASE" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
-                    ;;
 				"postgres")
 					db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DATABASE" "$FORGE_PGPASS_POSTGRES_ADM_USER" "$2"
+                    ;;
+                "admin" | "adm")
+                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DATABASE" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
 					;;
                 *)
                     db_script "$FORGE_PGPASS_PRIMARY_SYS_HOST" "$FORGE_PGPASS_PRIMARY_SYS_PORT" "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER" "$2"

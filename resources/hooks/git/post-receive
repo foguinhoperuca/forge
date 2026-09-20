@@ -1,38 +1,147 @@
 #!/bin/bash
 
-# GIT_BRANCH=<GIT_BRANCH_NAME> :: should be the real git branch that in this repository will be deployed.
-# By now there is the limitation: $GIT_BRANCH should be a valid env (with conf files .*.<ENV>)
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source $SCRIPT_DIR/mount_etna.sh > /dev/null
+source "$SCRIPT_DIR"/mount_etna.sh > /dev/null
 set_vars "" "" "" "" > /dev/null
 
-while read oldrev newrev ref
-do
-    if [[ "$FORGE_DEBUG" == "1" ]];
-    then
-        echo "[DEBUG] FORGE_DRY_RUN..: $FORGE_DRY_RUN :: original SCRIPT_DIR....: ${SCRIPT_DIR}"
-        echo "[DEBUG] TARGET_ENV.....: ${TARGET_ENV}  :: GIT_BRANCH.............: $GIT_BRANCH   :: DEFAULT_TARGET_ENV..: $DEFAULT_TARGET_ENV :: Using DEPLOYMENT_FILE..: ${DEPLOYMENT_FILE}"
-        echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
-    fi
+SAFE_VAR_REGEX="^[a-zA-Z_][a-zA-Z0-9_]*=[a-zA-Z0-9_\.\/\-]+$"
+ALLOWED_VARS=("FORCE_REINSTALL_VENV" "TARGET_ENV" "FORGE_DEBUG")
+extract_vars() {
+    # Given a content line, extract the correct variable. Can be re-used with git option in push like `clear; date; [[ -z "$POINTER" ]] && POINTER="HEAD" || POINTER=""; git push deployment "$POINTER":refs/triggers/deploy --force -o FORCE_REINSTALL_VENV=0 -o TARGET_ENV=nami -o bla=blargh -o lala="lele" -o lili -o DARTH=VADER`
+    # Also can be re-used with git commit message body
+    # [MANDATORY] $1 CONTENT        :: The line/value itself that will be parsed
+    # [OPTIONAL]  $2 SILENT_DISCARD :: To silent the output messages
 
-    if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
-        continue
-    fi
+    local CONTENT=$1            # FIXME ${1:?} do not hold the problem discarded bellow with returning?
+    local SILENT_DISCARD=${2:-0}
+    [[ -z "$CONTENT" ]] && return 0
 
-    if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ];
-    then
-        if [[ "$FORGE_DRY_RUN" == "1" ]];
-        then
-            echo "[DRY_RUN] FORGE_DRY_RUN..: $FORGE_DRY_RUN :: original SCRIPT_DIR....: ${SCRIPT_DIR}"
-            echo "[DRY_RUN] TARGET_ENV.....: ${TARGET_ENV}  :: Using DEPLOYMENT_FILE..: ${DEPLOYMENT_FILE}"
-            echo "-------------------------------------------"
+    # eval "$OPTION" # [WARNING] not safe: can run arbitrary code!!
+    if [[ "$CONTENT" =~ $SAFE_VAR_REGEX ]]; then
+        KEY="${CONTENT%%=*}"
+        VALUE="${CONTENT#*=}"
 
-            exit 0
+        IS_ALLOWED=0
+        for ALLOWED in "${ALLOWED_VARS[@]}"; do
+            if [ "$KEY" == "$ALLOWED" ]; then
+                IS_ALLOWED=1
+                break
+            fi
+        done
+        if [ "$IS_ALLOWED" -eq 1 ]; then
+            case "$KEY" in
+                FORCE_REINSTALL_VENV)
+                    if [[ "$VALUE" =~ ^[01]$ ]]; then
+                        FORCE_REINSTALL_VENV="$VALUE"
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "✅ Seted the value for FORCE_REINSTALL_VENV as $FORCE_REINSTALL_VENV"
+                    else
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Invalid value for FORCE_REINSTALL_VENV: '$VALUE'. Falling back to default: $FORCE_REINSTALL_VENV"
+                    fi
+                    ;;
+                TARGET_ENV)
+                    IS_VALID_WORKFLOW_ENV=0
+                    for WORKFLOW_ENV in "${WORKFLOW_ENVS_AVAILABLE[@]}"; do
+                        if [ "$VALUE" == "$WORKFLOW_ENV" ]; then
+                            IS_VALID_WORKFLOW_ENV=1
+                            break
+                        fi
+                    done
+                    if [[ "$IS_VALID_WORKFLOW_ENV" -eq 1 ]]; then
+                        TARGET_ENV="$VALUE"
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "✅ Seted the value for TARGET_ENV as $TARGET_ENV"
+                    else
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Invalid environment: '$VALUE'. Must be one of: (${WORKFLOW_ENVS_AVAILABLE[*]}). Falling back to default: $TARGET_ENV"
+                    fi
+                    ;;
+                FORGE_DEBUG)
+                    if [[ "$VALUE" =~ ^[01]$ ]]; then
+                        FORGE_DEBUG="$VALUE"
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "✅ Seted the value for FORGE_DEBUG as $FORGE_DEBUG"
+                    else
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Invalid value for FORGE_DEBUG: '$VALUE'. Falling back to default: $FORGE_DEBUG"
+                    fi
+                    ;;
+            esac
+        else
+            [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "🚫 Blocked/Ignored push option: $KEY"
         fi
-        echo "[EXEC-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
-        deploy
     else
-        echo "[NO-DEPLOY] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Doing nothing: only the '${GIT_BRANCH}' (expecting $TARGET_ENV) branch may be deployed on this server."
+        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Warning: content '$CONTENT' blocked due to unsafe characters or not in formart KEY=VALUE."
+    fi
+}
+
+while read oldrev newrev refname; do
+    OLDREV=$oldrev
+    NEWREV=$newrev
+    REFNAME=$refname
+    CLEAN_COMMIT_MSG=$(git log -1 --format=%B "$newrev" 2>/dev/null | sed '/^$/d; s/^[ \t]*//; s/[ \t]*$//')
+    [[ "$newrev" = "0000000000000000000000000000000000000000" ]] && exit 0
+done
+
+# TODO study the commit message format to force a default pattern to be recognized as variables like put all variables in footer of comit message
+if [ -n "$NEWREV" ] && [ "$NEWREV" != "0000000000000000000000000000000000000000" ]; then
+    print_banner "Executing parse for commit message REV: $NEWREV"
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        extract_vars "$line" "0"
+    done <<< "$CLEAN_COMMIT_MSG"
+fi
+
+if [ -n "$GIT_PUSH_OPTION_COUNT" ] && [ "$GIT_PUSH_OPTION_COUNT" -gt 0 ]; then
+    print_banner "Extracting git options (total $GIT_PUSH_OPTION_COUNT)"
+    for ((i=0; i<GIT_PUSH_OPTION_COUNT; i++)); do
+        VAR_NAME="GIT_PUSH_OPTION_$i"
+        OPTION="${!VAR_NAME}"
+        extract_vars "$OPTION" "0"
+    done
+fi
+
+if [ "$FORGE_DEBUG" == "1" ]; then
+    echo "-------------------------------------------------------------------------------"
+    print_banner "CALCULATED ENVIRONMENT VARIABLES"
+    echo "FORCE_REINSTALL_VENV -> $FORCE_REINSTALL_VENV"
+    echo "TARGET_ENV -> $TARGET_ENV"
+    echo "FORGE_DEBUG -> $FORGE_DEBUG"
+    print_banner "GIT PUSH OPTIONS"
+    echo "GIT_PUSH_OPTION_COUNT -> $GIT_PUSH_OPTION_COUNT"
+    echo "GIT_PUSH_OPTION_0 -> $GIT_PUSH_OPTION_0"
+    echo "GIT_PUSH_OPTION_1 -> $GIT_PUSH_OPTION_1"
+    echo "GIT_PUSH_OPTION_2 -> $GIT_PUSH_OPTION_2"
+    echo "GIT_PUSH_OPTION_3 -> $GIT_PUSH_OPTION_3"
+    echo "GIT_PUSH_OPTION_4 -> $GIT_PUSH_OPTION_4"
+    echo "GIT_PUSH_OPTION_5 -> $GIT_PUSH_OPTION_5"
+    echo "GIT_PUSH_OPTION_6 -> $GIT_PUSH_OPTION_6"
+    echo "GIT_PUSH_OPTION_7 -> $GIT_PUSH_OPTION_7"
+    echo "GIT_PUSH_OPTION_8 -> $GIT_PUSH_OPTION_8"
+    echo "GIT_PUSH_OPTION_9 -> $GIT_PUSH_OPTION_9"
+    print_banner "CLEAN COMMIT MESSAGE"
+    echo "$CLEAN_COMMIT_MSG"
+    echo "-------------------------------------------------------------------------------"
+fi
+
+print_banner "CALC TARGET_ENV -> $TARGET_ENV :: DEFAULT_TARGET_ENV -> $DEFAULT_TARGET_ENV :: NEWREV -> $NEWREV :: OLDREV -> $OLDREV :: REFNAME -> $REFNAME"
+IS_CRITICAL=0
+for CRIT in "${CRITICAL_SYSTEMS[@]}"; do
+    # [DECISION] The DEFAULT_TARGET_ENV in mise-en-place.conf will be used as indicative of the real environment that code is deploying 'cause there is the good place to manually set the configuration that will be used by each environment. The default values stored in vault is just to be followed with necessary modification if need.
+    if [ "$TARGET_ENV" == "$CRIT" ] || [ "$DEFAULT_TARGET_ENV" == "$CRIT" ]; then
+        IS_CRITICAL=1
+        break
     fi
 done
+if [ "$IS_CRITICAL" -eq 1 ]; then
+    echo "🚨 WARNING: You are attempting to run a workflow against a CRITICAL SYSTEM ($TARGET_ENV)!"
+    echo "Please type 'yes' or 'YES' to explicitly confirm this execution."
+    read -r -p "Proceed? " USER_CONFIRMATION < /dev/tty
+    if [ "$USER_CONFIRMATION" != "yes" ] && [ "$USER_CONFIRMATION" != "YES" ]; then
+        echo "❌ Deployment aborted by user prompt verification failure."
+        exit 1
+    fi
+    echo "🛡️ Confirmation accepted. Executing production workflow..."
+fi
+
+if [ "$REFNAME" = "refs/heads/$TARGET_ENV" ] || [ "$REFNAME" = "refs/triggers/deploy" ]; then
+    echo "✅ [EXEC-DEPLOY] Refname '${REFNAME}' received along with oldrev '${OLDREV}' and newrev '${NEWREV}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
+    deploy
+else
+    echo "❌ [NO-DEPLOY] Refname '${refname}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Doing nothing: only the '${GIT_BRANCH}' (expecting $TARGET_ENV) branch may be deployed on this server."
+fi

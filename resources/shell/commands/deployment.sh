@@ -165,6 +165,7 @@ terraform_app_path_opt() {
     cd -
 
     git init --bare $APP_PATH_BARE
+	cd $APP_PATH_BARE && git config receive.advertisePushOptions true
     rm $APP_PATH_BARE/hooks/*
     ln -s $APP_PATH_WORKTREE/edge/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf
     ln -s $APP_PATH_WORKTREE/edge/mount_etna.sh $APP_PATH_BARE/hooks/mount_etna.sh
@@ -182,8 +183,7 @@ terraform_app_path_opt() {
     ln -s $APP_PATH_UPSTREAM $APP_PATH_DOCUMENT_ROOT
 
     git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
-    cd $APP_PATH_UPSTREAM
-    git config credential.helper store
+    cd $APP_PATH_UPSTREAM && git config credential.helper store
     git fetch -a $APP_PATH_UPSTREAM
     git checkout -b $GIT_BRANCH origin/$GIT_BRANCH
     git remote add deployment file://$APP_PATH_BARE
@@ -336,7 +336,7 @@ terraform() {
     # ** se certificar que as pastas /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/pedido_ajuda e /mnt/storage_sistemas/alerta-defesa-civil-<ENV>/media/photo_guia_atendimento/ existem!
     # * /etc/hosts
 
-    TERRAFORM_TARGET_ENV="${1:-local}"
+    TERRAFORM_TARGET_ENV="${1:-local}" # FIXME shouldn't fall back to DEFAULT_TARGET_SERVER
     print_banner "Terraforming for env $TERRAFORM_TARGET_ENV (original value: $1)"
 
     set_vars $TERRAFORM_TARGET_ENV "" ""
@@ -369,7 +369,7 @@ deploy_app_path_opt() {
     rm -rf "${APP_PATH_WORKTREE:?}/${GIT_BRANCH:?}"
     mkdir "$APP_PATH_WORKTREE/$GIT_BRANCH"
     # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
-    git clone --recurse-submodules -b "$GIT_BRANCH"  "$APP_PATH_BARE" "$APP_PATH_WORKTREE/$GIT_BRANCH"
+    git clone --recurse-submodules -b "$GIT_BRANCH" "$APP_PATH_BARE" "$APP_PATH_WORKTREE/$GIT_BRANCH"
     echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
     # FIXME maybe can be an error with master != prod for symlink
     rm -f "$APP_PATH_DOCUMENT_ROOT"
@@ -445,7 +445,7 @@ complement_deploy_db() {
 
     print_banner "[FORGE] running DEFAULT task for tear down and rebuild DB -> TARGET_ENV is $TARGET_ENV"
     cd "${APP_PATH_DOCUMENT_ROOT:?}"
-    source "${APP_PATH_DOCUMENT_ROOT:?}/mount_etna.sh" env $TARGET_ENV 2>/dev/null && make db-start || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
+    source "${APP_PATH_DOCUMENT_ROOT:?}/mount_etna.sh" env "$TARGET_ENV" 2>/dev/null && make db-start || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
     deactivate
     cd -
 }
@@ -479,7 +479,7 @@ complement_deploy() {
 }
 
 deploy() {
-    # Assume that set_vars was setted
+    # [DECISION] Assume that set_vars was setted
 
     if [ "$GIT_BRANCH" == "edge" ] || [ "$GIT_BRANCH" == "upstream" ];
     then

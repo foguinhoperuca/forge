@@ -54,7 +54,10 @@ declare -a WORKFLOW_ENVS_AVAILABLE=(
     "stage"
     "prod"
 )
-WORKFLOW_ENVS_AVAILABLE+=("$CUSTOM_WORKFLOW_ENVS")
+# TODO test that if bellow with other places instead of git hook post-receive
+if [ -n "$CUSTOM_WORKFLOW_ENVS" ]; then
+	WORKFLOW_ENVS_AVAILABLE+=("$CUSTOM_WORKFLOW_ENVS")
+fi
 
 CRITICAL_SYSTEMS=('prod')
 
@@ -87,3 +90,5 @@ declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
 )
 
 USER_SEEDS_FILE_HEADERS=(group_name username first_name last_name email is_staff is_superuser password)
+
+FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
