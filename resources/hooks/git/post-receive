@@ -9,7 +9,7 @@ set_vars "" "" "" "" > /dev/null
 # - 2. The Premature Multi-Branch Deletion Bug
 
 SAFE_VAR_REGEX="^[a-zA-Z_][a-zA-Z0-9_]*=[a-zA-Z0-9_\.\/\-]+$"
-ALLOWED_VARS=("FORCE_REINSTALL_VENV" "TARGET_ENV" "FORGE_DEBUG")
+ALLOWED_VARS=("FORCE_REINSTALL_VENV" "TARGET_ENV" "FORGE_DEBUG" "FORGE_DRY_RUN")
 extract_vars() {
     # Given a content line, extract the correct variable. Can be re-used with git option in push like `clear; date; [[ -z "$POINTER" ]] && POINTER="HEAD" || POINTER=""; git push deployment "$POINTER":refs/triggers/deploy --force -o FORCE_REINSTALL_VENV=0 -o TARGET_ENV=nami -o bla=blargh -o lala="lele" -o lili -o DARTH=VADER`
     # Also can be re-used with git commit message body
@@ -63,6 +63,14 @@ extract_vars() {
                         [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "✅ Set the value for FORGE_DEBUG as $FORGE_DEBUG"
                     else
                         [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Invalid value for FORGE_DEBUG: '$VALUE'. Falling back to default: $FORGE_DEBUG"
+                    fi
+                    ;;
+				FORGE_DRY_RUN)
+					if [[ "$VALUE" =~ ^[01]$ ]]; then
+                        FORGE_DRY_RUN="$VALUE"
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "✅ Set the value for FORGE_DRY_RUN as $FORGE_DRY_RUN"
+                    else
+                        [[ "$SILENT_DISCARD" == "1" ]] && return 0 || echo "⚠️ Invalid value for FORGE_DRY_RUN: '$VALUE'. Falling back to default: $FORGE_DEBUG"
                     fi
                     ;;
             esac
@@ -143,6 +151,7 @@ if [ "$IS_CRITICAL" -eq 1 ]; then
     echo "🛡️ Confirmation accepted. Executing production workflow..."
 fi
 
+[[ "$FORGE_DRY_RUN" == 1 ]] && print_banner "[DRY_RUN] Not executing **ANY** action with side effect." && return 0
 if [ "$REFNAME" = "refs/heads/$TARGET_ENV" ] || [ "$REFNAME" = "refs/triggers/deploy" ]; then
     echo "✅ [EXEC-DEPLOY] Refname '${REFNAME}' received along with oldrev '${OLDREV}' and newrev '${NEWREV}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
     deploy
