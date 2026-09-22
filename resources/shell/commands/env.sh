@@ -345,7 +345,8 @@ encrypt_multiple() {
 }
 
 generate_conf_file() {
-    # Generate conf file from samples. It would grab secrets into remote vault, local vault (keepass) or be generated here
+    # Generate conf file from samples. It would grab secrets into remote vault, local vault (keepass) or be generated here.
+    # It is assume that set_vars and set_vars_by_env **ALREADY** was runned.
     # [MANDATORY] $1 ENV_DESIRED          :: define environment desired to be generate [local | dev | stage | replica | prod]. ALL is implemented in the call of this function.
     # [MANDATORY] $2 SOURCE_SECRETS       :: define $SOURCE_SECRETS [gpg | passbolt | keepass | new]
     # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
@@ -489,10 +490,12 @@ generate_conf_file() {
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/
     echo "${NOW}" | tee .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/deployment_datetime.txt
 
-    if [[ "$DEPLOY_GENERATED_FILES" == "1" ]];
-    then
-        echo "Copying generated files to deploy target..."
+    if [[ "$DEPLOY_GENERATED_FILES" == "1" ]]; then
+        print_banner "Copying generated files to deploy target..."
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.mise-en-place.conf" ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" ".credentials/"
+        # [DECISION] To support a better and smooth workflow, if was asked to deploy generated files, it should make it without any disturbance and smooth
+        sed -i.bkp "s|DEFAULT_TARGET_ENV=.*|DEFAULT_TARGET_ENV=${TARGET_ENV}|" "${APP_PATH_ORIGIN_EDGE}/.credentials/.mise-en-place.conf"
+
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.user_seeds.csv"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
     fi
 
