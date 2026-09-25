@@ -261,6 +261,7 @@ set_symbolic_link() {
     chmod 600 "$APP_PATH_ORIGIN_EDGE"/.credentials/.mise-en-place.*
     chmod 600 "$APP_PATH_ETC"/.pgpass.*
     chmod 600 "$APP_PATH_ETC"/.target-server.*
+    chmod 600 "$APP_PATH_ETC"/.user_seeds.csv.*
     chmod 640 "$APP_PATH_ETC"/.env.*
 
     complement_set_symbolic_link
