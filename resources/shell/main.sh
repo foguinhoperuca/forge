@@ -187,19 +187,19 @@ erupt() {
             ;;
         "db_script")
             case $3 in
-				"postgres")
-					db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DATABASE" "$FORGE_PGPASS_POSTGRES_ADM_USER" "$2"
+                "postgres")
+                    db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DBNM" "$FORGE_PGPASS_POSTGRES_ADM_USER" "$2"
                     ;;
                 "admin" | "adm")
-                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DATABASE" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
-					;;
+                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DBNM" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
+                    ;;
                 *)
                     db_script "$FORGE_PGPASS_PRIMARY_SYS_HOST" "$FORGE_PGPASS_PRIMARY_SYS_PORT" "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER" "$2"
                     ;;
             esac
             ;;
         "db_backup")
-			# TODO implement it!
+            # TODO implement it!
             case $2 in
                 "full")
                     db_backup_full "$FORGE_PGPASS_PRIMARY_SYS_DBNM"
