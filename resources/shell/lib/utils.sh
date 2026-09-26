@@ -81,3 +81,11 @@ do_sleep_break() {
     echo ""
     read sleep_break
 }
+
+deployment_stats() {
+    local STATS_PATH="${1:-APP_PATH_DOCUMENT_ROOT}/deployment_stats.txt"
+
+    print_banner "[FORGE] Deploy stats to $STATS_PATH"
+    echo "${NOW}" > "$STATS_PATH"
+    echo "TODO put git log there" >> "$STATS_PATH"
+}

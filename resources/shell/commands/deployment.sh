@@ -362,28 +362,33 @@ terraform() {
 
 deploy_app_path_opt() {
     # Deploy default $TARGET_ENV and set it as main depository to run the project
+    # [MANDATORY][0|DEFAULTS to 1] $FORCE_REINSTALL_DOCUMENT_ROOT :: define if force the re-createation of venv or just install libs
 
-    print_banner "[FORGE] Deploying APP_PATH_OPT: $APP_PATH_OPT"
+    FORCE_REINSTALL_DOCUMENT_ROOT=${FORCE_REINSTALL_DOCUMENT_ROOT:-1}
+    print_banner "[FORGE] Deploying APP_PATH_OPT: $APP_PATH_OPT :: APP_PATH_DOCUMENT_ROOT -> $APP_PATH_DOCUMENT_ROOT :: FORCE_REINSTALL_DOCUMENT_ROOT -> $FORCE_REINSTALL_DOCUMENT_ROOT"
 
-    # FIXME should protect rm -rf !!
-    rm -rf "${APP_PATH_WORKTREE:?}/${GIT_BRANCH:?}"
-    mkdir "$APP_PATH_WORKTREE/$GIT_BRANCH"
-    # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
-    git clone --recurse-submodules -b "$GIT_BRANCH" "$APP_PATH_BARE" "$APP_PATH_WORKTREE/$GIT_BRANCH"
-    echo "${NOW}" > $APP_PATH_WORKTREE/$GIT_BRANCH/deployment_datetime.txt
-    # FIXME maybe can be an error with master != prod for symlink
-    rm -f "$APP_PATH_DOCUMENT_ROOT"
-    ln -s "$APP_PATH_WORKTREE/$GIT_BRANCH" "$APP_PATH_DOCUMENT_ROOT"
+    if [ "$FORCE_REINSTALL_DOCUMENT_ROOT" == "1" ]; then
+        # FIXME should protect rm -rf !!
+        rm -rf "${APP_PATH_WORKTREE:?}/${GIT_BRANCH:?}"
+    fi
+
+    if [ -d "$APP_PATH_WORKTREE/$GIT_BRANCH" ]; then
+        # Alternative A: (cd "$APP_PATH_DOCUMENT_ROOT" && git pull origin "$GIT_BRANCH" --recurse-submodules) or Alternative B: pushd "$APP_PATH_DOCUMENT_ROOT" && git pull origin "$GIT_BRANCH" --recurse-submodules && popd
+        git -C "$APP_PATH_DOCUMENT_ROOT" pull origin "$GIT_BRANCH" --recurse-submodules
+    else
+        # git --work-tree=$APP_PATH_WORKTREE/$GIT_BRANCH --git-dir=$APP_PATH_BARE checkout -f $GIT_BRANCH
+        git clone --recurse-submodules -b "$GIT_BRANCH" "$APP_PATH_BARE" "$APP_PATH_WORKTREE/$GIT_BRANCH"
+    fi
+
+    # FIXME analyze if maybe can be an error with master != prod for symlink
+    ln -sfn "$APP_PATH_WORKTREE/$GIT_BRANCH" "$APP_PATH_DOCUMENT_ROOT"
     set_symbolic_link
-
+    # TODO test creation forge in bare.git
     # TODO give back to backoffice and api to www-data user - temp workarround: git config --global --add safe.directory "$APP_PATH_DOCUMENT_ROOT"
     # TODO chown -R "${APP_PATH_DOCUMENT_ROOT}/backoffice" www-data:www-data
     # TODO chown -R "${APP_PATH_DOCUMENT_ROOT}/api" www-data:www-data
 
-    # TODO test creation forge in bare.git
-    cd "$APP_PATH_WORKTREE/edge"
-    git submodule update --init --recursive
-    cd -
+    deployment_stats "$APP_PATH_DOCUMENT_ROOT"
 }
 
 deploy_venv() {
@@ -443,6 +448,8 @@ deploy_collectstatic() {
 complement_deploy_db() {
     # Is expected that the host project implemented the main db related to make target. This function can be rewrote in mount_etna.sh script to use a custom action
 
+    # FIXME When fix the ./mount_etna.sh show to use correct fragment of real var name (defined in var.sh) need pass the SHOW_SENSITIVE - this need be tested into var.sql
+
     print_banner "[FORGE] running DEFAULT task for tear down and rebuild DB -> TARGET_ENV is $TARGET_ENV"
     cd "${APP_PATH_DOCUMENT_ROOT:?}"
     source "${APP_PATH_DOCUMENT_ROOT:?}/mount_etna.sh" env "$TARGET_ENV" 2>/dev/null && make db-start || { echo "❌ Critical Error: Venv activation failed! Aborting."; exit 1; }
@@ -489,6 +496,10 @@ deploy() {
 
     echo "Deploying for env $TARGET_ENV branch $GIT_BRANCH"
     echo "================================================"
+
+    # TODO analyze if worth update the forge it self before the deploy of app: this action will not be unstable with deployment process? -> git -C "$APP_PATH_ORIGIN_EDGE" pull origin "$TARGET_ENV" --recurse-submodules
+
+    # TODO implement deploy_etc to update the /etc/<target_sys>/
     
     deploy_app_path_opt
 
