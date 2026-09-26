@@ -9,7 +9,7 @@ django-users:
 	@echo "|+------------+|"
 	@echo "| DJANGO USERS |"
 	@echo "|+------------+|"
-	@python3 forge/genesis.py -l normal -c all
+	@python3 forge/src/forge/genesis.py -l normal -c all
 
 django-update-permissions:
 	@echo "|+--------------+|"

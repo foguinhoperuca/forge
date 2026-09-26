@@ -65,7 +65,7 @@
 \if :{?forgesys_pwd}
   \echo 'Already setted forgesys_pwd -->' :forgesys_pwd
 \else
-  \set forgesys_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_SYS_PASSWORD | cut -d = -f2)"`
+  \set forgesys_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_PRIMARY_SYS_PASS | cut -d = -f2)"`
   SET session.forgesys_pwd = :'forgesys_pwd';
 \endif
 
@@ -73,14 +73,14 @@
 \if :{?forgesys_view_report_pwd}
   \echo 'Already setted forgesys_view_report_pwd -->' :forgesys_view_report_pwd
 \else
-  \set forgesys_view_report_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_READONLY_PASSWORD | cut -d = -f2)"`
+  \set forgesys_view_report_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_READONLY_PASS | cut -d = -f2)"`
   SET session.forgesys_view_report_pwd = :'forgesys_view_report_pwd';
 \endif
 
 \if :{?forgesys_app_tester_pwd}
   \echo 'Already setted forgesys_app_tester_pwd -->' :forgesys_app_tester_pwd
 \else
-  \set forgesys_app_tester_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_TEST_PASSWORD | cut -d = -f2)"`
+  \set forgesys_app_tester_pwd `echo "$(:forgesys_path/mount_etna.sh show | grep FORGE_PGPASS_POSTGRES_TEST_PASS | cut -d = -f2)"`
   SET session.forgesys_app_tester_pwd = :'forgesys_app_tester_pwd';
 \endif
 

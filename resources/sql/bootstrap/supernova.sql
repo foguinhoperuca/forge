@@ -8,6 +8,8 @@
 \i :forgesys_path/forge/resources/sql/lib/utils.sql
 SET client_min_messages TO ERROR;
 
+CREATE SCHEMA IF NOT EXISTS :forgesys_schema AUTHORIZATION postgres;
+
 DO $$
   BEGIN
     -- FIXME create_dbas do not working anymore 'cause it calling the schema that isn created yet!!

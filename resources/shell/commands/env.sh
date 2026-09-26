@@ -307,7 +307,7 @@ show_env() {
     # TODO think about how to show it without env vars... maybe forcing get basic info from $(dirname $0)/.credentials/.mise-en-place.conf
     # TODO add api/.google-service-account to be used as symlink
     for conf_file in ${CONF_FILES}; do
-        ls -lah --color=auto "${APP_PATH_DOCUMENT_ROOT}/${conf_file}"
+        [ -e "${APP_PATH_DOCUMENT_ROOT}/${conf_file}" ] && ls -lah --color=auto "${APP_PATH_DOCUMENT_ROOT}/${conf_file}"
     done
 
     [[ "$DO_BREAK" == "true" ]] && do_sleep_break || :

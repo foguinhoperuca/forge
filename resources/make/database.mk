@@ -44,6 +44,7 @@ db-deploy: db-terraform db-ddl db-permission db-seeds
 	@echo "|+-------------------------+|"
 	@date
 
+# FIXME not working because supernova needs schema to create DBA. Also, the terraform needs have extension postgis (that is in supernova) and causes a circular dependency. Beside forcing create the schema in supernova, it justs works if call DB_SCRIPT=database/supernova.sql make db-admin-script before terraform
 db-bigbang:
 	@echo "|+-------------+|"
 	@echo "|  SINGULARITY  |"
@@ -62,7 +63,6 @@ db-terraform:
 	@echo "|+-------------+|"
 	@echo "| TERRAFORMING  |"
 	@echo "|+-------------+|"
-	@echo "PGPASSFILE -> $(PGPASSFILE)"
 	psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/database/terraform.sql" -h $(FORGE_PGPASS_PRIMARY_ADM_HOST) -p $(FORGE_PGPASS_PRIMARY_ADM_PORT) -d $(FORGE_PGPASS_PRIMARY_ADM_DBNM) -U $(FORGE_PGPASS_PRIMARY_ADM_USER) -f database/terraform.sql
 	@echo "|+--------------------+|"
 	@echo "| INITIALIZE           |"

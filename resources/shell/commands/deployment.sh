@@ -402,23 +402,30 @@ deploy_venv() {
     PYTHON_PROJECTS_AVAILABLE+=('forge')
     for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
     do
+		local PYTHON_ROOT_PROJECT
+		if [ "$python_project" == "forge" ]; then
+			PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project/src"
+		else
+			PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project"
+		fi
+
         print_banner "[FORGE] Install libs for ${python_project}"
         if [[ "$FORGE_DEBUG" == "1" ]];
         then
-            echo "EXIST? ... ${python_project} ::: ${FORCE_REINSTALL_VENV} ::: ${APP_PATH_DOCUMENT_ROOT}"
+            echo "EXIST? ... ${python_project} ::: ${FORCE_REINSTALL_VENV} ::: ${APP_PATH_DOCUMENT_ROOT} ::: ${PYTHON_ROOT_PROJECT}"
         fi
 
-        if [[ ! -e $APP_PATH_DOCUMENT_ROOT/$python_project/requirements.txt ]];
+        if [[ ! -e "${PYTHON_ROOT_PROJECT}/requirements.txt" ]];
         then
-            echo "Project ${python_project} do not have requirements.txt. Skipping..."
+            echo "Project ${python_project} (${PYTHON_ROOT_PROJECT}) do not have requirements.txt. Skipping..."
             continue
         fi
         if [[ "$FORCE_REINSTALL_VENV" == "1" ]]; then
-            rm -rf "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv"
-            python3 -m venv "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv"
+            rm -rf "${PYTHON_ROOT_PROJECT}/.venv"
         fi
-        source "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/.venv/bin/activate"
-        pip install -r "${APP_PATH_DOCUMENT_ROOT:?}/$python_project/requirements.txt"
+        python3 -m venv "${PYTHON_ROOT_PROJECT}/.venv"
+        source "${PYTHON_ROOT_PROJECT}/.venv/bin/activate"
+        pip install -r "${PYTHON_ROOT_PROJECT}/requirements.txt"
         deactivate
     done
 }
@@ -497,14 +504,17 @@ deploy() {
     echo "Deploying for env $TARGET_ENV branch $GIT_BRANCH"
     echo "================================================"
 
+	FORCE_REINSTALL_DOCUMENT_ROOT=${FORCE_REINSTALL_DOCUMENT_ROOT:-1}
+	[ "$FORCE_REINSTALL_DOCUMENT_ROOT" == "1" ] && FORCE_REINSTALL_VENV="1" || FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
+
     # TODO analyze if worth update the forge it self before the deploy of app: this action will not be unstable with deployment process? -> git -C "$APP_PATH_ORIGIN_EDGE" pull origin "$TARGET_ENV" --recurse-submodules
 
     # TODO implement deploy_etc to update the /etc/<target_sys>/
     
-    deploy_app_path_opt
+    deploy_app_path_opt "$FORCE_REINSTALL_DOCUMENT_ROOT"
 
     # app
-    deploy_venv
+    deploy_venv "$FORCE_REINSTALL_VENV"
     deploy_collectstatic
     deploy_db
 
