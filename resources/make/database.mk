@@ -49,25 +49,25 @@ db-bigbang:
 	@echo "|+-------------+|"
 	@echo "|  SINGULARITY  |"
 	@echo "|+-------------+|"
-	psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/singularity.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/singularity.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/singularity.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/singularity.sql
 	@echo "|+-------------+|"
 	@echo "|   HYPERNOVA   |"
 	@echo "|+-------------+|"
-	psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/hypernova.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/hypernova.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/hypernova.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/hypernova.sql
 	@echo "|+-------------+|"
 	@echo "|   SUPERNOVA   |"
 	@echo "|+-------------+|"
-	psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/supernova.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/supernova.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/bootstrap/supernova.sql" -h $(FORGE_PGPASS_POSTGRES_ADM_HOST) -p $(FORGE_PGPASS_POSTGRES_ADM_PORT) -d $(FORGE_PGPASS_POSTGRES_ADM_DBNM) -U $(FORGE_PGPASS_POSTGRES_ADM_USER) -f database/supernova.sql
 
 db-terraform:
 	@echo "|+-------------+|"
 	@echo "| TERRAFORMING  |"
 	@echo "|+-------------+|"
-	psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/database/terraform.sql" -h $(FORGE_PGPASS_PRIMARY_ADM_HOST) -p $(FORGE_PGPASS_PRIMARY_ADM_PORT) -d $(FORGE_PGPASS_PRIMARY_ADM_DBNM) -U $(FORGE_PGPASS_PRIMARY_ADM_USER) -f database/terraform.sql
+	@psql -v forgesys_path="$(shell pwd)" -v forgesys_script="forge/resources/sql/database/terraform.sql" -h $(FORGE_PGPASS_PRIMARY_ADM_HOST) -p $(FORGE_PGPASS_PRIMARY_ADM_PORT) -d $(FORGE_PGPASS_PRIMARY_ADM_DBNM) -U $(FORGE_PGPASS_PRIMARY_ADM_USER) -f database/terraform.sql
 	@echo "|+--------------------+|"
 	@echo "| INITIALIZE           |"
 	@echo "|+--------------------+|"
-	psql -v forgesys_path="$(shell pwd)" -h $(FORGE_PGPASS_PRIMARY_SYS_HOST) -p $(FORGE_PGPASS_PRIMARY_SYS_PORT) -d $(FORGE_PGPASS_PRIMARY_SYS_DBNM) -U $(FORGE_PGPASS_PRIMARY_SYS_USER) -f database/initialize.sql
+	@psql -v forgesys_path="$(shell pwd)" -h $(FORGE_PGPASS_PRIMARY_SYS_HOST) -p $(FORGE_PGPASS_PRIMARY_SYS_PORT) -d $(FORGE_PGPASS_PRIMARY_SYS_DBNM) -U $(FORGE_PGPASS_PRIMARY_SYS_USER) -f database/initialize.sql
 	@echo "|+--------------------+|"
 	@echo "| MIGRATE DJANGO       |"
 	@echo "|+--------------------+|"

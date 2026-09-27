@@ -279,6 +279,7 @@ show_env() {
     date
 
     print_banner "[FORGE] SHOW ALL EXCEPT SENSITIVE"
+	# FIXME exception case: when env | grep filter got 2 or more lines
     for var in $(env | sort | grep -E "(${CUSTOM_VARS_FRAGMENT})" | cut -d = -f1); do
         var_name="$var"
         OLD_IFS=$IFS

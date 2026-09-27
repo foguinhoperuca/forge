@@ -42,7 +42,7 @@ do
         # TODO set defautl location to forge (maybe forge can live under /opt/forge/$FORGE_PROJECT/worktree/upstream - and all normal folder's/file's of a forge's project: edge, $GIT_BRANCH, etc).
 
         # TODO set correct vars. Reference for vars: git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
-        git push --quiet "ssh://${GIT_USER}@${GIT_BASE_URL}:${APP_PATH_BARE}" "$refname"
+        git push --quiet "ssh://${GIT_USER}@${GIT_BASE_URL}:${APP_PATH_BARE}" "$ref"
 
     fi
 done

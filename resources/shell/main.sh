@@ -39,7 +39,7 @@ show_help() {
     echo "- db_backup_full - create a backup full from database"
 }
 
-# TODO use _forge inside mount_etna.sh to add custom completion
+# TODO use _forge inside mount_etna.sh to add custom completation
 _forge_completation() {
     local cur prev opts
 
@@ -186,15 +186,16 @@ erupt() {
             verify_mounted_path_online "$2" "$3"
             ;;
         "db_script")
+			# TODO pass FORGESYS_SCRIPT ($6) to call db_script
             case $3 in
                 "postgres")
-                    db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DBNM" "$FORGE_PGPASS_POSTGRES_ADM_USER" "$2"
+                    db_script "$FORGE_PGPASS_POSTGRES_ADM_HOST" "$FORGE_PGPASS_POSTGRES_ADM_PORT" "$FORGE_PGPASS_POSTGRES_ADM_DBNM" "$FORGE_PGPASS_POSTGRES_ADM_USER" "" "$2"
                     ;;
                 "admin" | "adm")
-                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DBNM" "$FORGE_PGPASS_PRIMARY_ADM_USER" "$2"
+                    db_script "$FORGE_PGPASS_PRIMARY_ADM_HOST" "$FORGE_PGPASS_PRIMARY_ADM_PORT" "$FORGE_PGPASS_PRIMARY_ADM_DBNM" "$FORGE_PGPASS_PRIMARY_ADM_USER" "" "$2"
                     ;;
                 *)
-                    db_script "$FORGE_PGPASS_PRIMARY_SYS_HOST" "$FORGE_PGPASS_PRIMARY_SYS_PORT" "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER" "$2"
+                    db_script "$FORGE_PGPASS_PRIMARY_SYS_HOST" "$FORGE_PGPASS_PRIMARY_SYS_PORT" "$FORGE_PGPASS_PRIMARY_SYS_DBNM" "$FORGE_PGPASS_PRIMARY_SYS_USER" "" "$2"
                     ;;
             esac
             ;;

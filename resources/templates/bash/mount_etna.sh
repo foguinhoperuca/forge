@@ -5,10 +5,11 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+
 echo "--------------------------- forged in Mount Etna ==> $SCRIPT_DIR ---------------------------"
-source $SCRIPT_DIR/forge/main.sh
+source "$SCRIPT_DIR"/forge/resources/shell/main.sh
 echo "--------------------------- forged in Mount Etna ==> $SCRIPT_DIR ---------------------------"
 
-# Put all customization of forge before call it
+# Put all customization of forge between source it and call main function (erupt). Rewrote only functions with complement_ in the start of name
 
-erupt $@
+erupt "$@"

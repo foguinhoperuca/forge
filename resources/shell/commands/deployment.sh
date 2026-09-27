@@ -64,8 +64,7 @@ genesis() {
     )
 
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
-    for filename in ${FILES_GENESIS[@]};
-    do
+    for filename in ${FILES_GENESIS[@]}; do
         echo "${filename} testing..."
         if [[ ! -e $filename ]];
         then
@@ -74,29 +73,22 @@ genesis() {
             echo "---------------------------------------"
 
             echo "TODO implement DRY RUN return and then implement create folder and the the file"
-            # if [[ "$FORGE_DRY_RUN" == "1" ]];
-            # then
-            #     return 0
-            # fi
+            [ "$FORGE_DRY_RUN" == "1" ] && return 0 || :
             # mkdir -p $(dirname $filename)
             # touch "${filename}"
         fi
     done
 
-	# TODO set default git deployment remote for edge as git remote add deployment file://$APP_PATH_BARE
-	cd $APP_PATH_EDGE
-	git remote add deployment file://$APP_PATH_BARE
+    # TODO set default git deployment remote for edge as git remote add deployment file://$APP_PATH_BARE
+    cd $APP_PATH_EDGE
+    git remote add deployment file://$APP_PATH_BARE
 }
 
 terraform_app_path_etc() {
     local old_opts=$(set +o)
     set -eu
 
-    echo ""
-    echo "|---------------------------|"
-    echo "| Terraforming APP_PATH_ETC |"
-    echo "|---------------------------|"
-    echo "$APP_PATH_ETC"
+    print_banner "Terraforming APP_PATH_ETC: $APP_PATH_ETC"
 
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     if [[ "$FORGE_DRY_RUN" == "1" ]]; then
@@ -165,7 +157,7 @@ terraform_app_path_opt() {
     cd -
 
     git init --bare $APP_PATH_BARE
-	cd $APP_PATH_BARE && git config receive.advertisePushOptions true
+    cd $APP_PATH_BARE && git config receive.advertisePushOptions true
     rm $APP_PATH_BARE/hooks/*
     ln -s $APP_PATH_WORKTREE/edge/.credentials/.mise-en-place.conf $APP_PATH_BARE/hooks/.mise-en-place.conf
     ln -s $APP_PATH_WORKTREE/edge/mount_etna.sh $APP_PATH_BARE/hooks/mount_etna.sh
@@ -402,12 +394,12 @@ deploy_venv() {
     PYTHON_PROJECTS_AVAILABLE+=('forge')
     for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
     do
-		local PYTHON_ROOT_PROJECT
-		if [ "$python_project" == "forge" ]; then
-			PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project/src"
-		else
-			PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project"
-		fi
+        local PYTHON_ROOT_PROJECT
+        if [ "$python_project" == "forge" ]; then
+            PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project/src"
+        else
+            PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project"
+        fi
 
         print_banner "[FORGE] Install libs for ${python_project}"
         if [[ "$FORGE_DEBUG" == "1" ]];
@@ -446,6 +438,7 @@ deploy_collectstatic() {
             echo "Project ${django_project} do not have manage.py. Skipping..."
             continue
         fi
+        # FIXME it is better to execute it in a sub-sheel (no need to deactivate)?
         source "$APP_PATH_DOCUMENT_ROOT/$django_project/.venv/bin/activate"
         python3 "$APP_PATH_DOCUMENT_ROOT/$django_project/manage.py" collectstatic -c --no-input
         deactivate
@@ -504,8 +497,8 @@ deploy() {
     echo "Deploying for env $TARGET_ENV branch $GIT_BRANCH"
     echo "================================================"
 
-	FORCE_REINSTALL_DOCUMENT_ROOT=${FORCE_REINSTALL_DOCUMENT_ROOT:-1}
-	[ "$FORCE_REINSTALL_DOCUMENT_ROOT" == "1" ] && FORCE_REINSTALL_VENV="1" || FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
+    FORCE_REINSTALL_DOCUMENT_ROOT=${FORCE_REINSTALL_DOCUMENT_ROOT:-1}
+    [ "$FORCE_REINSTALL_DOCUMENT_ROOT" == "1" ] && FORCE_REINSTALL_VENV="1" || FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
 
     # TODO analyze if worth update the forge it self before the deploy of app: this action will not be unstable with deployment process? -> git -C "$APP_PATH_ORIGIN_EDGE" pull origin "$TARGET_ENV" --recurse-submodules
 

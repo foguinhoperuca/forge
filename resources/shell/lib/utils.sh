@@ -83,9 +83,9 @@ do_sleep_break() {
 }
 
 deployment_stats() {
-    local STATS_PATH="${1:-APP_PATH_DOCUMENT_ROOT}/deployment_stats.txt"
+    local STATS_PATH="${1:-$APP_PATH_DOCUMENT_ROOT}/deployment_stats.txt"
 
-    print_banner "[FORGE] Deploy stats to $STATS_PATH"
-    echo "${NOW}" > "$STATS_PATH"
-    echo "TODO put git log there" >> "$STATS_PATH"
+    print_banner "[FORGE] Deploy stats to ${STATS_PATH}"
+    date +"%Y-%m-%dT%H-%M-%S" > "$STATS_PATH"
+	git -C "$APP_PATH_DOCUMENT_ROOT" rev-parse --short=8 HEAD >> "$STATS_PATH"
 }

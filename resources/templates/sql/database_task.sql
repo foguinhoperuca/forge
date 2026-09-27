@@ -20,6 +20,7 @@
 -- ALTER SYSTEM SET log_line_prefix = '%m [%p]: [%l-1] db=%d,user=%u ';
 -- SELECT pg_reload_conf();
 -- \set CLIENT_MIN_MESSAGES TO 'NOTICE';
-\echo '--------------------------- RESULT database_task.sql ::' :forgesys_path '::' :forgesys_script '---------------------------'
 
+\echo '--------------------------- BEFORE database_task.sql ::' :forgesys_path '::' :forgesys_script '---------------------------'
 \i :forgesys_path/:forgesys_script
+\echo '--------------------------- AFTER database_task.sql :: Put all customization bellow  ---------------------------'

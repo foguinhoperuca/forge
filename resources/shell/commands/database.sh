@@ -6,11 +6,12 @@ db_script() {
     local DBDATABASE=$3
     local DBUSER=$4
     local DBSCRIPT=$5
+	local FORGESYS_SCRIPT=$6
     local FORGESYSPATH
 	FORGESYSPATH=$(pwd)
 
     print_banner "[FORGE] db vars: forgesyspath=$FORGESYSPATH -h $DBHOST -p $DBPORT -d $DBDATABASE -U $DBUSER -f $DBSCRIPT"
-    psql -v forgesyspath="$FORGESYSPATH" -h "$DBHOST" -p "$DBPORT" -d "$DBDATABASE" -U "$DBUSER" -f "$DBSCRIPT"
+    psql -v forgesyspath="$FORGESYSPATH" -v forgesys_script="$FORGESYS_SCRIPT" -h "$DBHOST" -p "$DBPORT" -d "$DBDATABASE" -U "$DBUSER" -f "$DBSCRIPT"
 }
 
 db_backup_full() {
