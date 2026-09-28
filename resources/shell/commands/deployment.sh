@@ -356,6 +356,8 @@ deploy_app_path_opt() {
     # Deploy default $TARGET_ENV and set it as main depository to run the project
     # [MANDATORY][0|DEFAULTS to 1] $FORCE_REINSTALL_DOCUMENT_ROOT :: define if force the re-createation of venv or just install libs
 
+    # FIXME if $APP_PATH_DOCUMENT_ROOT is empty it should force to re-deploy
+
     FORCE_REINSTALL_DOCUMENT_ROOT=${FORCE_REINSTALL_DOCUMENT_ROOT:-1}
     print_banner "[FORGE] Deploying APP_PATH_OPT: $APP_PATH_OPT :: APP_PATH_DOCUMENT_ROOT -> $APP_PATH_DOCUMENT_ROOT :: FORCE_REINSTALL_DOCUMENT_ROOT -> $FORCE_REINSTALL_DOCUMENT_ROOT"
 
@@ -383,43 +385,66 @@ deploy_app_path_opt() {
     deployment_stats "$APP_PATH_DOCUMENT_ROOT"
 }
 
+_deploy_single_project() {
+    # Helper function to handle a single project in parallel
+    local python_project="$1"
+    local force_reinstall="$2"
+    local python_root_project="${APP_PATH_DOCUMENT_ROOT:?}/$python_project"
+
+    if [[ ! -f "${python_root_project}/requirements.txt" ]]; then
+        echo "[FORGE] Project ${python_project} does not have requirements.txt. Skipping..."
+        return 0
+    fi
+
+    echo "[FORGE] Starting setup for ${python_project} (Force: ${force_reinstall})..."
+
+    if [[ "$force_reinstall" == "1" ]]; then
+        rm -rf "${python_root_project}/.venv"
+    fi
+
+    if [[ ! -d "${python_root_project}/.venv" ]]; then
+        python3 -m venv "${python_root_project}/.venv"
+    fi
+
+    if "${python_root_project}/.venv/bin/pip" install --upgrade pip && \
+       "${python_root_project}/.venv/bin/pip" install -r "${python_root_project}/requirements.txt"; then
+        echo "[FORGE] [SUCCESS] ${python_project} dependencies installed."
+        return 0
+    else
+        echo "[FORGE] [ERROR] ${python_project} failed installation!" >&2
+        return 1
+    fi
+}
+
 deploy_venv() {
     # Deploy venv environment for each python project for prepare it to run with libs
     # [MANDATORY] $FORCE_REINSTALL_VENV :: define if force the re-createation of venv or just install libs
     # [OPTIONAL]  $FORGE_DEBUG          :: show debug info
 
-    FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
+    deactivate 2>/dev/null || true
 
-    deactivate 2>/dev/null
-    PYTHON_PROJECTS_AVAILABLE+=('forge')
-    for python_project in "${PYTHON_PROJECTS_AVAILABLE[@]}";
-    do
-        local PYTHON_ROOT_PROJECT
-        if [ "$python_project" == "forge" ]; then
-            PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project/src"
-        else
-            PYTHON_ROOT_PROJECT="${APP_PATH_DOCUMENT_ROOT:?}/$python_project"
-        fi
-
-        print_banner "[FORGE] Install libs for ${python_project}"
-        if [[ "$FORGE_DEBUG" == "1" ]];
-        then
-            echo "EXIST? ... ${python_project} ::: ${FORCE_REINSTALL_VENV} ::: ${APP_PATH_DOCUMENT_ROOT} ::: ${PYTHON_ROOT_PROJECT}"
-        fi
-
-        if [[ ! -e "${PYTHON_ROOT_PROJECT}/requirements.txt" ]];
-        then
-            echo "Project ${python_project} (${PYTHON_ROOT_PROJECT}) do not have requirements.txt. Skipping..."
-            continue
-        fi
-        if [[ "$FORCE_REINSTALL_VENV" == "1" ]]; then
-            rm -rf "${PYTHON_ROOT_PROJECT}/.venv"
-        fi
-        python3 -m venv "${PYTHON_ROOT_PROJECT}/.venv"
-        source "${PYTHON_ROOT_PROJECT}/.venv/bin/activate"
-        pip install -r "${PYTHON_ROOT_PROJECT}/requirements.txt"
-        deactivate
+    # PYTHON_PROJECTS_AVAILABLE+=('forge')
+    local projects=("${PYTHON_PROJECTS_AVAILABLE[@]}" "forge")
+    local force_reinstall=${FORCE_REINSTALL_VENV:-1}
+    local pids=()
+    for python_project in "${projects[@]}"; do
+        _deploy_single_project "$python_project" "$force_reinstall" &
+        pids+=($!)
     done
+
+    local errors=0
+    for pid in "${pids[@]}"; do
+        if ! wait "$pid"; then
+            ((errors++))
+        fi
+    done
+    if (( errors > 0 )); then
+        echo "[FORGE] [CRITICAL] Parallel deployment completed with $errors failure(s)." >&2
+        return 1
+    else
+        print_banner "[FORGE] [SUCCESS] All python environments deployed successfully!"
+        return 0
+    fi
 }
 
 deploy_collectstatic() {
