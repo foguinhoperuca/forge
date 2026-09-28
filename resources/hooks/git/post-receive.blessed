@@ -1,5 +1,7 @@
 #!/bin/bash
 
+FORGE_DRY_RUN="${FORGE_DRY_RUN:-1}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TODO need bring here to use in configuration: forge; .mise-en-place; mount_etna.sh (maybe); edge (maybe)
 # source $SCRIPT_DIR/mount_etna.sh > /dev/null && set_vars "" "" "" "" > /dev/null || echo "[BLESSED] failed with loading mise-en-place"
@@ -31,18 +33,26 @@ do
         echo "[DEBUG] ref............: $ref           :: oldrev.........: $oldrev               :: newrev..: $newrev"
     fi
 
-    # if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
-    #     continue
-    # fi
-
-    # TODO deploy to correct branchs that isn't prod (dev, stage)
-    if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ]; then # FIXME need this if here? Can I just call the git push?
-        echo "[BLESSED] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
-        # TODO first, update this blessed githook update $APP_PATH_EDGE/.credentials/.mise-en-place.conf (maybe here the .mise-en-place.conf can live in /etc/$FORGE_PROJECT/.mise-en-place.conf as a symlink to $APP_PATH_EDGE/.credentials/.mise-en-place.conf)
-        # TODO set defautl location to forge (maybe forge can live under /opt/forge/$FORGE_PROJECT/worktree/upstream - and all normal folder's/file's of a forge's project: edge, $GIT_BRANCH, etc).
-
-        # TODO set correct vars. Reference for vars: git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
-        git push --quiet "ssh://${GIT_USER}@${GIT_BASE_URL}:${APP_PATH_BARE}" "$ref"
-
+    if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
+        continue
     fi
+
+    if [ "$ref" == "refs/heads/dev" ]; then
+        echo "Dev branch detected. Forwarding push to the Ubuntu dev server..."
+        echo "Deployment triggered by user: $GL_USERNAME for project $GL_PROJECT_PATH"
+
+        [ "$FORGE_DRY_RUN" == "1" ] && echo "Skipping deploy for $ref" && continue
+        # FIXME deploy to dev OR to triggers/deploy? In the first time, I think to dev is better cause is the nominally what I want
+        git push "ssh://${TARGET_SERVER_USER}@${TARGET_SERVER_ADDRESS}:${APP_PATH_BARE}" HEAD:refs/triggers/deploy --force
+    fi
+
+    # # TODO deploy to correct branchs that isn't prod (dev, stage)
+    # if [ "$ref" = "refs/heads/$TARGET_ENV" ] || [ "$ref" = "refs/triggers/deploy" ]; then # FIXME need this if here? Can I just call the git push?
+    #     echo "[BLESSED] Ref '${ref}' received along with oldrev '${oldrev}' and newrev '${newrev}'. Deploying branch '${GIT_BRANCH}' to env '${TARGET_ENV}'..."
+    #     # TODO first, update this blessed githook update $APP_PATH_EDGE/.credentials/.mise-en-place.conf (maybe here the .mise-en-place.conf can live in /etc/$FORGE_PROJECT/.mise-en-place.conf as a symlink to $APP_PATH_EDGE/.credentials/.mise-en-place.conf)
+    #     # TODO set defautl location to forge (maybe forge can live under /opt/forge/$FORGE_PROJECT/worktree/upstream - and all normal folder's/file's of a forge's project: edge, $GIT_BRANCH, etc).
+
+    #     # TODO set correct vars. Reference for vars: git -c credential.helper='!f() { sleep 1; echo "password=${GIT_PASSWORD}"; }; f' clone --recurse-submodules "${GIT_PROTOCOL}${GIT_USER}@${GIT_BASE_URL}/${FORGE_SYSTEM_BASE_DNS}.git" $APP_PATH_UPSTREAM
+    #     git push --quiet "ssh://${GIT_USER}@${GIT_BASE_URL}:${APP_PATH_BARE}" "$ref"
+    # fi
 done
