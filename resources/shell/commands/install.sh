@@ -64,7 +64,7 @@ run() {
         echo "[FORGE_INSTALL] Processing: $KEYFILE :: $KEY_ID"
 
         if [ -n "$KEY_ID" ]; then
-            echo "${KEY_ID}:5:" | gpg --import-ownertrust
+            echo "${KEY_ID}:6:" | gpg --import-ownertrust
         else
             echo "[FORGE_INSTALL] Warning: Could not extract a valid Key ID from $KEYFILE"
         fi

@@ -55,6 +55,11 @@ encrypt-secrets:
 	@ls -lah $(APP_PATH_CREDENTIALS_GENERATED_INPUT)
 	@cat $(APP_PATH_CREDENTIALS_GENERATED_INPUT)/deployment_datetime.txt
 
+encrypt-add-keys:
+	@clear
+	@date
+	@find . -name "*.asc" -type f -exec sh -c 'for f; do fpr=$(gpg --with-colons --show-keys "$f" | awk -F: '\''$1=="fpr" {print $10; exit}'\''); [ ! -z "$fpr" ] && echo "${fpr}:6:" | gpg --import-ownertrust; done' _ {} +
+
 decrypt-miseenplace:
 	@clear
 	@date
