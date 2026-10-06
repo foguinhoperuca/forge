@@ -112,15 +112,13 @@ erupt() {
             [[ "$FORGE_DEBUG" == "1" ]] && echo "${WORKFLOW_ENVS_AVAILABLE[@]}" || :
             for ENV_TRG in "${WORKFLOW_ENVS_AVAILABLE[@]}"; do
                 # if [[ "$2" == @(local|dev|stage|prod) ]];
-                if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]];
-                then
+                if [[ " ${WORKFLOW_ENVS_AVAILABLE[*]} " =~ [[:space:]]$2[[:space:]] ]]; then
                     print_banner "Genereting env for valid: $2"
                     generate_conf_file "$2" "$3"
                     break
                 fi
 
-                if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]];
-                then
+                if [[ "$ENV_TRG" != @(edge|upstream) && "$2" == @(all|ALL) ]]; then
                     print_banner "|| Genereting env files for $ENV_TRG"
                     generate_conf_file "$ENV_TRG" "$3"
                 fi

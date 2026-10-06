@@ -355,43 +355,23 @@ generate_conf_file() {
     # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
 
-    ENV_DESIRED=$1
-    if [ "$1" == "" ];
-    then
-        ENV_DESIRED=$TARGET_ENV
-        echo ""
-        echo "--- Load env ${ENV_DESIRED}"
-        echo ""
-    fi
-    SOURCE_SECRETS=$2
-    if [ "$2" == "" ];
-    then
-        SOURCE_SECRETS="new"
-        echo ""
-        echo "--- Source Secrets ${SOURCE_SECRETS}"
-        echo ""
-    fi
-    FORGE_DEBUG=${FORGE_DEBUG:-0}
-    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
+	ENV_DESIRED=${1:-$TARGET_ENV}
+	SOURCE_SECRETS=${2:-"gpg"}
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
+    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
+    FORGE_DEBUG=${FORGE_DEBUG:-0}
 
-    for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g);
-    do
+	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
+
+    for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g); do
         DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-        if [[ "$FORGE_DEBUG" == "1" ]];
-        then
-            echo "EXIST? ... ${FILE_SAMPLE} ::: ${DEST}"
-        fi
 
-        if [[ ! -e ".credentials/secure/${DEST}.gpg" ]];
-        then
-            echo "FILE ${DEST}.gpg DO NOT EXIST!! Continue..."
-            continue
-        fi
+		[[ "$FORGE_DEBUG" == "1" ]] && echo "EXIST? $([[ ! -e ".credentials/secure/${DEST}.gpg" ]] && echo "NOT no" || echo "yes")... ${FILE_SAMPLE} ::: ${DEST}"
+		[[ ! -e ".credentials/secure/${DEST}.gpg" ]] && continue
 
-        if [[ "${SOURCE_SECRETS}" == "gpg" ]];
-        then
+        if [[ "${SOURCE_SECRETS}" == "gpg" ]]; then
             gpg --quiet --batch --yes --output .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/"${DEST}" --decrypt .credentials/secure/"${DEST}".gpg
+			# FIXME need this!? The loop re-send the date for file multiple time and in the end of function the same behavior is done.
             echo "${NOW}" | tee .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/deployment_datetime.txt > /dev/null
             continue
         fi
@@ -400,8 +380,7 @@ generate_conf_file() {
         DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
-        if [[ "$FORGE_DEBUG" == "1" ]];
-        then
+        if [[ "$FORGE_DEBUG" == "1" ]]; then
             echo ""
             echo "+===================================================================================================================================="
             echo "| [DEBUG] DRY_RUN -> $FORGE_DRY_RUN :: FILE_SAMPLE -> $FILE_SAMPLE :: TARGET_ENTRY -> $TARGET_ENTRY :: ENV_DESIRED -> $ENV_DESIRED :: DESTINY -> $DESTINY :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES"
@@ -412,17 +391,11 @@ generate_conf_file() {
             echo "------------------------------------------- <RESULT>  --------------------------------------------"
         fi
 
-        if [[ "$FORGE_DRY_RUN" != "1" ]];
-        then
-            : > $DESTINY
-        fi
+		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
 
         IFS=$'\n'
-        for LINE in $CONTENT;
-        do
-            if [[ "$LINE" == \#* ]]; then
-                continue
-            fi
+        for LINE in $CONTENT; do
+			[[ "$LINE" == \#* ]] && continue
 
             IFS=':' read -r -a ENTRIES <<< "$LINE"
             BUILD_UP_LINE=""
@@ -436,6 +409,14 @@ generate_conf_file() {
                         ;;
                     "passbolt")
                         SECRET="TODO implement client to get REMOTE ENTRY using PASSBOLT"
+						# Folders
+						PASSBOLT_FOLDER_ORGANIZATION_ID="" # $FORGE_ORGANIZATION_ACRONYM -> pms
+						PASSBOLT_FOLDER_SYSTEM_ID="" # $FORGE_SYSTEM_ACRONYM -> river
+						PASSBOLT_FOLDER_ENV_ID="" # $ENV_DESIRED -> local
+						PASSBOLT_RESOURCE_ID="" # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+						PASSBOLT_RESOURCE_LINE_ID="" # $ENTRY -> TARGET_SERVER_ADDR (grab it from a custom fields)
+						PASSBOLT_RESOURCE_SECRET="" # Using $PASSBOLT_RESOURCE_LINE_ID I can get the custom field itself with secret
+						
                         ;;
                     "new")
                         SECRET=$(generate_secret "16")
@@ -456,22 +437,15 @@ generate_conf_file() {
                 esac
             done
 
-            if [[ "$FORGE_DRY_RUN" != "1" ]];
-            then
+            if [[ "$FORGE_DRY_RUN" != "1" ]]; then
                 case $FILE_SAMPLE in
                     ".pgpass")
-                        echo "${BUILD_UP_LINE%:}" >> $DESTINY
-                        if [[ "$FORGE_DEBUG" == "1" ]];
-                        then
-                            echo "${BUILD_UP_LINE%:}"
-                        fi
+                        echo "${BUILD_UP_LINE%:}" >> "$DESTINY"
+						[[ "$FORGE_DEBUG" == "1" ]] && echo "${BUILD_UP_LINE%:}"
                         ;;
                     *)
-                        echo $BUILD_UP_LINE >> $DESTINY
-                        if [[ "$FORGE_DEBUG" == "1" ]];
-                        then
-                            echo "$BUILD_UP_LINE"
-                        fi
+                        echo "$BUILD_UP_LINE" >> "$DESTINY"
+						[[ "$FORGE_DEBUG" == "1" ]] && echo "$BUILD_UP_LINE"
                         ;;
                 esac
             fi
@@ -483,14 +457,13 @@ generate_conf_file() {
     done
 
     TARGET_SERVER_USER=${TARGET_SERVER_USER:-"${DEFAULT_TARGET_SERVER_USER}"}
-    if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1;
-    then
+    if ! id "$TARGET_SERVER_USER" >/dev/null 2>&1; then
         echo "Original ${TARGET_SERVER_USER} do not exist in this machine. Using current user."
         TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     fi
 
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/
-    echo "${NOW}" | tee .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/deployment_datetime.txt
+    echo "${NOW}" | tee .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/deployment_datetime.txt > /dev/null
 
     if [[ "$DEPLOY_GENERATED_FILES" == "1" ]]; then
         print_banner "Copying generated files to deploy target..."
@@ -501,7 +474,7 @@ generate_conf_file() {
         cp ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.env"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.pgpass"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.target-server"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/.user_seeds.csv"* ".credentials/$APP_PATH_CREDENTIALS_GENERATED_OUTPUT/deployment_datetime.txt" "$APP_PATH_ETC"
     fi
 
-    echo "Generated confifguration file..."
+    echo "Generated configuration file..."
 }
 
 cp_secrets() {
