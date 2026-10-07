@@ -363,6 +363,15 @@ generate_conf_file() {
 
 	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
 
+	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
+		# TODO use go-passbolt-cli list folder --json to extract folder information. Also extract resource information
+		PASSBOLT_FOLDER_ORGANIZATION_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_ORGANIZATION_ACRONYM -> pms
+		# TODO use parent id from here with name to grab specific and correct folder
+		PASSBOLT_FOLDER_SYSTEM_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_SYSTEM_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_SYSTEM_ACRONYM -> river
+		PASSBOLT_FOLDER_ENV_ID=$(cat mashiro_folders.json | jq -r --arg name "$ENV_DESIRED" '.[] | select(.name == $name) | .id') # $ENV_DESIRED -> local
+		echo "PASSBOLT variables: PASSBOLT_FOLDER_ORGANIZATION_ID -> $PASSBOLT_FOLDER_ORGANIZATION_ID :: PASSBOLT_FOLDER_SYSTEM_ID -> $PASSBOLT_FOLDER_SYSTEM_ID :: PASSBOLT_FOLDER_ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+	fi
+
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g); do
         DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
 
@@ -379,6 +388,11 @@ generate_conf_file() {
         TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
         DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
+
+		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
+			PASSBOLT_RESOURCE_ID=$(cat mashiro_resources.json | jq -r --arg name "$FILE_SAMPLE" '.[] | select(.name == $name) | .id') # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+			echo "PASSBOLT variables: PASSBOLT_RESOURCE_ID for $FILE_SAMPLE -> $PASSBOLT_RESOURCE_ID"
+		fi
 
         if [[ "$FORGE_DEBUG" == "1" ]]; then
             echo ""
@@ -408,12 +422,8 @@ generate_conf_file() {
                         SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
                         ;;
                     "passbolt")
-                        SECRET="TODO implement client to get REMOTE ENTRY using PASSBOLT"
-						# Folders
-						PASSBOLT_FOLDER_ORGANIZATION_ID="" # $FORGE_ORGANIZATION_ACRONYM -> pms
-						PASSBOLT_FOLDER_SYSTEM_ID="" # $FORGE_SYSTEM_ACRONYM -> river
-						PASSBOLT_FOLDER_ENV_ID="" # $ENV_DESIRED -> local
-						PASSBOLT_RESOURCE_ID="" # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+                        SECRET="TODO implement client for PASSBOLT"
+						# resources
 						PASSBOLT_RESOURCE_LINE_ID="" # $ENTRY -> TARGET_SERVER_ADDR (grab it from a custom fields)
 						PASSBOLT_RESOURCE_SECRET="" # Using $PASSBOLT_RESOURCE_LINE_ID I can get the custom field itself with secret
 						
