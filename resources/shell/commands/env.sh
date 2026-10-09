@@ -365,10 +365,12 @@ generate_conf_file() {
 
 	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
 		# TODO use go-passbolt-cli list folder --json to extract folder information. Also extract resource information
-		PASSBOLT_FOLDER_ORGANIZATION_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_ORGANIZATION_ACRONYM -> pms
+		PASSBOLT_FOLDER_ORGANIZATION_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_ORGANIZATION_ACRONYM -> pms (more or less: go-passbolt-cli list folder --column id --filter 'name == "$FORGE_ORGANIZATION_ACRONYM"')
+		PASSBOLT_FOLDER_SYSTEM_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORGANIZATION_ID" '.[] | select(.name == $name and .folder_parent_id == $org) | .id') # $FORGE_SYSTEM_ACRONYM -> river
 		# TODO use parent id from here with name to grab specific and correct folder
-		PASSBOLT_FOLDER_SYSTEM_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_SYSTEM_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_SYSTEM_ACRONYM -> river
-		PASSBOLT_FOLDER_ENV_ID=$(cat mashiro_folders.json | jq -r --arg name "$ENV_DESIRED" '.[] | select(.name == $name) | .id') # $ENV_DESIRED -> local
+		PASSBOLT_FOLDER_ENV_ID=$(cat mashiro_folders.json | jq -r --arg name "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYSTEM_ID" '.[] | select(.name == $name and .folder_parent_id == $sys) | .id') # $ENV_DESIRED -> local
+
+		# TODO validate if var is found and echo must be with FORGE_DEBUG=1
 		echo "PASSBOLT variables: PASSBOLT_FOLDER_ORGANIZATION_ID -> $PASSBOLT_FOLDER_ORGANIZATION_ID :: PASSBOLT_FOLDER_SYSTEM_ID -> $PASSBOLT_FOLDER_SYSTEM_ID :: PASSBOLT_FOLDER_ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
 	fi
 
@@ -391,7 +393,7 @@ generate_conf_file() {
 
 		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
 			PASSBOLT_RESOURCE_ID=$(cat mashiro_resources.json | jq -r --arg name "$FILE_SAMPLE" '.[] | select(.name == $name) | .id') # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-			echo "PASSBOLT variables: PASSBOLT_RESOURCE_ID for $FILE_SAMPLE -> $PASSBOLT_RESOURCE_ID"
+			[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT variables: PASSBOLT_RESOURCE_ID for $FILE_SAMPLE -> $PASSBOLT_RESOURCE_ID"
 		fi
 
         if [[ "$FORGE_DEBUG" == "1" ]]; then
@@ -424,9 +426,9 @@ generate_conf_file() {
                     "passbolt")
                         SECRET="TODO implement client for PASSBOLT"
 						# resources
-						PASSBOLT_RESOURCE_LINE_ID="" # $ENTRY -> TARGET_SERVER_ADDR (grab it from a custom fields)
-						PASSBOLT_RESOURCE_SECRET="" # Using $PASSBOLT_RESOURCE_LINE_ID I can get the custom field itself with secret
-						
+						PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(cat mashiro_resources.json | jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id') # $ENTRY -> TARGET_SERVER_ADDR
+						PASSBOLT_RESOURCE_SECRET=$(cat mashiro_secrets.json | jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value') # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
+						[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID ($LINE) :: SECRET -> $PASSBOLT_RESOURCE_SECRET"						
                         ;;
                     "new")
                         SECRET=$(generate_secret "16")
