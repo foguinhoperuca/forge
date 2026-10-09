@@ -362,28 +362,40 @@ generate_conf_file() {
     FORGE_DEBUG=${FORGE_DEBUG:-0}
 
 	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
-
+   
 	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
+        local tmp_folders
+        local tmp_resources
+        local tmp_secrets
+        if [[ "$FORGE_DEBUG" == "1" ]]; then
+            tmp_folders="folders.json"
+            tmp_resources="resources.json"
+            tmp_secrets="secrets.json"
+        else
+            tmp_folders=$(mktemp)
+            tmp_resources=$(mktemp)
+            tmp_secrets=$(mktemp)
+            trap 'rm -f "$tmp_folders" "$tmp_resources" "$tmp_secrets"' EXIT
+            passbolt list folder --json > "$tmp_folders"
+            passbolt list resource --json > "$tmp_resources"
+            echo "TODO some secret goes here" --json > "$tmp_secrets"
+        fi
+        
 		# TODO use go-passbolt-cli list folder --json to extract folder information. Also extract resource information
-		PASSBOLT_FOLDER_ORGANIZATION_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_ORGANIZATION_ACRONYM -> pms (more or less: go-passbolt-cli list folder --column id --filter 'name == "$FORGE_ORGANIZATION_ACRONYM"')
-		PASSBOLT_FOLDER_SYSTEM_ID=$(cat mashiro_folders.json | jq -r --arg name "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORGANIZATION_ID" '.[] | select(.name == $name and .folder_parent_id == $org) | .id') # $FORGE_SYSTEM_ACRONYM -> river
-		# TODO use parent id from here with name to grab specific and correct folder
-		PASSBOLT_FOLDER_ENV_ID=$(cat mashiro_folders.json | jq -r --arg name "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYSTEM_ID" '.[] | select(.name == $name and .folder_parent_id == $sys) | .id') # $ENV_DESIRED -> local
+		PASSBOLT_FOLDER_ORG_ID=$(cat "$tmp_folders" | jq -r --arg name "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $name) | .id') # $FORGE_ORGANIZATION_ACRONYM -> pms (more or less: go-passbolt-cli list folder --column id --filter 'name == "$FORGE_ORGANIZATION_ACRONYM"')
+		PASSBOLT_FOLDER_SYS_ID=$(cat "$tmp_folders" | jq -r --arg name "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORG_ID" '.[] | select(.name == $name and .folder_parent_id == $org) | .id') # $FORGE_SYSTEM_ACRONYM -> river
+		PASSBOLT_FOLDER_ENV_ID=$(cat "$tmp_folders" | jq -r --arg name "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYS_ID" '.[] | select(.name == $name and .folder_parent_id == $sys) | .id') # $ENV_DESIRED -> local
 
 		# TODO validate if var is found and echo must be with FORGE_DEBUG=1
-		echo "PASSBOLT variables: PASSBOLT_FOLDER_ORGANIZATION_ID -> $PASSBOLT_FOLDER_ORGANIZATION_ID :: PASSBOLT_FOLDER_SYSTEM_ID -> $PASSBOLT_FOLDER_SYSTEM_ID :: PASSBOLT_FOLDER_ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+		echo "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
 	fi
 
     for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g); do
         DEST="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-
-		[[ "$FORGE_DEBUG" == "1" ]] && echo "EXIST? $([[ ! -e ".credentials/secure/${DEST}.gpg" ]] && echo "NOT no" || echo "yes")... ${FILE_SAMPLE} ::: ${DEST}"
-		[[ ! -e ".credentials/secure/${DEST}.gpg" ]] && continue
+		[[ ! -e ".credentials/secure/${DEST}.gpg" ]] && echo "[FORGE_GENENV] skipping ${DEST}" && continue
 
         if [[ "${SOURCE_SECRETS}" == "gpg" ]]; then
             gpg --quiet --batch --yes --output .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/"${DEST}" --decrypt .credentials/secure/"${DEST}".gpg
-			# FIXME need this!? The loop re-send the date for file multiple time and in the end of function the same behavior is done.
-            echo "${NOW}" | tee .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/deployment_datetime.txt > /dev/null
             continue
         fi
 
@@ -392,19 +404,18 @@ generate_conf_file() {
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
 
 		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-			PASSBOLT_RESOURCE_ID=$(cat mashiro_resources.json | jq -r --arg name "$FILE_SAMPLE" '.[] | select(.name == $name) | .id') # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-			[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT variables: PASSBOLT_RESOURCE_ID for $FILE_SAMPLE -> $PASSBOLT_RESOURCE_ID"
+            # TODO use parent id from here with name to grab specific and correct folder
+			PASSBOLT_RESOURCE_ID=$(cat "$tmp_resources" | jq -r --arg name "$FILE_SAMPLE" '.[] | select(.name == $name) | .id') # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
 		fi
 
         if [[ "$FORGE_DEBUG" == "1" ]]; then
             echo ""
-            echo "+===================================================================================================================================="
-            echo "| [DEBUG] DRY_RUN -> $FORGE_DRY_RUN :: FILE_SAMPLE -> $FILE_SAMPLE :: TARGET_ENTRY -> $TARGET_ENTRY :: ENV_DESIRED -> $ENV_DESIRED :: DESTINY -> $DESTINY :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES"
-            echo "+===================================================================================================================================="
-            echo "------------------------------------------- <CONTENT>  -------------------------------------------"
+            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (${DEST}) :: PASSBOLT_RESOURCE_ID -> $PASSBOLT_RESOURCE_ID :: DESTINY -> $DESTINY"
+            echo "[DEBUG] TARGET_ENTRY -> $TARGET_ENTRY"
+            echo "----------------------------------------------------- <CONTENT>  -----------------------------------------------------"
             echo "$CONTENT"
-            echo "------------------------------------------- </CONTENT> -------------------------------------------"
-            echo "------------------------------------------- <RESULT>  --------------------------------------------"
+            echo "----------------------------------------------------- </CONTENT> -----------------------------------------------------"
+            echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
         fi
 
 		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
@@ -424,11 +435,10 @@ generate_conf_file() {
                         SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
                         ;;
                     "passbolt")
-                        SECRET="TODO implement client for PASSBOLT"
-						# resources
-						PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(cat mashiro_resources.json | jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id') # $ENTRY -> TARGET_SERVER_ADDR
-						PASSBOLT_RESOURCE_SECRET=$(cat mashiro_secrets.json | jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value') # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
-						[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID ($LINE) :: SECRET -> $PASSBOLT_RESOURCE_SECRET"						
+						PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(cat "$tmp_resources" | jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id') # $ENTRY -> TARGET_SERVER_ADDR
+						PASSBOLT_RESOURCE_SECRET=$(cat "$tmp_secrets" | jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value') # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
+                        SECRET=$PASSBOLT_RESOURCE_SECRET
+						# [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID ($LINE) :: SECRET -> $PASSBOLT_RESOURCE_SECRET"
                         ;;
                     "new")
                         SECRET=$(generate_secret "16")
@@ -464,7 +474,7 @@ generate_conf_file() {
         done
         if [[ "$FORGE_DEBUG" == "1" ]];
         then
-            echo "------------------------------------------- </RESULT> -------------------------------------------"
+            echo "----------------------------------------------------- </RESULT> -----------------------------------------------------"
         fi
     done
 
@@ -473,9 +483,8 @@ generate_conf_file() {
         echo "Original ${TARGET_SERVER_USER} do not exist in this machine. Using current user."
         TARGET_SERVER_USER=$(PROCPS_USERLEN=32 w -h | awk 'NR==1 {print $1}' | uniq | head -n 1)
     fi
-
     sudo chown -R "$TARGET_SERVER_USER:$TARGET_SERVER_USER" .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/
-    echo "${NOW}" | tee .credentials/"$APP_PATH_CREDENTIALS_GENERATED_OUTPUT"/deployment_datetime.txt > /dev/null
+    echo "${NOW}" | tee .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/deployment_datetime.txt > /dev/null
 
     if [[ "$DEPLOY_GENERATED_FILES" == "1" ]]; then
         print_banner "Copying generated files to deploy target..."
