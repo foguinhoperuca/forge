@@ -360,9 +360,8 @@ generate_conf_file() {
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     FORGE_DEBUG=${FORGE_DEBUG:-0}
-
 	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
-   
+
 	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
         local tmp_folders
         local tmp_resources
@@ -373,8 +372,8 @@ generate_conf_file() {
         trap 'rm -f "$tmp_folders" "$tmp_resources" "$tmp_secrets"' EXIT
 
         if [[ "$FORGE_DEBUG" == "1" ]]; then
-            tmp_folders=$(cat ../.forge_workspace/passbolt/.folders.json)
-            tmp_resources=$(cat ../.forge_workspace/passbolt/.resources.json)
+            cat ../.forge_workspace/passbolt/.folders.json > "$tmp_folders"
+            cat ../.forge_workspace/passbolt/.resources.json > "$tmp_resources"
         else
 			# TODO validate if binary passbolt exist (or go-passbolt-cli)
 			# local FORGE_PASSBOLT_BIN=$([[ -e passbolt ]] && echo "passbolt" || echo "go-passbolt-cli") # TODO something like it. Also, test if binary is installed and then test if is passbolt or go-passbolt-cli
@@ -428,7 +427,7 @@ generate_conf_file() {
 			fi
 			PASSBOLT_RESOURCE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
 			if [[ "$FORGE_DEBUG" == "1" ]]; then
-			   tmp_secrets=$(cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json)
+			   cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json > "$tmp_secrets"
 			else
 				passbolt get resource --id "$PASSBOLT_RESOURCE_ID" > "$tmp_secrets"
 			fi
@@ -466,7 +465,6 @@ generate_conf_file() {
 						PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id' "$tmp_resources") # $ENTRY -> TARGET_SERVER_ADDR
 						PASSBOLT_RESOURCE_SECRET=$(jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value' "$tmp_secrets") # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
                         SECRET=$PASSBOLT_RESOURCE_SECRET
-						# [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID ($LINE) :: SECRET -> $PASSBOLT_RESOURCE_SECRET"
                         ;;
                     "new")
                         SECRET=$(generate_secret "16")
