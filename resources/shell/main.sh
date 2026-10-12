@@ -124,6 +124,9 @@ erupt() {
                 fi
             done
             ;;
+		"persist_secrets")
+			persist_secrets
+			;;
         "cp-secrets")
             cp_secrets "$2" "$3"
             ;;
