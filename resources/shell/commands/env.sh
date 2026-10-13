@@ -345,6 +345,7 @@ encrypt_multiple() {
     return 0
 }
 
+# FIXME Cant create programmatically the resources using custom_fields. The alternative is use a traditional password field to store each key
 persist_secrets() {
     ENV_DESIRED=$TARGET_ENV
     local tmp_folders
@@ -358,7 +359,7 @@ persist_secrets() {
 
     if [[ "$FORGE_DEBUG" == "1" ]]; then
         cat ../.forge_workspace/passbolt/.folders.json > "$tmp_folders"
-        cat ../.forge_workspace/passbolt/.resources.json > "$tmp_resources"
+        cat ../.forge_workspaec/passbolt/.resources.json > "$tmp_resources"
     else
         # TODO validate if binary passbolt exist (or go-passbolt-cli)
         # local FORGE_PASSBOLT_BIN=$([[ -e passbolt ]] && echo "passbolt" || echo "go-passbolt-cli") # TODO something like it. Also, test if binary is installed and then test if is passbolt or go-passbolt-cli
@@ -389,7 +390,7 @@ persist_secrets() {
     fi
     # TODO validate if var is found and echo must be with FORGE_DEBUG=1
     # [[ "$FORGE_DEBUG" == "1" ]] && print_banner "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
-	print_banner "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+    print_banner "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
 
     for filepath in .credentials/samples/.*example; do
         filename="${filepath##*/}"
@@ -402,19 +403,52 @@ persist_secrets() {
             PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID
         fi
         PASSBOLT_RESOURCE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-		if [[ -z "$PASSBOLT_RESOURCE_ID" || "$PASSBOLT_RESOURCE_ID" == "null" ]]; then
-			# FIXME env.api generates envapi for example?
-			local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
+        if [[ -z "$PASSBOLT_RESOURCE_ID" || "$PASSBOLT_RESOURCE_ID" == "null" ]]; then
+            # FIXME env.api generates envapi for example?
+            local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
             CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
             declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
 
-			KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
+            KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
 
-			CUSTOM_FIELDS_JSON=$(echo "$KEYS" | jq -n -R --arg acronym "$REF" '[inputs | select(length > 0) | {name: ., value: (env["FORGE_\($acronym)_\(.)"] // ""), type: "text"}]')
-			PASSBOLT_RESOURCE_ID=$(passbolt create resource --type v5-custom-fields --folderParentID "$PARENT_FOLDER" -n "$FILE_SAMPLE" --customFields "$CUSTOM_FIELDS_JSON" | jq -r '.id')
-			echo "[FORGE] PASSBOLT_RESOURCE_ID returned empty: the folder ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_RESOURCE_ID}."
-		fi
-		# if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt get resource --id "$PASSBOLT_RESOURCE_ID"; fi > "$tmp_secrets"
+            VALID_KEYS=""
+            while read -r key; do
+                [[ -z "$key" ]] && continue
+                if [[ "$key" =~ [\<\>] ]]; then
+                    echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
+                    continue
+                fi
+                VALID_KEYS+="${key}"$'\n'
+            done <<< "$KEYS"
+            # CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '[inputs | select(length > 0) | {name: ., value: (env["FORGE_\($acronym)_\(.)"] // ""), type: "text"}]')
+            CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '{
+                custom_fields: [
+                    inputs
+                    | select(length > 0)
+                    | {
+                        name: .,
+                        value: (env["FORGE_\($acronym)_\(.)"] // ""),
+                        type: "text"
+                      }
+                ]
+            }')
+
+            # SECRET_FIELD_ARGS=()
+            # while read -r key; do
+            #     [[ -z "$key" ]] && continue
+            #     if [[ "$key" =~ [\<\>] ]]; then
+            #         echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
+            #         continue
+            #     fi
+            #     local var_name="FORGE_${REF}_${key}"
+            #     local var_value="${!var_name:-}"
+            #     SECRET_FIELD_ARGS+=( "--secret-field" "${key}=${var_value}" )
+            # done <<< "$KEYS"
+
+            PASSBOLT_RESOURCE_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
+            echo "[FORGE] PASSBOLT_RESOURCE_ID returned empty: the resource ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_RESOURCE_ID}."
+        fi
+        # if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt get resource --id "$PASSBOLT_RESOURCE_ID"; fi > "$tmp_secrets"
 
         # CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
         if [[ "$FORGE_DEBUG" == "0" ]]; then
@@ -426,56 +460,7 @@ persist_secrets() {
             # echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
         fi
 
-        # IFS=$'\n'
-        # for LINE in $CONTENT; do
-        #     [[ "$LINE" == \#* ]] && continue
 
-        #     IFS=':' read -r -a ENTRIES <<< "$LINE"
-        #     BUILD_UP_LINE=""
-        #     for ENTRY in "${ENTRIES[@]}"; do
-        #         # TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
-        #         # TODO make sense to grab secrets from .*.gpg files?!
-        #         case $SOURCE_SECRETS in
-        #             "passbolt")
-        #                 # TODO use parent id from here with name to grab specific and correct folder
-        #                 PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id' "$tmp_resources") # $ENTRY -> TARGET_SERVER_ADDR
-        #                 PASSBOLT_RESOURCE_SECRET=$(jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value' "$tmp_secrets") # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
-        #                 SECRET=$PASSBOLT_RESOURCE_SECRET
-        #                 ;;
-        #             *)
-        #                 echo "[ERROR] Should do nothing: SOURCE_SECRETS -> ${SOURCE_SECRETS}"
-        #                 exit 1
-        #                 ;;
-        #         esac
-
-        #         case $FILE_SAMPLE in
-        #             ".pgpass")
-        #                 BUILD_UP_LINE+="$SECRET"":"
-        #                 ;;
-        #             *)
-        #                 BUILD_UP_LINE+="$ENTRY""=""$SECRET"
-        #                 ;;
-        #         esac
-        #     done
-
-        #     if [[ "$FORGE_DRY_RUN" != "1" ]]; then
-        #         case $FILE_SAMPLE in
-        #             ".pgpass")
-        #                 echo "${BUILD_UP_LINE%:}" >> "$DESTINY"
-        #                 [[ "$FORGE_DEBUG" == "1" ]] && echo "${BUILD_UP_LINE%:}"
-        #                 ;;
-        #             ".user_seeds.csv")
-        #                 # TODO create the header
-        #                 echo "${BUILD_UP_LINE%;}" >> "$DESTINY"
-        #                 [[ "$FORGE_DEBUG" == "1" ]] && echo "${BUILD_UP_LINE%;}"
-        #                 ;;
-        #             *)
-        #                 echo "$BUILD_UP_LINE" >> "$DESTINY"
-        #                 [[ "$FORGE_DEBUG" == "1" ]] && echo "$BUILD_UP_LINE"
-        #                 ;;
-        #         esac
-        #     fi
-        # done
         if [[ "$FORGE_DEBUG" == "1" ]]; then
             echo "----------------------------------------------------- </RESULT> -----------------------------------------------------"
         fi
