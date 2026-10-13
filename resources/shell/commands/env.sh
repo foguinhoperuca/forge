@@ -396,64 +396,65 @@ persist_secrets() {
         filename="${filepath##*/}"
         filename_clean="${filename%.target-env-example}"
         FILE_SAMPLE="${filename_clean%.example}"
-        ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+        # ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
 
         local PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
         if [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]]; then
             PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID
         fi
-        PASSBOLT_RESOURCE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-        if [[ -z "$PASSBOLT_RESOURCE_ID" || "$PASSBOLT_RESOURCE_ID" == "null" ]]; then
-            # FIXME env.api generates envapi for example?
-            local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
-            CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
-            declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
-
-            KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
-
-            VALID_KEYS=""
-            while read -r key; do
-                [[ -z "$key" ]] && continue
-                if [[ "$key" =~ [\<\>] ]]; then
-                    echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
-                    continue
-                fi
-                VALID_KEYS+="${key}"$'\n'
-            done <<< "$KEYS"
-            # CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '[inputs | select(length > 0) | {name: ., value: (env["FORGE_\($acronym)_\(.)"] // ""), type: "text"}]')
-            CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '{
-                custom_fields: [
-                    inputs
-                    | select(length > 0)
-                    | {
-                        name: .,
-                        value: (env["FORGE_\($acronym)_\(.)"] // ""),
-                        type: "text"
-                      }
-                ]
-            }')
-
-            # SECRET_FIELD_ARGS=()
-            # while read -r key; do
-            #     [[ -z "$key" ]] && continue
-            #     if [[ "$key" =~ [\<\>] ]]; then
-            #         echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
-            #         continue
-            #     fi
-            #     local var_name="FORGE_${REF}_${key}"
-            #     local var_value="${!var_name:-}"
-            #     SECRET_FIELD_ARGS+=( "--secret-field" "${key}=${var_value}" )
-            # done <<< "$KEYS"
-
-            PASSBOLT_RESOURCE_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
+        PASSBOLT_FOLDER_SAMPLE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+        if [[ -z "$PASSBOLT_FOLDER_SAMPLE_ID" || "$PASSBOLT_FOLDER_SAMPLE_ID" == "null" ]]; then
+			# PASSBOLT_RESOURCE_FIELD_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
+			PASSBOLT_FOLDER_SAMPLE_ID=$(passbolt create folder -j -f "$PARENT_FOLDER" -n "$FILE_SAMPLE" | jq -r '.id')
             echo "[FORGE] PASSBOLT_RESOURCE_ID returned empty: the resource ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_RESOURCE_ID}."
         fi
-        # if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt get resource --id "$PASSBOLT_RESOURCE_ID"; fi > "$tmp_secrets"
+
+		# TODO implement generate resource for each key
+
+		# # FIXME env.api generates envapi for example?
+        # local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
+        # CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
+        # declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
+        # KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
+        # VALID_KEYS=""
+        # while read -r key; do
+        #     [[ -z "$key" ]] && continue
+        #     if [[ "$key" =~ [\<\>] ]]; then
+        #         echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
+        #         continue
+        #     fi
+        #     VALID_KEYS+="${key}"$'\n'
+        # done <<< "$KEYS"
+        # # CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '[inputs | select(length > 0) | {name: ., value: (env["FORGE_\($acronym)_\(.)"] // ""), type: "text"}]')
+        # CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '{
+        #         custom_fields: [
+        #             inputs
+        #             | select(length > 0)
+        #             | {
+        #                 name: .,
+        #                 value: (env["FORGE_\($acronym)_\(.)"] // ""),
+        #                 type: "text"
+        #               }
+        #         ]
+        #     }')
+        # # SECRET_FIELD_ARGS=()
+        # # while read -r key; do
+        # #     [[ -z "$key" ]] && continue
+        # #     if [[ "$key" =~ [\<\>] ]]; then
+        # #         echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
+        # #         continue
+        # #     fi
+        # #     local var_name="FORGE_${REF}_${key}"
+        # #     local var_value="${!var_name:-}"
+        # #     SECRET_FIELD_ARGS+=( "--secret-field" "${key}=${var_value}" )
+        # # done <<< "$KEYS"
+        # PASSBOLT_RESOURCE_FIELD_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
+        # # if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt get resource --id "$PASSBOLT_RESOURCE_ID"; fi > "$tmp_secrets"
 
         # CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
         if [[ "$FORGE_DEBUG" == "0" ]]; then
             echo ""
-            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (${ENV_FILE}) :: PASSBOLT_RESOURCE_ID -> $PASSBOLT_RESOURCE_ID ($PARENT_FOLDER)"
+            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (TODO need ENV_FILE?) :: PASSBOLT_FOLDER_SAMPLE_ID -> $PASSBOLT_FOLDER_SAMPLE_ID ($PARENT_FOLDER)"
             # echo "----------------------------------------------------- <CONTENT>  -----------------------------------------------------"
             # echo "$CONTENT"
             # echo "----------------------------------------------------- </CONTENT> -----------------------------------------------------"
