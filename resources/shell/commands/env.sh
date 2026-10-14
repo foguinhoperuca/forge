@@ -347,122 +347,127 @@ encrypt_multiple() {
 
 # FIXME Cant create programmatically the resources using custom_fields. The alternative is use a traditional password field to store each key
 persist_secrets() {
-    ENV_DESIRED=$TARGET_ENV
+    date
+    ENV_DESIRED=${1:-$TARGET_ENV}
+    FORGE_PASSBOLT_BIN=""
+    if command -v go-passbolt-cli >/dev/null 2>&1; then
+        FORGE_PASSBOLT_BIN="go-passbolt-cli"
+    elif command -v passbolt >/dev/null 2>&1; then
+        FORGE_PASSBOLT_BIN="passbolt"
+    else
+        echo "❌ Error: Neither 'go-passbolt-cli' nor 'passbolt' was found in your PATH." >&2
+        exit 1
+    fi
+    [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] Verified system binary: $PASSBOLT_BIN"
+
     local tmp_folders
     local tmp_resources
-    local tmp_secrets
     tmp_folders=$(mktemp)
     tmp_resources=$(mktemp)
-    tmp_secrets=$(mktemp)
-    trap 'rm -f "$tmp_folders" "$tmp_resources" "$tmp_secrets"' EXIT
-    date
-
+    trap 'rm -f "$tmp_folders" "$tmp_resources"' EXIT
     if [[ "$FORGE_DEBUG" == "1" ]]; then
-        cat ../.forge_workspace/passbolt/.folders.json > "$tmp_folders"
-        cat ../.forge_workspaec/passbolt/.resources.json > "$tmp_resources"
+        cat ../.forge_workspace/passbolt/.folders.json
     else
-        # TODO validate if binary passbolt exist (or go-passbolt-cli)
-        # local FORGE_PASSBOLT_BIN=$([[ -e passbolt ]] && echo "passbolt" || echo "go-passbolt-cli") # TODO something like it. Also, test if binary is installed and then test if is passbolt or go-passbolt-cli
-        passbolt list folders --json > "$tmp_folders"
-        passbolt list resources --json > "$tmp_resources"
-    fi
+        $FORGE_PASSBOLT_BIN list folders --json
+    fi > "$tmp_folders"
 
-    # FIXME call folder only the necessary data (not all folders - less data going through client and server)
-    PASSBOLT_FOLDER_ORG_ID=$(jq -r --arg org "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $org) | .id' "$tmp_folders") # $FORGE_ORGANIZATION_ACRONYM -> pms (more or less: go-passbolt-cli list folder --column id --filter 'name == "$FORGE_ORGANIZATION_ACRONYM"')
-    # FIXME passbolt accept folder with same name in same level. ORG folder can came from the .mise-en-place.conf (but will be the chicken-egg problem or use a new separated .env file called .passbolt.json that has only id and can live inside of repository)?
+    # TODO is better to use a universal folder called forge to have organization and all thing for sysadmin
+
+    # FIXME validating with multiple is not 100% OK yet
+
+    ALL_PASSBOLT_FOLDER=$(jq -r --arg org "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $org and (.folder_parent_id == null or .folder_parent_id == "")) | .id' "$tmp_folders")
+    MATCH_COUNT=$(echo "$ALL_PASSBOLT_FOLDER" | grep -v '^$' | wc -l)
+    PASSBOLT_FOLDER_ORG_ID=$(echo "$ALL_PASSBOLT_FOLDER" | head -n 1)
+    [[ $MATCH_COUNT -gt 1 ]] && echo "[FORGE] ⚠️ Warning: Found $MATCH_COUNT duplicate folders named '${FORGE_ORGANIZATION_ACRONYM}' at same level! 👉 Selecting the first discovered ID: $PASSBOLT_FOLDER_ORG_ID"
     if [[ -z "$PASSBOLT_FOLDER_ORG_ID" || "$PASSBOLT_FOLDER_ORG_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_ORG_ID=$(passbolt create folder -j -n "$FORGE_ORGANIZATION_ACRONYM" | jq -r '.id')
-        echo "[FORGE] PASSBOLT_FOLDER_ORG_ID returned empty: the folder ${FORGE_ORGANIZATION_ACRONYM} originally do not exist in passbolt. Creating the specific ORG ID: ${PASSBOLT_FOLDER_ORG_ID}."
+        PASSBOLT_FOLDER_ORG_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -n "$FORGE_ORGANIZATION_ACRONYM" | jq -r '.id')
+        echo "[FORGE] ORG_ID returned empty: the folder ${FORGE_ORGANIZATION_ACRONYM} originally do not exist in passbolt. Creating the specific ORG ID: ${PASSBOLT_FOLDER_ORG_ID}."
     fi
 
-    # FIXME same problem above that passbolt can have folder with same name in same level
-    PASSBOLT_FOLDER_SYS_ID=$(jq -r --arg sys "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORG_ID" '.[] | select(.name == $sys and .folder_parent_id == $org) | .id' "$tmp_folders") # $FORGE_SYSTEM_ACRONYM -> river
+    ALL_PASSBOLT_FOLDER=$(jq -r --arg sys "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORG_ID" '.[] | select(.name == $sys and .folder_parent_id == $org) | .id' "$tmp_folders") # $FORGE_SYSTEM_ACRONYM -> river
+    MATCH_COUNT=$(echo "$ALL_PASSBOLT_FOLDER" | grep -v '^$' | wc -l)
+    PASSBOLT_FOLDER_SYS_ID=$(echo "$ALL_PASSBOLT_FOLDER" | head -n 1)
+    [[ $MATCH_COUNT -gt 1 ]] && echo "[FORGE] ⚠️ Warning: Found $MATCH_COUNT duplicate folders named '${FORGE_SYSTEM_ACRONYM}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_FOLDER_SYS_ID} (${PASSBOLT_FOLDER_ORG_ID})"
     if [[ -z "$PASSBOLT_FOLDER_SYS_ID" || "$PASSBOLT_FOLDER_SYS_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_SYS_ID=$(passbolt create folder -j -f "$PASSBOLT_FOLDER_ORG_ID" -n "$FORGE_SYSTEM_ACRONYM" | jq -r '.id')
-        echo "[FORGE] PASSBOLT_FOLDER_SYS_ID returned empty: the folder ${FORGE_SYSTEM_ACRONYM} originally do not exist in passbolt. Creating the specific SYS ID: ${PASSBOLT_FOLDER_SYS_ID}."
+        PASSBOLT_FOLDER_SYS_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -f "$PASSBOLT_FOLDER_ORG_ID" -n "$FORGE_SYSTEM_ACRONYM" | jq -r '.id')
+        echo "[FORGE] SYS_ID returned empty: the folder ${FORGE_SYSTEM_ACRONYM} originally do not exist in passbolt. Creating the specific SYS ID: ${PASSBOLT_FOLDER_SYS_ID}."
     fi
 
-    # FIXME same problem above that passbolt can have folder with same name in same level
-    PASSBOLT_FOLDER_ENV_ID=$(jq -r --arg env "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYS_ID" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
+    ALL_PASSBOLT_FOLDER=$(jq -r --arg env "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYS_ID" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
+    MATCH_COUNT=$(echo "$ALL_PASSBOLT_FOLDER" | grep -v '^$' | wc -l)
+    PASSBOLT_FOLDER_ENV_ID=$(echo "$ALL_PASSBOLT_FOLDER" | head -n 1)
+    [[ $MATCH_COUNT -gt 1 ]] && echo "[FORGE] ⚠️ Warning: Found $MATCH_COUNT duplicate folders named '${ENV_DESIRED}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_FOLDER_ENV_ID} (${PASSBOLT_FOLDER_SYS_ID} -> ${PASSBOLT_FOLDER_ORG_ID})"
     if [[ -z "$PASSBOLT_FOLDER_ENV_ID" || "$PASSBOLT_FOLDER_ENV_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_ENV_ID=$(passbolt create folder -j -f "$PASSBOLT_FOLDER_SYS_ID" -n "$ENV_DESIRED" | jq -r '.id')
-        echo "[FORGE] PASSBOLT_FOLDER_ENV_ID returned empty: the folder ${ENV_DESIRED} originally do not exist in passbolt. Creating the specific ENV ID: ${PASSBOLT_FOLDER_ENV_ID}."
+        PASSBOLT_FOLDER_ENV_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -f "$PASSBOLT_FOLDER_SYS_ID" -n "$ENV_DESIRED" | jq -r '.id')
+        echo "[FORGE] ENV_ID returned empty: the folder ${ENV_DESIRED} originally do not exist in passbolt. Creating the specific ENV ID: ${PASSBOLT_FOLDER_ENV_ID}."
     fi
-    # TODO validate if var is found and echo must be with FORGE_DEBUG=1
-    # [[ "$FORGE_DEBUG" == "1" ]] && print_banner "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
-    print_banner "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+
+    print_banner "[${ENV_DESIRED}] PASSBOLT vars: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+
+    # exit 0                      # FIXME remove it - just for test
 
     for filepath in .credentials/samples/.*example; do
         filename="${filepath##*/}"
         filename_clean="${filename%.target-env-example}"
         FILE_SAMPLE="${filename_clean%.example}"
-        # ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+        ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
 
-        local PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
-        if [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]]; then
-            PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID
-        fi
-        PASSBOLT_FOLDER_SAMPLE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-        if [[ -z "$PASSBOLT_FOLDER_SAMPLE_ID" || "$PASSBOLT_FOLDER_SAMPLE_ID" == "null" ]]; then
-			PASSBOLT_FOLDER_SAMPLE_ID=$(passbolt create folder -j -f "$PARENT_FOLDER" -n "$FILE_SAMPLE" | jq -r '.id')
-            echo "[FORGE] PASSBOLT_RESOURCE_ID returned empty: the resource ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_RESOURCE_ID}."
+        # FIXME this code is correct now?
+        # local PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
+        # if [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]]; then
+        #     PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID
+        # fi
+        [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID || PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
+
+        ALL_PASSBOLT_FOLDER=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_folders") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+        MATCH_COUNT=$(echo "$ALL_PASSBOLT_FOLDER" | grep -v '^$' | wc -l)
+        PASSBOLT_FOLDER_FIL_ID=$(echo "$ALL_PASSBOLT_FOLDER" | head -n 1)
+        [[ $MATCH_COUNT -gt 1 ]] && echo "[FORGE] ⚠️ Warning: Found $MATCH_COUNT duplicate folders named '${FILE_SAMPLE}' at same level! 👉 Selecting the first discovered ID: $PASSBOLT_FOLDER_FIL_ID (${PASSBOLT_FOLDER_ENV_ID} ($ENV_FILE) -> ${PASSBOLT_FOLDER_SYS_ID} -> ${PASSBOLT_FOLDER_ORG_ID})"
+        if [[ -z "$PASSBOLT_FOLDER_FIL_ID" || "$PASSBOLT_FOLDER_FIL_ID" == "null" ]]; then
+			PASSBOLT_FOLDER_FIL_ID=$(passbolt create folder -j -f "$PARENT_FOLDER" -n "$FILE_SAMPLE" | jq -r '.id')
+            echo "[FORGE] PASSBOLT_FOLDER_FIL_ID returned empty: the resource ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_FOLDER_FIL_ID}."
         fi
 
-		# TODO implement generate resource for each key
+        print_banner "[FORGE] FILE_SAMPLE -> $FILE_SAMPLE (${ENV_FILE}) :: PASSBOLT_FOLDER_FIL_ID -> $PASSBOLT_FOLDER_FIL_ID ($PARENT_FOLDER)"
+        # continue                # FIXME remove it - just for test
+        # TODO implement specific case for .pgpass and .user_seeds.csv
+        [[ "$FILE_SAMPLE" == ".pgpass" || "$FILE_SAMPLE" == ".user_seeds.csv" ]] && echo "FIXME just skip temporally to dev other features" && continue
+
+        if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt list resources --json --folder "$PASSBOLT_FOLDER_FIL_ID"; fi > "$tmp_resources"
 
         local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
         CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
         declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
-        KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
-        VALID_KEYS=""
-		# SECRET_FIELD_ARGS=()
-        while read -r key; do
-            [[ -z "$key" ]] && continue
-            if [[ "$key" =~ [\<\>] ]]; then
-                echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: $key"
+        KEYS=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | grep -v '^#' | grep -v '^$' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
+        # if [[ "$FORGE_DEBUG" == "0" ]]; then # FIXME reset to 1
+        #     print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (${ENV_FILE}) :: PASSBOLT_FOLDER_FIL_ID -> $PASSBOLT_FOLDER_FIL_ID ($PARENT_FOLDER)"
+        #     # echo "----------------------------------------------------- <CONTENT>  -----------------------------------------------------"
+        #     # echo "$KEYS"
+        #     # echo "----------------------------------------------------- </CONTENT> -----------------------------------------------------"
+        #     # echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
+        # fi
+
+        while read -r KEY; do
+            [[ -z "$KEY" ]] && continue
+            if [[ "$KEY" =~ [\<\>] ]]; then
+                echo "[FORGE] ⚠️ Skipping invalid key name containing restricted characters: ${KEY}"
                 continue
             fi
-            VALID_KEYS+="${key}"$'\n'
-			# local var_name="FORGE_${REF}_${key}"
-			# local var_value="${!var_name:-}"
-			# SECRET_FIELD_ARGS+=( "--secret-field" "${key}=${var_value}" )
+			local var_name="FORGE_${REF}_${KEY}"
+			local var_value="${!var_name:-}"
 
-			# PASSBOLT_RESOURCE_FIELD_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
-			if [[ -z "$PASSBOLT_RESOURCE_FIELD_ID" || "$PASSBOLT_RESOURCE_FIELD_ID" == "null" ]]; then
-				# PASSBOLT_RESOURCE_FIELD_ID=$(passbolt create resource --json --type v5-custom-fields --folderParentID "$PARENT_FOLDER" --name "$FILE_SAMPLE" --secret-field "$CUSTOM_FIELDS_JSON" | jq -r '.id')
-				echo "[FORGE] PASSBOLT_RESOURCE_FIELD_ID is empty. Created new resource with name $key and got id $PASSBOLT_RESOURCE_FIELD_ID"
-				continue
+            # FIXME also a resource can have a name duplicated in same folder
+			PASSBOLT_RESOURCE_KEY_ID=$(jq -r --arg key "$KEY" '.[] | select(.name == $key) | .id' "${tmp_resources}")
+			if [[ -z "$PASSBOLT_RESOURCE_KEY_ID" || "$PASSBOLT_RESOURCE_KEY_ID" == "null" ]]; then
+				PASSBOLT_RESOURCE_KEY_ID=$(passbolt create resource --json --folderParentID "$PASSBOLT_FOLDER_FIL_ID" --name "$KEY" --password "$var_value" | jq -r '.id')
+				echo "[FORGE] KEY_ID is empty. Created new resource with name ${KEY} ($var_name = $var_value) and got id $PASSBOLT_RESOURCE_KEY_ID"
+            else
+                passbolt update resource --id "$PASSBOLT_RESOURCE_KEY_ID" --password "$var_value" > /dev/null # FIXME need redirect?
+                echo "[FORGE] KEY_ID is $PASSBOLT_RESOURCE_KEY_ID. UPDATED resource with name ${KEY} ($var_name = $var_value)"
 			fi
-			# TODO implement logic to passbolt update existing resource
         done <<< "$KEYS"
-        CUSTOM_FIELDS_JSON=$(echo "$VALID_KEYS" | jq -n -R --arg acronym "$REF" '{
-                custom_fields: [
-                    inputs
-                    | select(length > 0)
-                    | {
-                        name: .,
-                        value: (env["FORGE_\($acronym)_\(.)"] // ""),
-                        type: "text"
-                      }
-                ]
-            }')
 
-        # if [[ "$FORGE_DEBUG" == "1" ]]; then cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json; else passbolt get resource --id "$PASSBOLT_RESOURCE_ID"; fi > "$tmp_secrets"
-
-        # CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1 | grep -v '^#' | grep -v '^$')
-        if [[ "$FORGE_DEBUG" == "0" ]]; then
-            echo ""
-            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (TODO need ENV_FILE?) :: PASSBOLT_FOLDER_SAMPLE_ID -> $PASSBOLT_FOLDER_SAMPLE_ID ($PARENT_FOLDER)"
-            # echo "----------------------------------------------------- <CONTENT>  -----------------------------------------------------"
-            # echo "$CONTENT"
-            # echo "----------------------------------------------------- </CONTENT> -----------------------------------------------------"
-            # echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
-        fi
-
-
-        if [[ "$FORGE_DEBUG" == "1" ]]; then
-            echo "----------------------------------------------------- </RESULT> -----------------------------------------------------"
-        fi
+        echo "----------------------------------------------------- </RESULT> -----------------------------------------------------"
     done
 }
 
