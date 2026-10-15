@@ -9,5 +9,5 @@ FOREIGN_ADM_HOST:FOREIGN_ADM_PORT:FOREIGN_ADM_DBNM:FOREIGN_ADM_USER:FOREIGN_ADM_
 # Postgres hold credential to execute a more privileged (but no for all DB!) action using DB postgres
 POSTGRES_ADM_HOST:POSTGRES_ADM_PORT:POSTGRES_ADM_DBNM:POSTGRES_ADM_USER:POSTGRES_ADM_PASS
 POSTGRES_READONLY_HOST:POSTGRES_READONLY_PORT:POSTGRES_READONLY_DBNM:POSTGRES_READONLY_USER:POSTGRES_READONLY_PASS
-# For a generic user to run tests (it must have permission to create and drop databases)
-*:*:*:POSTGRES_TEST_USER:POSTGRES_TEST_PASS
+# For a generic user to run tests (it must have permission to create and drop databases). Generally use it with values -> *:*:*:POSTGRES_TEST_USER:POSTGRES_TEST_PASS
+POSTGRES_TEST_HOST:POSTGRES_TEST_PORT:POSTGRES_TEST_DBNM:POSTGRES_TEST_USER:POSTGRES_TEST_PASS
