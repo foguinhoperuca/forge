@@ -100,6 +100,10 @@ set_vars() {
                 export GIT_BRANCH="$TARGET_ENV"
                 echo "ENV USAGE: Env '$1' is *NOT* valid [${WORKFLOW_ENVS_AVAILABLE[*]}]. Forcing defaults."
             fi
+            # # FIXME GIT_BRANCH if not defined will follow the TARGET_ENV
+            # export GIT_BRANCH="${3:-$TARGET_ENV}"
+            # # FIXME in else branch is missing to calc GIT_BRANCH prod -> master.
+            # [[ "$GIT_BRANCH" == "prod" ]] && export GIT_BRANCH="master"
             ;;
     esac
 
