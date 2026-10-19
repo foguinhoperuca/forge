@@ -92,3 +92,10 @@ declare -a DJANGO_MEDIA_FILE_AVAILABLE=(
 USER_SEEDS_FILE_HEADERS=(group_name username first_name last_name email is_staff is_superuser password)
 
 FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
+
+FORGE_PASSBOLT_BIN=""
+if command -v go-passbolt-cli >/dev/null 2>&1; then
+    FORGE_PASSBOLT_BIN="go-passbolt-cli"
+elif command -v passbolt >/dev/null 2>&1; then
+    FORGE_PASSBOLT_BIN="passbolt"
+fi
