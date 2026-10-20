@@ -81,6 +81,15 @@ CONF_FILE_ACRONYM[envbackoffice]="ENVBAC"
 CONF_FILE_ACRONYM[target_server]="TRGSRV"
 CONF_FILE_ACRONYM[user_seedscsv]="USEEDS"
 
+declare -A CONF_FILE_CANONICAL_NAME
+CONF_FILE_CANONICAL_NAME[MIENPL]=".mise-en-place.conf"
+CONF_FILE_CANONICAL_NAME[PGPASS]=".pgpass"
+CONF_FILE_CANONICAL_NAME[ENVAPI]=".env.api"
+CONF_FILE_CANONICAL_NAME[ENVBAC]=".env.backoffice"
+CONF_FILE_CANONICAL_NAME[ENVBOT]=".env.bot"
+CONF_FILE_CANONICAL_NAME[TRGSRV]=".target-server"
+CONF_FILE_CANONICAL_NAME[USEEDS]=".user_seeds.csv"
+
 PGPASS_FILE_HEADERS=(HOST PORT DBNM USER PASS)
 PGPASS_LINE_IDENTIFICATION=(PRIMARY_SYS PRIMARY_ADM FOREIGN_SYS FOREIGN_ADM POSTGRES_ADM POSTGRES_READONLY POSTGRES_TEST)
 # This should be replaced by a fully declare statement
@@ -93,9 +102,12 @@ USER_SEEDS_FILE_HEADERS=(group_name username first_name last_name email is_staff
 
 FORCE_REINSTALL_VENV=${FORCE_REINSTALL_VENV:-1}
 
+# ---------- PASSBOLT stuffs ----------
 FORGE_PASSBOLT_BIN=""
 if command -v go-passbolt-cli >/dev/null 2>&1; then
     FORGE_PASSBOLT_BIN="go-passbolt-cli"
 elif command -v passbolt >/dev/null 2>&1; then
     FORGE_PASSBOLT_BIN="passbolt"
 fi
+PASSBOLT_DEFAULT_ROOT_FOLDER="forge"
+declare -a PASSBOLT_BASE_FOLDER_HIERARCHY=("ROOT" "ORG" "SYS" "ENV")

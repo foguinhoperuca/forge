@@ -90,6 +90,7 @@ deployment_stats() {
     git -C "$APP_PATH_DOCUMENT_ROOT" rev-parse --short=8 HEAD >> "$STATS_PATH"
 }
 
+# TODO create a generic function to run passbolt commands, including with retries
 get_passbolt_folder_ids() {
     # Grab all folders ID from passbolt using the default organization: forge -> ORGANIZATION -> SYSTEM -> ENVIRONMENT -> CONFIGURATION FILE
     # Each configuration file will have multiple resources with the name as the same as the key and in passworld will be stored the secret/sensible information (configuration itself)
@@ -99,8 +100,7 @@ get_passbolt_folder_ids() {
 
     declare -n PASSBOLT_IDS="$1"
     local ENV_DESIRED=${2:-$TARGET_ENV}
-    local PASSBOLT_ROOT_FOLDER=${3:-"forge"}
-
+    local PASSBOLT_ROOT_FOLDER=${3:-"${PASSBOLT_DEFAULT_ROOT_FOLDER}"}
     [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] Verified PASSBOLT system binary: $PASSBOLT_BIN"
     if [[ -z "$FORGE_PASSBOLT_BIN" ]]; then
         echo "❌ Error: Neither 'go-passbolt-cli' nor 'passbolt' was found in your PATH." >&2
@@ -116,88 +116,62 @@ get_passbolt_folder_ids() {
         $FORGE_PASSBOLT_BIN list folders --json
     fi > "$tmp_folders"
 
-    ALL_PASSBOLT_ENTRY=$(jq -r --arg root "$PASSBOLT_ROOT_FOLDER" '.[] | select(.name == $root and (.folder_parent_id == null or .folder_parent_id == "")) | .id' "$tmp_folders")
-    PASSBOLT_FOLDER_ROOT_ID=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
-    MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-    [[ $MATCH_COUNT -gt 1 ]] && echo "[ROOT] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_ROOT_FOLDER}' at same level! 👉 Selecting the first discovered ID: $PASSBOLT_FOLDER_ROOT_ID"
-    if [[ -z "$PASSBOLT_FOLDER_ROOT_ID" || "$PASSBOLT_FOLDER_ROOT_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_ROOT_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -n "$PASSBOLT_ROOT_FOLDER" | jq -r '.id')
-        echo "[FORGE] ROOT_ID returned empty: the folder ${PASSBOLT_ROOT_FOLDER} originally do not exist in passbolt. Creating the specific ROOT ID: ${PASSBOLT_FOLDER_ROOT_ID}."
-    fi
-    PASSBOLT_IDS["ROOT"]=$PASSBOLT_FOLDER_ROOT_ID
+    local PASSBOLT_FOLDERS=("${PASSBOLT_BASE_FOLDER_HIERARCHY[@]}" "${CONF_FILE_ACRONYM[@]}")
+    for fld in "${PASSBOLT_FOLDERS[@]}"; do
+        case $fld in
+            "ROOT")
+                ALL_PASSBOLT_ENTRY=$(jq -r --arg root "$PASSBOLT_ROOT_FOLDER" '.[] | select(.name == $root and (.folder_parent_id == null or .folder_parent_id == "")) | .id' "$tmp_folders")
+                ;;
+            "ORG")
+                ALL_PASSBOLT_ENTRY=$(jq -r --arg org "$FORGE_ORGANIZATION_ACRONYM" --arg root "${PASSBOLT_IDS[ROOT]}" '.[] | select(.name == $org and .folder_parent_id == $root) | .id' "$tmp_folders")
+                ;;
+            "SYS")
+                ALL_PASSBOLT_ENTRY=$(jq -r --arg sys "$FORGE_SYSTEM_ACRONYM" --arg org "${PASSBOLT_IDS[ORG]}" '.[] | select(.name == $sys and .folder_parent_id == $org) | .id' "$tmp_folders") # $FORGE_SYSTEM_ACRONYM -> river
+                ;;
+            "ENV")
+                ALL_PASSBOLT_ENTRY=$(jq -r --arg env "$ENV_DESIRED" --arg sys "${PASSBOLT_IDS[SYS]}" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
+                ;;
+            *)
+                local matched=false
+                for acronym in "${CONF_FILE_ACRONYM[@]}"; do
+                    if [[ "$fld" == "$acronym" ]]; then
+                        matched=true
+                        break
+                    fi
+                done
 
-    ALL_PASSBOLT_ENTRY=$(jq -r --arg org "$FORGE_ORGANIZATION_ACRONYM" --arg root "$PASSBOLT_FOLDER_ROOT_ID" '.[] | select(.name == $org and .folder_parent_id == $root) | .id' "$tmp_folders")
-    PASSBOLT_FOLDER_ORG_ID=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
-    MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-    if [[ $MATCH_COUNT -gt 1 ]]; then
-        echo "[ORG ] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${FORGE_ORGANIZATION_ACRONYM}' at same level! 👉 Selecting the first discovered ID: $PASSBOLT_FOLDER_ORG_ID"
-        [[ "$FORGE_DEBUG" == "1" ]] && echo "[ORG ] ⚠️ Warning tracking full path: ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
-    fi
-    if [[ -z "$PASSBOLT_FOLDER_ORG_ID" || "$PASSBOLT_FOLDER_ORG_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_ORG_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -n "$FORGE_ORGANIZATION_ACRONYM" -f "$PASSBOLT_FOLDER_ROOT_ID" | jq -r '.id')
-        echo "[FORGE] ORG_ID returned empty: the folder ${FORGE_ORGANIZATION_ACRONYM} originally do not exist in passbolt. Creating the specific ORG ID: ${PASSBOLT_FOLDER_ORG_ID}."
-    fi
-    PASSBOLT_IDS["ORG"]=$PASSBOLT_FOLDER_ORG_ID
+                if [ "$matched" = true ]; then
+                    [[ "$fld" == "MIENPL" ]] && PARENT_FOLDER="${PASSBOLT_IDS[SYS]}" || PARENT_FOLDER="${PASSBOLT_IDS[ENV]}"
+                    ALL_PASSBOLT_ENTRY=$(jq -r --arg file_sample "${CONF_FILE_CANONICAL_NAME[$fld]}" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_folders") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
+                else
+                    echo "Value of fld ${fld} not foreseen. Exiting..."
+                    exit 1
+                fi
+                ;;
+        esac
 
-    ALL_PASSBOLT_ENTRY=$(jq -r --arg sys "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORG_ID" '.[] | select(.name == $sys and .folder_parent_id == $org) | .id' "$tmp_folders") # $FORGE_SYSTEM_ACRONYM -> river
-    PASSBOLT_FOLDER_SYS_ID=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
-    MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-    if [[ $MATCH_COUNT -gt 1 ]]; then
-        echo "[SYS ] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${FORGE_SYSTEM_ACRONYM}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_FOLDER_SYS_ID}"
-        [[ "$FORGE_DEBUG" == "1" ]] && echo "[SYS ] ⚠️ Warning tracking full path: ${PASSBOLT_FOLDER_ORG_ID} -> ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
-    fi
-    if [[ -z "$PASSBOLT_FOLDER_SYS_ID" || "$PASSBOLT_FOLDER_SYS_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_SYS_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -n "$FORGE_SYSTEM_ACRONYM" -f "$PASSBOLT_FOLDER_ORG_ID" | jq -r '.id')
-        echo "[FORGE] SYS_ID returned empty: the folder ${FORGE_SYSTEM_ACRONYM} originally do not exist in passbolt. Creating the specific SYS ID: ${PASSBOLT_FOLDER_SYS_ID}."
-    fi
-    PASSBOLT_IDS["SYS"]=$PASSBOLT_FOLDER_SYS_ID
-
-    ALL_PASSBOLT_ENTRY=$(jq -r --arg env "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYS_ID" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
-    PASSBOLT_FOLDER_ENV_ID=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
-    MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-    if [[ $MATCH_COUNT -gt 1 ]]; then
-        echo "[ENV ] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${ENV_DESIRED}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_FOLDER_ENV_ID}"
-        [[ "$FORGE_DEBUG" == "1" ]] && echo "[ENV ] ⚠️ Warning tracking full path: ${PASSBOLT_FOLDER_SYS_ID} -> ${PASSBOLT_FOLDER_ORG_ID} -> ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
-    fi
-    if [[ -z "$PASSBOLT_FOLDER_ENV_ID" || "$PASSBOLT_FOLDER_ENV_ID" == "null" ]]; then
-        PASSBOLT_FOLDER_ENV_ID=$("$FORGE_PASSBOLT_BIN" create folder -j -n "$ENV_DESIRED" -f "$PASSBOLT_FOLDER_SYS_ID" | jq -r '.id')
-        echo "[FORGE] ENV_ID returned empty: the folder ${ENV_DESIRED} originally do not exist in passbolt. Creating the specific ENV ID: ${PASSBOLT_FOLDER_ENV_ID}."
-    fi
-    PASSBOLT_IDS["ENV"]=$PASSBOLT_FOLDER_ENV_ID
-
-    print_banner "[${ENV_DESIRED}] PASSBOLT: ROOT_ID -> $PASSBOLT_FOLDER_ROOT_ID :: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
-
-    for filepath in .credentials/samples/.*example; do
-        local FILE_SAMPLE="${filepath##*/}"
-        FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
-        FILE_SAMPLE="${FILE_SAMPLE%.example}"
-        local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
-        CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
-        declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
-
-        [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && PARENT_FOLDER="$PASSBOLT_FOLDER_SYS_ID" || PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
-        ALL_PASSBOLT_ENTRY=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_folders") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-        PASSBOLT_FOLDER_FIL_ID=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
+        PASSBOLT_IDS["$fld"]=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
         MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-        if [[ $MATCH_COUNT -gt 1 ]]; then
-            echo "[${REF}] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${FILE_SAMPLE}' at same level! 👉 Selecting the first discovered ID: $PASSBOLT_FOLDER_FIL_ID"
-            [[ "$FORGE_DEBUG" == "1" ]] && echo "[${REF}] ⚠️ Warning tracking full path: PARENT: ${PARENT_FOLDER} :: ENV: ${PASSBOLT_FOLDER_ENV_ID} ($ENV_FILE) -> SYS: ${PASSBOLT_FOLDER_SYS_ID} -> ORG: ${PASSBOLT_FOLDER_ORG_ID} -> ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
+        [[ $MATCH_COUNT -gt 1 ]] && echo "[ROOT] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_ROOT_FOLDER}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_IDS[$fld]}"
+        if [[ -z "${PASSBOLT_IDS[$fld]}" || "${PASSBOLT_IDS[$fld]}" == "null" ]]; then
+            local passbolt_output
+            if ! passbolt_output=$("$FORGE_PASSBOLT_BIN" create folder -j -n "${PASSBOLT_IDS[$fld]}" 2>&1); then
+                echo "[FORGE] Fatal: Passbolt command execution failed for folder '${PASSBOLT_IDS[$fld]}' -> $passbolt_output" >&2
+                exit 1
+            fi
+            local jq_output
+            jq_output=$(echo "$passbolt_output" | jq -r '.id' 2>/dev/null)
+            if [[ -z "$jq_output" || "$jq_output" == "null" ]]; then
+                echo "[FORGE] jq failed to parse pasbolt's response: $passbolt_output" >&2
+                exit 1
+            fi
+            PASSBOLT_IDS[$fld]="$jq_output"
+            echo "[FORGE] ${fld}_ID returned empty: the folder ${fld} originally do not exist in passbolt. Creating the specific ${fld}_ID: ${PASSBOLT_IDS[$fld]}."
         fi
-        if [[ -z "$PASSBOLT_FOLDER_FIL_ID" || "$PASSBOLT_FOLDER_FIL_ID" == "null" ]]; then
-            PASSBOLT_FOLDER_FIL_ID=$($FORGE_PASSBOLT_BIN create folder -j -f "$PARENT_FOLDER" -n "$FILE_SAMPLE" | jq -r '.id')
-            echo "[FORGE] PASSBOLT_FOLDER_FIL_ID returned empty: the resource ${FILE_SAMPLE} originally do not exist in passbolt. Creating the specific RESOURCE ID: ${PASSBOLT_FOLDER_FIL_ID}."
-        fi
-        PASSBOLT_IDS["$REF"]="$PASSBOLT_FOLDER_FIL_ID"
-        [[ "$FORGE_DEBUG" == "1" ]] && print_banner "[${REF}] FILE_SAMPLE -> ${FILE_SAMPLE} (${ENV_FILE}) :: ${REF} (${CLEAN_FILE_SAMPLE}) :: PASSBOLT_FOLDER_FIL_ID (${MATCH_COUNT}) -> ${PASSBOLT_FOLDER_FIL_ID} (^: ${PARENT_FOLDER})"
+        [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_IDS[${fld}] -> ${PASSBOLT_IDS[$fld]} :: MATCH_COUNT -> ${MATCH_COUNT}"
     done
 
-    if [[ "$FORGE_DEBUG" == "1" ]]; then
-        print_banner "[FORGE] Passbolt folder ids"
-        for my_key in "${!PASSBOLT_IDS[@]}"; do
-            my_value="${PASSBOLT_IDS[$my_key]}"
-            echo "Key: $my_key -> Value: $my_value"
-        done
-    fi
+    print_banner "[${ENV_DESIRED}] ROOT -> ${PASSBOLT_IDS[ROOT]} :: ORG -> ${PASSBOLT_IDS[ORG]} :: SYS -> ${PASSBOLT_IDS[SYS]} :: ENV -> ${PASSBOLT_IDS[ENV]}"
 }
 
 get_passbolt_resource_ids() {
