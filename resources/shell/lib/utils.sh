@@ -118,6 +118,7 @@ get_passbolt_folder_ids() {
 
     local PASSBOLT_FOLDERS=("${PASSBOLT_BASE_FOLDER_HIERARCHY[@]}" "${CONF_FILE_ACRONYM[@]}")
     for fld in "${PASSBOLT_FOLDERS[@]}"; do
+        local PASSBOLT_IDS_KEY=$fld
         case $fld in
             "ROOT")
                 ALL_PASSBOLT_ENTRY=$(jq -r --arg root "$PASSBOLT_ROOT_FOLDER" '.[] | select(.name == $root and (.folder_parent_id == null or .folder_parent_id == "")) | .id' "$tmp_folders")
@@ -130,6 +131,7 @@ get_passbolt_folder_ids() {
                 ;;
             "ENV")
                 ALL_PASSBOLT_ENTRY=$(jq -r --arg env "$ENV_DESIRED" --arg sys "${PASSBOLT_IDS[SYS]}" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
+                PASSBOLT_IDS_KEY="$ENV_DESIRED"
                 ;;
             *)
                 local matched=false
@@ -141,7 +143,7 @@ get_passbolt_folder_ids() {
                 done
 
                 if [ "$matched" = true ]; then
-                    [[ "$fld" == "MIENPL" ]] && PARENT_FOLDER="${PASSBOLT_IDS[SYS]}" || PARENT_FOLDER="${PASSBOLT_IDS[ENV]}"
+                    [[ "$fld" == "MIENPL" ]] && PARENT_FOLDER="${PASSBOLT_IDS[SYS]}" || PARENT_FOLDER="${PASSBOLT_IDS[$ENV_DESIRED]}"
                     ALL_PASSBOLT_ENTRY=$(jq -r --arg file_sample "${CONF_FILE_CANONICAL_NAME[$fld]}" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_folders") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
                 else
                     echo "Value of fld ${fld} not foreseen. Exiting..."
@@ -150,13 +152,13 @@ get_passbolt_folder_ids() {
                 ;;
         esac
 
-        PASSBOLT_IDS["$fld"]=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
+        PASSBOLT_IDS["${PASSBOLT_IDS_KEY}"]=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
         MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-        [[ $MATCH_COUNT -gt 1 ]] && echo "[ROOT] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_ROOT_FOLDER}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_IDS[$fld]}"
-        if [[ -z "${PASSBOLT_IDS[$fld]}" || "${PASSBOLT_IDS[$fld]}" == "null" ]]; then
+        [[ $MATCH_COUNT -gt 1 ]] && echo "[ROOT] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}"
+        if [[ -z "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" || "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" == "null" ]]; then
             local passbolt_output
-            if ! passbolt_output=$("$FORGE_PASSBOLT_BIN" create folder -j -n "${PASSBOLT_IDS[$fld]}" 2>&1); then
-                echo "[FORGE] Fatal: Passbolt command execution failed for folder '${PASSBOLT_IDS[$fld]}' -> $passbolt_output" >&2
+            if ! passbolt_output=$("$FORGE_PASSBOLT_BIN" create folder -j -n "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" 2>&1); then
+                echo "[FORGE] Fatal: Passbolt command execution failed for folder '${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}' -> $passbolt_output" >&2
                 exit 1
             fi
             local jq_output
@@ -165,45 +167,46 @@ get_passbolt_folder_ids() {
                 echo "[FORGE] jq failed to parse pasbolt's response: $passbolt_output" >&2
                 exit 1
             fi
-            PASSBOLT_IDS[$fld]="$jq_output"
-            echo "[FORGE] ${fld}_ID returned empty: the folder ${fld} originally do not exist in passbolt. Creating the specific ${fld}_ID: ${PASSBOLT_IDS[$fld]}."
+            PASSBOLT_IDS["${PASSBOLT_IDS_KEY}"]="$jq_output"
+            echo "[FORGE] ${fld}_ID returned empty: the folder ${fld} originally do not exist in passbolt. Creating the specific ${fld}_ID: ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}."
         fi
-        [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_IDS[${fld}] -> ${PASSBOLT_IDS[$fld]} :: MATCH_COUNT -> ${MATCH_COUNT}"
+        [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_IDS[${PASSBOLT_IDS_KEY}] -> ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]} :: MATCH_COUNT -> ${MATCH_COUNT}"
     done
 
-    print_banner "[${ENV_DESIRED}] ROOT -> ${PASSBOLT_IDS[ROOT]} :: ORG -> ${PASSBOLT_IDS[ORG]} :: SYS -> ${PASSBOLT_IDS[SYS]} :: ENV -> ${PASSBOLT_IDS[ENV]}"
+    print_banner "[${ENV_DESIRED}] ROOT -> ${PASSBOLT_IDS[ROOT]} :: ORG -> ${PASSBOLT_IDS[ORG]} :: SYS -> ${PASSBOLT_IDS[SYS]} :: ENV(${PASSBOLT_IDS_KEY}) -> ${PASSBOLT_IDS[$PASSBOLT_IDS_KEY]}"
 }
 
 get_passbolt_resource_ids() {
     # Grab all resources ID from passbolt using the default organization: forge -> ORGANIZATION -> SYSTEM -> ENVIRONMENT -> CONFIGURATION FILE
     # Each configuration file will have multiple resources with the name as the same as the key and in passworld will be stored the secret/sensible information (configuration itself)
-    # [MANDATORY] $1 PASSBOLT_IDS            :: array where all data grabed will be stored.
-    # [MANDATORY] $2 PASSBOLT_FOLDER_FIL_ID  :: set passbolt id of folder that has the resources
-    # [MANDATORY] $3 FILE_SAMPLE             :: file sample tha will retrive all keys
+    # [MANDATORY] $1 PASSBOLT_IDS             :: array where all data grabed will be stored.
+    # [MANDATORY] $2 PASSBOLT_CALC_FOLDER_IDS :: array to get passbolt id of folder that has the resources
+    # [MANDATORY] $3 ACRONYM                  :: acronym tha will retrive all keys
+    # [OPTIONAL]  $4 ENV_DESIRED              :: set the environmet that will be used. The dafult is use $TARGET_ENV
+    
 
     declare -n PASSBOLT_RES_IDS="$1"
-    local REF="${2:-}"
+    declare -n PASSBOLT_CALC_FOLDER_IDS="$2"
+    # local PASSBOLT_FOLDER_FIL_ID="${3:-}"
+    # if [[ -z "$PASSBOLT_FOLDER_FIL_ID" ]]; then
+    #     echo "Can't go on: PASSBOLT_FOLDER_FIL_ID is empty!!"
+    #     exit 1
+    # fi
+    local ACRONYM="${3:-}"
     # FIXME test -z can be replace by another idiom
-    if [[ -z "$REF" ]]; then
-        echo "Can't go on: REF is empty!!"
+    if [[ -z "$ACRONYM" ]]; then
+        echo "Can't go on: ACRONYM is empty!!"
         exit 1
     fi
-    local PASSBOLT_FOLDER_FIL_ID="${3:-}"
-    if [[ -z "$PASSBOLT_FOLDER_FIL_ID" ]]; then
-        echo "Can't go on: PASSBOLT_FOLDER_FIL_ID is empty!!"
-        exit 1
-    fi
-    local ENV_DESIRED="${4:-}"
+    local ENV_DESIRED=${4:-$TARGET_ENV}
     if [[ -z "$ENV_DESIRED" ]]; then
         echo "Can't go on: ENV_DESIRED is empty!!"
         exit 1
     fi
-    local FILE_SAMPLE="${5:-}"
-    if [[ -z "$FILE_SAMPLE" ]]; then
-        echo "Can't go on: FILE_SAMPLE is empty!!"
-        exit 1
-    fi
+    local FILE_SAMPLE="${CONF_FILE_CANONICAL_NAME[$ACRONYM]}"
     local ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
+    local REF="${CONF_FILE_ACRONYM_BY_FILENAME[${FILE_SAMPLE}]}"
+    local PASSBOLT_FOLDER_FIL_ID="${PASSBOLT_CALC_FOLDER_IDS[$REF]}"
     [[ "$FORGE_DEBUG" == "" ]] && echo "[FORGE] PASSBOLT system binary $PASSBOLT_BIN :: PASSBOLT_FOLDER_FIL_ID -> ${PASSBOLT_FOLDER_FIL_ID} :: FILE_SAMPLE -> ${FILE_SAMPLE}"
     if [[ -z "$FORGE_PASSBOLT_BIN" ]]; then
         echo "❌ Error: Neither 'go-passbolt-cli' nor 'passbolt' was found in your PATH." >&2
@@ -251,8 +254,8 @@ get_passbolt_resource_ids() {
             [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] ⚠️ Warning tracking full path: ${PASSBOLT_FOLDER_FIL_ID} (${FILE_SAMPLE}) -> PARENT: ${PARENT_FOLDER} :: ENV: ${PASSBOLT_FOLDER_ENV_ID} ($ENV_FILE) -> SYS: ${PASSBOLT_FOLDER_SYS_ID} -> ORG: ${PASSBOLT_FOLDER_ORG_ID} -> ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
         fi
         PASSBOLT_RES_IDS["$var_name"]=$PASSBOLT_RESOURCE_KEY_ID
-        [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] KEY_ID is ${PASSBOLT_RESOURCE_KEY_ID} -> resource with name ${var_name} (${KEY})"
+        # [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] KEY_ID is ${PASSBOLT_RESOURCE_KEY_ID} -> resource with name ${var_name} (${KEY})"
     done <<< "$KEYS"
-    [[ "$FORGE_DEBUG" == "1" ]] && echo "----------------------------------------------------- </RESULT>  ------------------------------------------------------"
-    [[ "$FORGE_DEBUG" == "1" ]] && echo ""
+    # [[ "$FORGE_DEBUG" == "1" ]] && echo "----------------------------------------------------- </RESULT>  ------------------------------------------------------"
+    # [[ "$FORGE_DEBUG" == "1" ]] && echo ""
 }

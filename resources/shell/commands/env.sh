@@ -359,24 +359,28 @@ persist_secrets() {
 
     date
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
-    FORGE_DEBUG=${FORGE_DEBUG:-0}
     local ENV_DESIRED=${1:-$TARGET_ENV}
 
     declare -A PASSBOLT_FOLDER_IDS
     get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
 
-    for filepath in .credentials/samples/.*example; do
-        local FILE_SAMPLE="${filepath##*/}"
-        FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
-        FILE_SAMPLE="${FILE_SAMPLE%.example}"
-        local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
-        CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
-        declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
+    for acronym in "${CONF_FILE_ACRONYM_BY_FILENAME[@]}"; do
+    # for filepath in .credentials/samples/.*example; do
+        # local FILE_SAMPLE="${filepath##*/}"
+        # FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
+        # FILE_SAMPLE="${FILE_SAMPLE%.example}"
+        # local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
+        # CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
+        # declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
+        declare -n REF=$acronym
 
         # # FIXME ATTENTION!!
-        # [[ "$FILE_SAMPLE" == ".user_seeds.csv" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
+        # # [[ "$FILE_SAMPLE" == ".user_seeds.csv" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
+        # [[ "$acronym" != "MIENPL" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
+
         declare -A PASSBOLT_RESOURCE_IDS=()
-        get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS "$REF" "${PASSBOLT_FOLDER_IDS[${REF}]}" "$ENV_DESIRED" "${FILE_SAMPLE}"
+        # get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS "${FILE_SAMPLE}" "${PASSBOLT_FOLDER_IDS[${REF}]}" "$ENV_DESIRED"
+        get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
 
         for ENTRY in "${!PASSBOLT_RESOURCE_IDS[@]}"; do
             [[ -z "$ENTRY" ]] && continue
@@ -385,6 +389,7 @@ persist_secrets() {
                 continue
             fi
 
+            # TODO implement get variable from secret file (gpg)
             local var_value="${!ENTRY:-<NULL>}"
             if [[ -z "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" || "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" == "null" ]]; then
                 [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${REF}]}" --name "$ENTRY" --password "$var_value" > /dev/null # FIXME need redirect? Should log the error?
