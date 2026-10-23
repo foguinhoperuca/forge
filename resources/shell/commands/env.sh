@@ -379,7 +379,6 @@ persist_secrets() {
         # [[ "$acronym" != "MIENPL" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
 
         declare -A PASSBOLT_RESOURCE_IDS=()
-        # get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS "${FILE_SAMPLE}" "${PASSBOLT_FOLDER_IDS[${REF}]}" "$ENV_DESIRED"
         get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
 
         for ENTRY in "${!PASSBOLT_RESOURCE_IDS[@]}"; do
@@ -398,8 +397,6 @@ persist_secrets() {
             fi
             echo "[FORGE] ENTRY_ID is ${PASSBOLT_RESOURCE_IDS[$ENTRY]} -> $([[ -z ${PASSBOLT_RESOURCE_IDS[$ENTRY]} ]] && echo "CREATED" || echo "UPDATED") resource $ENTRY = $var_value"
         done
-        echo "----------------------------------------------------- </RESULT>  ------------------------------------------------------"
-        echo ""
     done
 }
 
@@ -408,7 +405,7 @@ generate_conf_file() {
     # It is assume that set_vars and set_vars_by_env **ALREADY** was runned.
     # [MANDATORY] $1 ENV_DESIRED          :: define environment desired to be generate [local | dev | stage | replica | prod]. ALL is implemented in the call of this function.
     # [MANDATORY] $2 SOURCE_SECRETS       :: define $SOURCE_SECRETS [gpg | passbolt | keepass | new]
-    # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target
+    # [OPTIONAL]  $DEPLOY_GENERATED_FILES :: define if generated files will be deployed to each target. Default is not deployed.
     # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
 
@@ -420,57 +417,22 @@ generate_conf_file() {
 	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
 
 	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-        local tmp_folders
-        local tmp_resources
-        local tmp_secrets
-		tmp_folders=$(mktemp)
-        tmp_resources=$(mktemp)
-        tmp_secrets=$(mktemp)
-        trap 'rm -f "$tmp_folders" "$tmp_resources" "$tmp_secrets"' EXIT
-
-        if [[ "$FORGE_DEBUG" == "1" ]]; then
-            cat ../.forge_workspace/passbolt/.folders.json > "$tmp_folders"
-            cat ../.forge_workspace/passbolt/.resources.json > "$tmp_resources"
-        else
-			# TODO validate if binary passbolt exist (or go-passbolt-cli)
-			# local FORGE_PASSBOLT_BIN=$([[ -e passbolt ]] && echo "passbolt" || echo "go-passbolt-cli") # TODO something like it. Also, test if binary is installed and then test if is passbolt or go-passbolt-cli
-            passbolt list folder --json > "$tmp_folders"
-            passbolt list resouce --json > "$tmp_resources"
-        fi
-
-		# FIXME call folder only the necessary data (not all folders - less data going through client and server)
-		PASSBOLT_FOLDER_ORG_ID=$(jq -r --arg org "$FORGE_ORGANIZATION_ACRONYM" '.[] | select(.name == $org) | .id' "$tmp_folders") # $FORGE_ORGANIZATION_ACRONYM -> pms (more or less: go-passbolt-cli list folder --column id --filter 'name == "$FORGE_ORGANIZATION_ACRONYM"')
-		# FIXME passbolt accept folder with same name in same level. ORG folder can came from the .mise-en-place.conf (but will be the chicken-egg problem or use a new separated .env file called .passbolt.json that has only id and can live inside of repository)?
-		if [[ -z "$PASSBOLT_FOLDER_ORG_ID" || "$PASSBOLT_FOLDER_ORG_ID" == "null" ]]; then
-			echo "[FAILED] PASSBOLT_FOLDER_ORG_ID is empty. Can't go on."
-			return 1
-		fi
-
-		# FIXME same problem above that passbolt can have folder with same name in same level
-		PASSBOLT_FOLDER_SYS_ID=$(jq -r --arg sys "$FORGE_SYSTEM_ACRONYM" --arg org "$PASSBOLT_FOLDER_ORG_ID" '.[] | select(.name == $sys and .folder_parent_id == $org) | .id' "$tmp_folders") # $FORGE_SYSTEM_ACRONYM -> river
-		if [[ -z "$PASSBOLT_FOLDER_SYS_ID" || "$PASSBOLT_FOLDER_SYS_ID" == "null" ]]; then
-			echo "[FAILED] PASSBOLT_FOLDER_SYS_ID is empty. Can't go on."
-			return 1
-		fi
-
-		# FIXME same problem above that passbolt can have folder with same name in same level
-		PASSBOLT_FOLDER_ENV_ID=$(jq -r --arg env "$ENV_DESIRED" --arg sys "$PASSBOLT_FOLDER_SYS_ID" '.[] | select(.name == $env and .folder_parent_id == $sys) | .id' "$tmp_folders") # $ENV_DESIRED -> local
-		if [[ -z "$PASSBOLT_FOLDER_ENV_ID" || "$PASSBOLT_FOLDER_ENV_ID" == "null" ]]; then
-			echo "[FAILED] PASSBOLT_FOLDER_ENV_ID is empty. Can't go on."
-			return 1
-		fi
-
-		# TODO validate if var is found and echo must be with FORGE_DEBUG=1
-		[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT variables: ORG_ID -> $PASSBOLT_FOLDER_ORG_ID :: SYS_ID -> $PASSBOLT_FOLDER_SYS_ID :: ENV_ID -> $PASSBOLT_FOLDER_ENV_ID"
+		declare -A PASSBOLT_FOLDER_IDS
+		get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
 	fi
 
     # for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g); do
+	# 	filename="${filepath##*/}"
+	# 	filename_clean="${filename%.target-env-example}"
+	# 	FILE_SAMPLE="${filename_clean%.example}"
 	for filepath in .credentials/samples/.*example; do
-		filename="${filepath##*/}"
-		filename_clean="${filename%.target-env-example}"
-		FILE_SAMPLE="${filename_clean%.example}"
+		local FILE_SAMPLE="${filepath##*/}"
+        FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
+        FILE_SAMPLE="${FILE_SAMPLE%.example}"
         ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
 		DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${ENV_FILE}"
+		TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
+		local acronym="${CONF_FILE_ACRONYM_BY_FILENAME[$FILE_SAMPLE]}"
 
         if [[ "${SOURCE_SECRETS}" == "gpg" ]]; then
 			[[ ! -e ".credentials/secure/${ENV_FILE}.gpg" ]] && echo "[FORGE_GENENV] skipping ${ENV_FILE}" && continue
@@ -479,38 +441,62 @@ generate_conf_file() {
             continue
         fi
 
-        TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
-        # DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${TARGET_ENTRY}")"
-
+		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
 		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-			local PARENT_FOLDER="$PASSBOLT_FOLDER_ENV_ID"
-			if [[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]]; then
-				PARENT_FOLDER=$PASSBOLT_FOLDER_SYS_ID
-			fi
-			PASSBOLT_RESOURCE_ID=$(jq -r --arg file_sample "$FILE_SAMPLE" --arg parent "$PARENT_FOLDER" '.[] | select(.name == $file_sample and .folder_parent_id == $parent) | .id' "$tmp_resources") # $FILE_SAMPLE -> .target-server (.mise-en-place.conf should be linked with folder system)
-			if [[ -z "$PASSBOLT_RESOURCE_ID" || "$PASSBOLT_RESOURCE_ID" == "null" ]]; then
-				echo "[FAILED] PASSBOLT_RESOURCE_ID is empty. Can't continue."
-				return 1
-			fi
-			if [[ "$FORGE_DEBUG" == "1" ]]; then
-			   cat ../.forge_workspace/passbolt/"${ENV_FILE}".secrets.json > "$tmp_secrets"
-			else
-				passbolt get resource --id "$PASSBOLT_RESOURCE_ID" > "$tmp_secrets"
-			fi
+			# FIXME ATTENTION!!
+			[[ "$FILE_SAMPLE" != ".mise-en-place.conf" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
+			echo ""
+			echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+
+			local tmp_secrets
+			tmp_secrets=$(mktemp -d)
+			trap 'rm -f "$tmp_secrets"' EXIT
+
+			declare -A PASSBOLT_RESOURCE_IDS=()
+			get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
+			for UUID in "${PASSBOLT_RESOURCE_IDS[@]}"; do
+				("$FORGE_PASSBOLT_BIN" get resource --json --id "${UUID}" > "${tmp_secrets}/${UUID}") &
+				# TODO implement test if passbolt command was successfully
+				# break
+			done
+			wait
+			for RESOURCE in "${tmp_secrets}"/*; do
+				local value=$(jq -r '.password' "$RESOURCE")
+				local name=$(jq -r '.name' "$RESOURCE")
+				local key="${name#FORGE_"${acronym}"_}" 
+				echo "SECRET: $RESOURCE ::  ${key} (${name}) :: $pass"
+				case "$FILE_SAMPLE" in
+					".pgpass")
+						echo "TODO implement .pgpass"
+						;;
+					".user_seeds.csv")
+						echo "TODO implement .user_seeds.csv"
+						;;
+					*)
+						echo "${key}=${value}" >> "$DESTINY"
+						# # TODO order the file
+						# local ordered=$(cat "$DESTINY" | sort)
+						# # cat "$ordered" > "$DESTINY"
+						# cat "$ordered"
+					  ;;
+				esac
+			done
+
+			echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+			echo ""
+			continue
 		fi
 
         CONTENT=$([[ "$FILE_SAMPLE" == ".pgpass" ]] && cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' || cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | cut -d = -f1)
-        if [[ "$FORGE_DEBUG" == "1" ]]; then
+        if [[ "$FORGE_DEBUG" == "0" ]]; then
             echo ""
-            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (${ENV_FILE}) :: PASSBOLT_RESOURCE_ID -> $PASSBOLT_RESOURCE_ID ($PARENT_FOLDER) :: DESTINY -> $DESTINY"
+            print_banner "[DEBUG] FILE_SAMPLE -> $FILE_SAMPLE (${ENV_FILE}) :: DESTINY -> $DESTINY"
             echo "[DEBUG] TARGET_ENTRY -> $TARGET_ENTRY"
             echo "----------------------------------------------------- <CONTENT>  -----------------------------------------------------"
             echo "$CONTENT"
             echo "----------------------------------------------------- </CONTENT> -----------------------------------------------------"
             echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
         fi
-
-		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
 
         IFS=$'\n'
         for LINE in $CONTENT; do
@@ -520,18 +506,11 @@ generate_conf_file() {
             BUILD_UP_LINE=""
             for ENTRY in "${ENTRIES[@]}"; do
                 # TODO generate_secret do not make much sense for various. Maybe grab data from .seed file with defaults (username for DB, username for app, server ip, etc) - those files (.seed) shouldn't be checked into git but keep it in another secure place
-                # TODO make sense to grab secrets from .*.gpg files?!
                 case $SOURCE_SECRETS in
                     "keepass")
                         echo "[FORGE] KEEPASS not fully implemented yet! continue..." && continue
                         # FIXME use correct sample.kdbx and pwfile (pass.txt) - implement some strategy to grab pass.txt (it should be encrypted with gpg)
                         SECRET=$(kpcli --readonly --kdb "${APP_PATH_WORKTREE}/edge/.credentials/secure/vault.kdbx" --pwfile "${APP_PATH_WORKTREE}/edge/.credentials/secure/pass.txt" --command "show -f \"/sample/"$FILE_SAMPLE"/"$ENTRY"/"$TARGET_ENTRY"\"" | grep -E 'Pass: ' | cut -d : -f2 | sed 's/^[[:space:]]*//') # FIXME --key ".credentials/sample.keyx" not working
-                        ;;
-                    "passbolt")
-						# TODO use parent id from here with name to grab specific and correct folder
-						PASSBOLT_RESOURCE_CUSTOM_FIELD_ID=$(jq -r --arg id "$PASSBOLT_RESOURCE_ID" --arg name "$LINE" '.[] | select(.id == $id) | .metadata | .custom_fields | .[] | select(.metadata_key == $name) | .id' "$tmp_resources") # $ENTRY -> TARGET_SERVER_ADDR
-						PASSBOLT_RESOURCE_SECRET=$(jq -r --arg id "$PASSBOLT_RESOURCE_CUSTOM_FIELD_ID" '.secret | .custom_fields | .[] | select(.id == $id) | .secret_value' "$tmp_secrets") # $PASSBOLT_RESOURCE_CUSTOM_FIELD_ID -> localhost
-                        SECRET=$PASSBOLT_RESOURCE_SECRET
                         ;;
                     "new")
                         SECRET=$(generate_secret "16")

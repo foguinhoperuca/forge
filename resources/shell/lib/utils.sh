@@ -154,7 +154,7 @@ get_passbolt_folder_ids() {
 
         PASSBOLT_IDS["${PASSBOLT_IDS_KEY}"]=$(echo "$ALL_PASSBOLT_ENTRY" | head -n 1)
         MATCH_COUNT=$(echo "$ALL_PASSBOLT_ENTRY" | grep -v '^$' | wc -l)
-        [[ $MATCH_COUNT -gt 1 ]] && echo "[ROOT] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}"
+        [[ $MATCH_COUNT -gt 1 ]] && echo "[${PASSBOLT_IDS_KEY}] ⚠️ Warning: Found $MATCH_COUNT duplicate FOLDERS named '${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}' at same level! 👉 Selecting the first discovered ID: ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}"
         if [[ -z "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" || "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" == "null" ]]; then
             local passbolt_output
             if ! passbolt_output=$("$FORGE_PASSBOLT_BIN" create folder -j -n "${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]}" 2>&1); then
@@ -173,7 +173,7 @@ get_passbolt_folder_ids() {
         [[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_IDS[${PASSBOLT_IDS_KEY}] -> ${PASSBOLT_IDS[${PASSBOLT_IDS_KEY}]} :: MATCH_COUNT -> ${MATCH_COUNT}"
     done
 
-    print_banner "[${ENV_DESIRED}] ROOT -> ${PASSBOLT_IDS[ROOT]} :: ORG -> ${PASSBOLT_IDS[ORG]} :: SYS -> ${PASSBOLT_IDS[SYS]} :: ENV(${PASSBOLT_IDS_KEY}) -> ${PASSBOLT_IDS[$PASSBOLT_IDS_KEY]}"
+    print_banner "[${ENV_DESIRED}] ROOT -> ${PASSBOLT_IDS[ROOT]} :: ORG -> ${PASSBOLT_IDS[ORG]} :: SYS -> ${PASSBOLT_IDS[SYS]} :: ENV -> ${PASSBOLT_IDS[$ENV_DESIRED]}"
 }
 
 get_passbolt_resource_ids() {
@@ -187,11 +187,6 @@ get_passbolt_resource_ids() {
 
     declare -n PASSBOLT_RES_IDS="$1"
     declare -n PASSBOLT_CALC_FOLDER_IDS="$2"
-    # local PASSBOLT_FOLDER_FIL_ID="${3:-}"
-    # if [[ -z "$PASSBOLT_FOLDER_FIL_ID" ]]; then
-    #     echo "Can't go on: PASSBOLT_FOLDER_FIL_ID is empty!!"
-    #     exit 1
-    # fi
     local ACRONYM="${3:-}"
     # FIXME test -z can be replace by another idiom
     if [[ -z "$ACRONYM" ]]; then
@@ -207,7 +202,7 @@ get_passbolt_resource_ids() {
     local ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
     local REF="${CONF_FILE_ACRONYM_BY_FILENAME[${FILE_SAMPLE}]}"
     local PASSBOLT_FOLDER_FIL_ID="${PASSBOLT_CALC_FOLDER_IDS[$REF]}"
-    [[ "$FORGE_DEBUG" == "" ]] && echo "[FORGE] PASSBOLT system binary $PASSBOLT_BIN :: PASSBOLT_FOLDER_FIL_ID -> ${PASSBOLT_FOLDER_FIL_ID} :: FILE_SAMPLE -> ${FILE_SAMPLE}"
+    [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] PASSBOLT system binary $PASSBOLT_BIN :: PASSBOLT_FOLDER_FIL_ID -> ${PASSBOLT_FOLDER_FIL_ID} :: FILE_SAMPLE -> ${FILE_SAMPLE} :: ENV_FILE -> $ENV_FILE :: REF -> $REF"
     if [[ -z "$FORGE_PASSBOLT_BIN" ]]; then
         echo "❌ Error: Neither 'go-passbolt-cli' nor 'passbolt' was found in your PATH." >&2
         exit 1
@@ -233,11 +228,7 @@ get_passbolt_resource_ids() {
             KEYS=$(cat .credentials/samples/"$FILE_SAMPLE"*example | sed '1d' | grep -v '^#' | grep -v '^$' | cut -d = -f1)
             ;;
     esac
-    if [[ "$FORGE_DEBUG" == "1" ]]; then
-        echo "$KEYS"
-        echo "----------------------------------------------------- </KEYS> --------------------------------------------------------"
-        echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
-    fi
+	[[ "$FORGE_DEBUG" == "1" ]] && echo "----------------------------------------------------- <RESULT>  ------------------------------------------------------"
     while read -r KEY; do
         [[ -z "$KEY" ]] && continue
         if [[ "$KEY" =~ [\<\>] ]]; then
@@ -254,8 +245,7 @@ get_passbolt_resource_ids() {
             [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] ⚠️ Warning tracking full path: ${PASSBOLT_FOLDER_FIL_ID} (${FILE_SAMPLE}) -> PARENT: ${PARENT_FOLDER} :: ENV: ${PASSBOLT_FOLDER_ENV_ID} ($ENV_FILE) -> SYS: ${PASSBOLT_FOLDER_SYS_ID} -> ORG: ${PASSBOLT_FOLDER_ORG_ID} -> ROOT: ${PASSBOLT_FOLDER_ROOT_ID}"
         fi
         PASSBOLT_RES_IDS["$var_name"]=$PASSBOLT_RESOURCE_KEY_ID
-        # [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] KEY_ID is ${PASSBOLT_RESOURCE_KEY_ID} -> resource with name ${var_name} (${KEY})"
+        [[ "$FORGE_DEBUG" == "1" ]] && echo "[FORGE] KEY_ID is ${PASSBOLT_RESOURCE_KEY_ID} -> resource with name ${var_name} (${KEY})"
     done <<< "$KEYS"
-    # [[ "$FORGE_DEBUG" == "1" ]] && echo "----------------------------------------------------- </RESULT>  ------------------------------------------------------"
-    # [[ "$FORGE_DEBUG" == "1" ]] && echo ""
+    [[ "$FORGE_DEBUG" == "1" ]] && echo "----------------------------------------------------- </RESULT>  ------------------------------------------------------"
 }
