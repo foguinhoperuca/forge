@@ -350,6 +350,7 @@ encrypt_multiple() {
 }
 
 # TODO implement get by org folder shared with group called devops
+# TODO merge this function with encrypt multiple to have one interface to sync secrets
 persist_secrets() {
     # Read all files for env and save it in passbolt. In case of the secret is already there then the update is made.
     # [MANDATORY] $1 ENV_DESIRED          :: will grab values from ENV
@@ -358,26 +359,12 @@ persist_secrets() {
     # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
 
     date
-    FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     local ENV_DESIRED=${1:-$TARGET_ENV}
 
     declare -A PASSBOLT_FOLDER_IDS
     get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
 
     for acronym in "${CONF_FILE_ACRONYM_BY_FILENAME[@]}"; do
-    # for filepath in .credentials/samples/.*example; do
-        # local FILE_SAMPLE="${filepath##*/}"
-        # FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
-        # FILE_SAMPLE="${FILE_SAMPLE%.example}"
-        # local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
-        # CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
-        # declare -n REF="CONF_FILE_ACRONYM[$CLEAN_FILE_SAMPLE]"
-        declare -n REF=$acronym
-
-        # # FIXME ATTENTION!!
-        # # [[ "$FILE_SAMPLE" == ".user_seeds.csv" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
-        # [[ "$acronym" != "MIENPL" ]] && echo "FIXME SKIPING: just skip temporally to validate the script and dev other features" && continue # FIXME remove it - just for test
-
         declare -A PASSBOLT_RESOURCE_IDS=()
         get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
 
@@ -388,14 +375,13 @@ persist_secrets() {
                 continue
             fi
 
-            # TODO implement get variable from secret file (gpg)
-            local var_value="${!ENTRY:-<NULL>}"
+            local VAR_VALUE="${!ENTRY:-<NULL>}"
             if [[ -z "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" || "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" == "null" ]]; then
-                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${REF}]}" --name "$ENTRY" --password "$var_value" > /dev/null # FIXME need redirect? Should log the error?
+                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${acronym}]}" --name "$ENTRY" --password "$VAR_VALUE" > /dev/null # FIXME need redirect? Should log the error?
             else
-                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" update resource --id "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" --password "$var_value" > /dev/null # FIXME need redirect?
+                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" update resource --id "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" --password "$VAR_VALUE" > /dev/null # FIXME need redirect?
             fi
-            echo "[FORGE] ENTRY_ID is ${PASSBOLT_RESOURCE_IDS[$ENTRY]} -> $([[ -z ${PASSBOLT_RESOURCE_IDS[$ENTRY]} ]] && echo "CREATED" || echo "UPDATED") resource $ENTRY = $var_value"
+            echo "[FORGE] ENTRY_ID is ${PASSBOLT_RESOURCE_IDS[$ENTRY]} -> $([[ -z ${PASSBOLT_RESOURCE_IDS[$ENTRY]} ]] && echo "CREATED" || echo "UPDATED") resource $ENTRY = $VAR_VALUE"
         done
     done
 }
@@ -425,6 +411,8 @@ generate_conf_file() {
 	# 	filename="${filepath##*/}"
 	# 	filename_clean="${filename%.target-env-example}"
 	# 	FILE_SAMPLE="${filename_clean%.example}"
+    # 	local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
+    # 	CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
 	for filepath in .credentials/samples/.*example; do
 		local FILE_SAMPLE="${filepath##*/}"
         FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
@@ -444,9 +432,7 @@ generate_conf_file() {
 		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
 		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
 			# FIXME ATTENTION!!
-			[[ "$FILE_SAMPLE" != ".mise-en-place.conf" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
-			echo ""
-			echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+			[[ "$FILE_SAMPLE" != ".pgpass" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
 
 			local tmp_secrets
 			tmp_secrets=$(mktemp -d)
@@ -460,30 +446,46 @@ generate_conf_file() {
 				# break
 			done
 			wait
+
+            declare -A PGPASS_ENTRIES
 			for RESOURCE in "${tmp_secrets}"/*; do
 				local value=$(jq -r '.password' "$RESOURCE")
 				local name=$(jq -r '.name' "$RESOURCE")
 				local key="${name#FORGE_"${acronym}"_}" 
-				echo "SECRET: $RESOURCE ::  ${key} (${name}) :: $pass"
+				[[ "$FORGE_DEBUG" == "1" ]] && echo "[${FILE_SAMPLE}] ${key} (${name}) :: ${value}"
 				case "$FILE_SAMPLE" in
 					".pgpass")
-						echo "TODO implement .pgpass"
+                        PGPASS_ENTRIES["${key}"]="${value}"
 						;;
 					".user_seeds.csv")
 						echo "TODO implement .user_seeds.csv"
 						;;
 					*)
-						echo "${key}=${value}" >> "$DESTINY"
-						# # TODO order the file
-						# local ordered=$(cat "$DESTINY" | sort)
-						# # cat "$ordered" > "$DESTINY"
-						# cat "$ordered"
-					  ;;
+						[[ "$FORGE_DRY_RUN" != "1" ]] && echo "${key}=${value}" >> "$DESTINY"
+					    ;;
 				esac
 			done
 
-			echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-			echo ""
+            case "$FILE_SAMPLE" in
+                ".pgpass")
+                    for line_id in "${PGPASS_LINE_IDENTIFICATION[@]}"; do
+                        local line_value=""
+                        for file_header in "${PGPASS_FILE_HEADERS[@]}"; do
+                            local entry_index="${line_id}_${file_header}"
+                            line_value+="${PGPASS_ENTRIES[${entry_index}]}:"
+                            echo "line_id -> ${line_id} :: file_header -> ${file_header} :: ${entry_index} :: ${PGPASS_ENTRIES[${entry_index}]}"
+                        done
+                        [[ "$FORGE_DRY_RUN" != "1" ]] && echo "${line_value%:}" >> "$DESTINY"
+                    done
+                    ;;
+                ".user_seeds.csv")
+                    echo "TODO implement it"
+                    ;;
+                *)
+                    sort -o "$DESTINY" "$DESTINY"
+                    ;;
+            esac
+
 			continue
 		fi
 
