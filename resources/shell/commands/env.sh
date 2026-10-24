@@ -365,7 +365,10 @@ persist_secrets() {
     get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
 
     for acronym in "${CONF_FILE_ACRONYM_BY_FILENAME[@]}"; do
-        declare -A PASSBOLT_RESOURCE_IDS=()
+		# # FIXME ATTENTION!!
+		# [[ "$acronym" != "USEEDS" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
+
+		declare -A PASSBOLT_RESOURCE_IDS=()
         get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
 
         for ENTRY in "${!PASSBOLT_RESOURCE_IDS[@]}"; do
@@ -375,6 +378,7 @@ persist_secrets() {
                 continue
             fi
 
+			# TODO implement as concurrent job
             local VAR_VALUE="${!ENTRY:-<NULL>}"
             if [[ -z "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" || "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" == "null" ]]; then
                 [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${acronym}]}" --name "$ENTRY" --password "$VAR_VALUE" > /dev/null # FIXME need redirect? Should log the error?
@@ -395,76 +399,94 @@ generate_conf_file() {
     # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
     # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
 
-	ENV_DESIRED=${1:-$TARGET_ENV}
-	SOURCE_SECRETS=${2:-"gpg"}
+    ENV_DESIRED=${1:-$TARGET_ENV}
+    SOURCE_SECRETS=${2:-"gpg"}
     DEPLOY_GENERATED_FILES=${DEPLOY_GENERATED_FILES:-0}
     FORGE_DRY_RUN=${FORGE_DRY_RUN:-0}
     FORGE_DEBUG=${FORGE_DEBUG:-0}
-	[[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
+    [[ "$FORGE_DEBUG" == "1" ]] && echo "ENV_DESIRED -> $ENV_DESIRED :: SOURCE_SECRETS -> $SOURCE_SECRETS :: DEPLOY_GENERATED_FILES -> $DEPLOY_GENERATED_FILES :: FORGE_DRY_RUN -> $FORGE_DRY_RUN :: FORGE_DEBUG -> $FORGE_DEBUG"
 
-	if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-		declare -A PASSBOLT_FOLDER_IDS
-		get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
-	fi
+    if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
+        declare -A PASSBOLT_FOLDER_IDS
+        get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
+    fi
 
     # for FILE_SAMPLE in $(ls .credentials/samples/.*example | sed -e "s|\.credentials/samples/||g" | sed -e s/\.target-env-example//g | sed -e s/\.example//g); do
-	# 	filename="${filepath##*/}"
-	# 	filename_clean="${filename%.target-env-example}"
-	# 	FILE_SAMPLE="${filename_clean%.example}"
-    # 	local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
-    # 	CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
-	for filepath in .credentials/samples/.*example; do
-		local FILE_SAMPLE="${filepath##*/}"
+    #     filename="${filepath##*/}"
+    #     filename_clean="${filename%.target-env-example}"
+    #     FILE_SAMPLE="${filename_clean%.example}"
+    #     local CLEAN_FILE_SAMPLE="${FILE_SAMPLE//./}"
+    #     CLEAN_FILE_SAMPLE="${CLEAN_FILE_SAMPLE//-/_}"
+    for filepath in .credentials/samples/.*example; do
+        local FILE_SAMPLE="${filepath##*/}"
         FILE_SAMPLE="${FILE_SAMPLE%.target-env-example}"
         FILE_SAMPLE="${FILE_SAMPLE%.example}"
         ENV_FILE="${FILE_SAMPLE}$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "" || echo ".${ENV_DESIRED}")"
-		DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${ENV_FILE}"
-		TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
-		local acronym="${CONF_FILE_ACRONYM_BY_FILENAME[$FILE_SAMPLE]}"
+        DESTINY=".credentials/${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}/${ENV_FILE}"
+        TARGET_ENTRY=$([[ "$FILE_SAMPLE" == ".mise-en-place.conf" ]] && echo "ingredient" || echo "$ENV_DESIRED")
+        local acronym="${CONF_FILE_ACRONYM_BY_FILENAME[$FILE_SAMPLE]}"
 
         if [[ "${SOURCE_SECRETS}" == "gpg" ]]; then
-			[[ ! -e ".credentials/secure/${ENV_FILE}.gpg" ]] && echo "[FORGE_GENENV] skipping ${ENV_FILE}" && continue
+            [[ ! -e ".credentials/secure/${ENV_FILE}.gpg" ]] && echo "[FORGE_GENENV] skipping ${ENV_FILE}" && continue
 
             gpg --quiet --batch --yes --output .credentials/"${APP_PATH_CREDENTIALS_GENERATED_OUTPUT}"/"${ENV_FILE}" --decrypt .credentials/secure/"${ENV_FILE}".gpg
             continue
         fi
 
-		[[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
-		if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-			# FIXME ATTENTION!!
-			[[ "$FILE_SAMPLE" != ".pgpass" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
+        [[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
+        if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
+            # FIXME ATTENTION!!
+            [[ "$FILE_SAMPLE" != ".user_seeds.csv" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
 
-			local tmp_secrets
-			tmp_secrets=$(mktemp -d)
-			trap 'rm -f "$tmp_secrets"' EXIT
+			# DECISION use FORGE_DEBUG=0 to use a temp file that will be removed in the end of program; FORGE_DEBUG=1 to full show messages AND use file in disk or FORGE_DEBUG=2 to use file on disk but sillent with echo messages
+			if [[ "$FORGE_DEBUG" == "1" || "$FORGE_DEBUG" == "2" ]]; then
+				tmp_secrets="../.forge_workspace/passbolt/matsumoto/resources/${FILE_SAMPLE}"
+			else
+				local tmp_secrets
+				tmp_secrets=$(mktemp -d)
+				trap 'rm -f "$tmp_secrets"' EXIT
+			fi
 
 			declare -A PASSBOLT_RESOURCE_IDS=()
 			get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
-			for UUID in "${PASSBOLT_RESOURCE_IDS[@]}"; do
-				("$FORGE_PASSBOLT_BIN" get resource --json --id "${UUID}" > "${tmp_secrets}/${UUID}") &
-				# TODO implement test if passbolt command was successfully
-				# break
-			done
-			wait
+			if [[ "$FORGE_DEBUG" == "0" || "$FORGE_DEBUG" == "1" ]]; then
+				local counter=0
+				local max_pool_size=30
+				for UUID in "${PASSBOLT_RESOURCE_IDS[@]}"; do
+					echo "Grabbing resource # ${counter} (${UUID}) for ${FILE_SAMPLE}"
+					("$FORGE_PASSBOLT_BIN" get resource --json --id "${UUID}" > "${tmp_secrets}/${UUID}") &
+					# TODO implement test if passbolt command was successfully
 
+					while (( $(jobs -r -p | wc -l) >= max_pool_size ));do
+						sleep 0.1
+					done
+					
+					# [[ $counter -eq 50 ]] && break # hard limit of itens
+					((counter++))
+				done
+				wait
+			fi
+
+            declare -A USEEDS_ENTRIES
             declare -A PGPASS_ENTRIES
-			for RESOURCE in "${tmp_secrets}"/*; do
-				local value=$(jq -r '.password' "$RESOURCE")
-				local name=$(jq -r '.name' "$RESOURCE")
-				local key="${name#FORGE_"${acronym}"_}" 
-				[[ "$FORGE_DEBUG" == "1" ]] && echo "[${FILE_SAMPLE}] ${key} (${name}) :: ${value}"
-				case "$FILE_SAMPLE" in
-					".pgpass")
+            for RESOURCE in "${tmp_secrets}"/*; do
+				[[ ! -s "$RESOURCE" ]] && continue
+                local value=$(jq -r '.password' "$RESOURCE")
+                local name=$(jq -r '.name' "$RESOURCE")
+                local key="${name#FORGE_"${acronym}"_}" 
+                [[ "$FORGE_DEBUG" == "1" ]] && echo "[${FILE_SAMPLE}] ${key} (${name}) :: ${value}"
+                case "$FILE_SAMPLE" in
+                    ".pgpass")
                         PGPASS_ENTRIES["${key}"]="${value}"
-						;;
-					".user_seeds.csv")
-						echo "TODO implement .user_seeds.csv"
-						;;
-					*)
-						[[ "$FORGE_DRY_RUN" != "1" ]] && echo "${key}=${value}" >> "$DESTINY"
-					    ;;
-				esac
-			done
+                        ;;
+                    ".user_seeds.csv")
+						USEEDS_ENTRIES["${key}"]="${value}"
+                        ;;
+                    *)
+                        [[ "$FORGE_DRY_RUN" != "1" ]] && echo "${key}=${value}" >> "$DESTINY"
+                        ;;
+                esac
+            done
 
             case "$FILE_SAMPLE" in
                 ".pgpass")
@@ -473,13 +495,25 @@ generate_conf_file() {
                         for file_header in "${PGPASS_FILE_HEADERS[@]}"; do
                             local entry_index="${line_id}_${file_header}"
                             line_value+="${PGPASS_ENTRIES[${entry_index}]}:"
-                            echo "line_id -> ${line_id} :: file_header -> ${file_header} :: ${entry_index} :: ${PGPASS_ENTRIES[${entry_index}]}"
+                            [[ "$FORGE_DEBUG" == "1" ]] && echo "line_id -> ${line_id} :: file_header -> ${file_header} :: ${entry_index} :: ${PGPASS_ENTRIES[${entry_index}]}"
                         done
                         [[ "$FORGE_DRY_RUN" != "1" ]] && echo "${line_value%:}" >> "$DESTINY"
                     done
                     ;;
                 ".user_seeds.csv")
-                    echo "TODO implement it"
+					TOTAL_STEPS=$(wc -l < "${APP_PATH_ETC}/${ENV_FILE}")
+					for ((i=0; i<TOTAL_STEPS; i++)); do
+						local line_vl=""
+						for usf_header in "${USER_SEEDS_FILE_HEADERS[@]}"; do
+							if [[ $i -eq 0 ]]; then
+								line_vl+="${usf_header};"
+							else
+								line_vl+="${USEEDS_ENTRIES[${i}_${usf_header^^}]:-N/A};"
+							fi
+							[[ "$FORGE_DEBUG" == "1" ]] && echo "i-> ${i} :: usf_header -> ${usf_header} (${usf_header^^}) :: ${USEEDS_ENTRIES[${i}_${usf_header^^}]:-N/A}"
+						done
+						[[ "$FORGE_DRY_RUN" != "1" ]] && echo "${line_vl%;}" >> "$DESTINY"
+					done
                     ;;
                 *)
                     sort -o "$DESTINY" "$DESTINY"
