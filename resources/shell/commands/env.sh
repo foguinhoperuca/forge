@@ -353,24 +353,30 @@ encrypt_multiple() {
 # TODO merge this function with encrypt multiple to have one interface to sync secrets
 persist_secrets() {
     # Read all files for env and save it in passbolt. In case of the secret is already there then the update is made.
-    # [MANDATORY] $1 ENV_DESIRED          :: will grab values from ENV
-    # [OPTIONAL]  $2 PASSBOLT_ROOT_FOLDER :: define the root of all forge's credentials. Default: forge
-    # [OPTIONAL]  $FORGE_DRY_RUN          :: do not execute changes with side-effect (e.g.: create files)
-    # [OPTIONAL]  $FORGE_DEBUG            :: show debug messages
+    # [MANDATORY] $1 ENV_DESIRED            :: will grab values from ENV
+    # [OPTIONAL ] $2 PASSBOLT_ROOT_FOLDER   :: define the root of all forge's credentials. Default: forge
+	# [OPTIONAL ] $3 PASSBOLT_MAX_POOL_SIZE :: number of concurrent process runnning passbolt. Default is 30.
+    # [OPTIONAL ] $FORGE_DRY_RUN            :: do not execute changes with side-effect (e.g.: create files)
+    # [OPTIONAL ] $FORGE_DEBUG              :: show debug messages
 
     date
     local ENV_DESIRED=${1:-$TARGET_ENV}
+	local PASSBOLT_ROOT_FOLDER=${2:-"${PASSBOLT_DEFAULT_ROOT_FOLDER}"}
+	# local PASSBOLT_MAX_POOL_SIZE=${3:-$PASSBOLT_DEFAULT_MAX_POOL_SIZE}
+	local PASSBOLT_MAX_POOL_SIZE=30
+	[[ "$FORGE_DEBUG" == "1" ]] && echo "PASSBOLT_MAX_POOL_SIZE -> $PASSBOLT_MAX_POOL_SIZE :: PASSBOLT_DEFAULT_MAX_POOL_SIZE $PASSBOLT_DEFAULT_MAX_POOL_SIZE"
 
     declare -A PASSBOLT_FOLDER_IDS
-    get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED"
+    get_passbolt_folder_ids PASSBOLT_FOLDER_IDS "$ENV_DESIRED" "${PASSBOLT_ROOT_FOLDER}"
 
     for acronym in "${CONF_FILE_ACRONYM_BY_FILENAME[@]}"; do
 		# # FIXME ATTENTION!!
-		# [[ "$acronym" != "USEEDS" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
+		# [[ "$acronym" != "MIENPL" ]] && echo "[${acronym}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
 
 		declare -A PASSBOLT_RESOURCE_IDS=()
         get_passbolt_resource_ids PASSBOLT_RESOURCE_IDS PASSBOLT_FOLDER_IDS "${acronym}" "$ENV_DESIRED"
 
+		local counter=0
         for ENTRY in "${!PASSBOLT_RESOURCE_IDS[@]}"; do
             [[ -z "$ENTRY" ]] && continue
             if [[ "$ENTRY" =~ [\<\>] ]]; then
@@ -378,15 +384,20 @@ persist_secrets() {
                 continue
             fi
 
-			# TODO implement as concurrent job
             local VAR_VALUE="${!ENTRY:-<NULL>}"
             if [[ -z "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" || "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" == "null" ]]; then
-                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${acronym}]}" --name "$ENTRY" --password "$VAR_VALUE" > /dev/null # FIXME need redirect? Should log the error?
+                [[ "$FORGE_DRY_RUN" != "1" ]] && ("$FORGE_PASSBOLT_BIN" create resource --json --folderParentID "${PASSBOLT_FOLDER_IDS[${acronym}]}" --name "$ENTRY" --password "$VAR_VALUE" > /dev/null)& # FIXME need redirect? Should log the error?
             else
-                [[ "$FORGE_DRY_RUN" != "1" ]] && "$FORGE_PASSBOLT_BIN" update resource --id "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" --password "$VAR_VALUE" > /dev/null # FIXME need redirect?
+                [[ "$FORGE_DRY_RUN" != "1" ]] && ("$FORGE_PASSBOLT_BIN" update resource --id "${PASSBOLT_RESOURCE_IDS[$ENTRY]}" --password "$VAR_VALUE" > /dev/null)& # FIXME need redirect?
             fi
-            echo "[FORGE] ENTRY_ID is ${PASSBOLT_RESOURCE_IDS[$ENTRY]} -> $([[ -z ${PASSBOLT_RESOURCE_IDS[$ENTRY]} ]] && echo "CREATED" || echo "UPDATED") resource $ENTRY = $VAR_VALUE"
+			while (( $(jobs -r -p | wc -l) >= PASSBOLT_MAX_POOL_SIZE )); do
+				sleep 0.1
+			done
+            echo "[FORGE: ${counter}] ENTRY_ID is ${PASSBOLT_RESOURCE_IDS[$ENTRY]} -> $([[ -z ${PASSBOLT_RESOURCE_IDS[$ENTRY]} ]] && echo "CREATED" || echo "UPDATED") resource $ENTRY = $VAR_VALUE"
+			((counter++))
         done
+		# FIXME this wait must live outer of loop through CONF_FILE_ACRONYM_BY_FILENAME? Here, maybe, it will wait each type of conf file
+		wait
     done
 }
 

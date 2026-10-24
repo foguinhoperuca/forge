@@ -121,3 +121,4 @@ elif command -v passbolt >/dev/null 2>&1; then
 fi
 PASSBOLT_DEFAULT_ROOT_FOLDER="forge"
 declare -a PASSBOLT_BASE_FOLDER_HIERARCHY=("ROOT" "ORG" "SYS" "ENV")
+PASSBOLT_MAX_POOL_SIZE_DEFAULT=30
