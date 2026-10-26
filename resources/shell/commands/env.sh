@@ -446,8 +446,8 @@ generate_conf_file() {
 
         [[ "$FORGE_DRY_RUN" != "1" ]] && : > "$DESTINY"
         if [[ "$SOURCE_SECRETS" == "passbolt" ]]; then
-            # FIXME ATTENTION!!
-            [[ "$FILE_SAMPLE" != ".user_seeds.csv" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
+            # # FIXME ATTENTION!!
+            # [[ "$FILE_SAMPLE" != ".user_seeds.csv" ]] && echo "[${FILE_SAMPLE}] FIXME SKIPING: just skip temporally to validate the script and dev other features -> ${acronym} :: ${ENV_DESIRED}" && continue # FIXME remove it - just for test
 
 			# DECISION use FORGE_DEBUG=0 to use a temp file that will be removed in the end of program; FORGE_DEBUG=1 to full show messages AND use file in disk or FORGE_DEBUG=2 to use file on disk but sillent with echo messages
 			if [[ "$FORGE_DEBUG" == "1" || "$FORGE_DEBUG" == "2" ]]; then
