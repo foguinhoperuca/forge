@@ -29,10 +29,18 @@ init-backoffice: init
 init-api: init
 	pip install -r api/requirements.txt
 
-run-local:
+PYTHON_APP ?= backoffice
+run-local: db-start
 	@clear
 	@date
-	@time python3 manage.py runserver 0.0.0.0:8080
+	python3 $(PYTHON_APP)/manage.py runserver 0.0.0.0:8000
+
+run-local-api: PYTHON_APP=api
+run-local-api: run-local
+	@date
+
+run-local-backoffice: PYTHON_APP=backoffice
+run-local-backoffice: run-local
 	@date
 
 # TODO implement test
